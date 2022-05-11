@@ -116,8 +116,7 @@ local Gui = Create{
 			AnchorPoint = Vector2.new(.5,.5),
 			BackgroundColor3 = Color3.fromRGB(80,80,100),
 			Position = UDim2.new(.5,0,.5,0),
-			Size = UDim2.new(0,100,0,100),
-			Image = getcustomasset("UltimatumLogo.png")
+			Size = UDim2.new(0,100,0,100)
 		}
 	},
 	{
@@ -144,7 +143,8 @@ local Gui = Create{
 		Properties = {
 			BackgroundTransparency = 1,
 			Position = UDim2.new(0,10,0,10),
-			Size = UDim2.new(0,80,0,80)
+			Size = UDim2.new(0,80,0,80),
+			Image = getcustomasset("UltimatumLogo.png")
 		}
 	}
 }
