@@ -3,14 +3,18 @@ pcall(Global.Ultimatum)
 if not game:IsLoaded() then
 	game.Loaded:Wait()
 end
-local Services = setmetatable({},{__index = function(Services,ServiceName)
-	assert(pcall(game.GetService,game,ServiceName),"Invalid ServiceName")
-	if not rawget(Services,ServiceName) or rawget(Services,ServiceName) ~= game:GetService(ServiceName) then
-		rawset(Services,ServiceName,game:GetService(ServiceName))
-	end
-	return rawget(Services,ServiceName)
-end,__newindex = function()
-end,__metatable = "nil"})
+local Services = setmetatable({},{
+	__index = function(Services,ServiceName)
+		assert(pcall(game.GetService,game,ServiceName),"Invalid ServiceName")
+		if not rawget(Services,ServiceName) or rawget(Services,ServiceName) ~= game:GetService(ServiceName) then
+			rawset(Services,ServiceName,game:GetService(ServiceName))
+		end
+		return rawget(Services,ServiceName)
+	end,
+	__newindex = function()
+	end,
+	__metatable = "nil"
+})
 local function EscapeTable(Value,Escape)
 	if not Escape and Value == Nil then
 		return nil
@@ -20,22 +24,35 @@ local function EscapeTable(Value,Escape)
 	return Value
 end
 local Valid
-Valid = {String = function(String,Substitute)
-	return Type(String) == "string" and String or Type(Substitute) == "string" and Substitute or ""
-end,Instance = function(Instance_,ClassName)
-	return Type(Instance_) == "Instance" and select(2,pcall(game.IsA,Instance_,Valid.String(ClassName,"Instance"))) == true and Instance_ or nil
-end,Number = function(Number,Substitute)
-	return tonumber(Number) == tonumber(Number) and tonumber(Number) or tonumber(Substitute) == tonumber(Substitute) and tonumber(Substitute) or 0
-end,Table = function(Table,Substitute)
-	Table = Type(Table) == "table" and Table or {}
-	for Index,Value in pairs(Type(Substitute) == "table" and Substitute or {}) do
-		Table[Index] = Type(Table[Index]) == Type(Value) and Table[Index] or Value
+Valid = {
+	String = function(String,Substitute)
+		return Type(String) == "string" and String or Type(Substitute) == "string" and Substitute or ""
+	end,
+	Instance = function(Instance_,ClassName)
+		return Type(Instance_) == "Instance" and select(2,pcall(game.IsA,Instance_,Valid.String(ClassName,"Instance"))) == true and Instance_ or nil
+	end,
+	Number = function(Number,Substitute)
+		return tonumber(Number) == tonumber(Number) and tonumber(Number) or tonumber(Substitute) == tonumber(Substitute) and tonumber(Substitute) or 0
+	end,
+	Table = function(Table,Substitute)
+		Table = Type(Table) == "table" and Table or {}
+		for Index,Value in pairs(Type(Substitute) == "table" and Substitute or {}) do
+			Table[Index] = Type(Table[Index]) == Type(Value) and Table[Index] or Value
+		end
+		return Table
 	end
-	return Table
-end}
+}
 table.freeze(Valid)
 local Random = {String = function(Settings)
-	Settings = Valid.Table(Settings,{Length = math.random(5,99),CharacterSet = {NumberRange.new(48,57),NumberRange.new(65,90),NumberRange.new(97,122)},Format = "\0%s"})
+	Settings = Valid.Table(Settings,{
+		Length = math.random(5,99),
+		CharacterSet = {
+			NumberRange.new(48,57),
+			NumberRange.new(65,90),
+			NumberRange.new(97,122)
+		},
+		Format = "\0%s"
+	})
 	return Settings.Format:format(("A"):rep(Settings.Length):gsub(".",function(Character)
 		local Range = Settings.CharacterSet[math.random(1,#Settings.CharacterSet)]
 		return string.char(math.random(Range.Min,Range.Max))
@@ -47,7 +64,10 @@ table.freeze(Random)
 local function NewInstance(ClassName,Parent,Properties)
 	local NewInstance = select(2,pcall(Instance.new,ClassName))
 	if Type(ClassName) == "Instance" then
-		Properties = Valid.Table(Properties,{Archivable = Random.Bool(),Name = Random.String()})
+		Properties = Valid.Table(Properties,{
+			Archivable = Random.Bool(),
+			Name = Random.String()
+		})
 		for Property,Value in pairs(Properties) do
 			pcall(function()
 				NewInstance[Property] = EscapeTable(Value)
@@ -74,7 +94,60 @@ local function Create(Data)
 	end
 	return Instances
 end
-local Gui = NewInstance("ScreenGui")
+if not isfile("UltimatumLogo.png") then
+	writefile("UltimatumLogo.png",game:HttpGet("https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Logo.png"))
+end
+local Gui = Create{
+	{
+		Name = "Holder",
+		ClassName = "ScreenGui",
+		Properties = {
+			DisplayOrder = 0x7FFFFFFF,
+			IgnoreGuiInset = true,
+			ResetOnSpawn = false,
+			ZIndexBehavior = Enum.ZIndexBehavior.Global
+		}
+	},
+	{
+		Name = "Frame",
+		ClassName = "Frame",
+		Parent = "Holder",
+		Properties = {
+			AnchorPoint = Vector2.new(.5,.5),
+			BackgroundColor3 = Color3.fromRGB(80,80,100),
+			Position = UDim2.new(.5,0,.5,0),
+			Size = UDim2.new(0,100,0,100),
+			Image = getcustomasset("UltimatumLogo.png")
+		}
+	},
+	{
+		Name = "FrameHolder",
+		ClassName = "UICorner",
+		Parent = "Frame",
+		Properties = {
+			CornerRadius = UDim.new(0,5)
+		}
+	},
+	{
+		Name = "FrameGradient",
+		ClassName = "UIGradient",
+		Parent = "Frame",
+		Properties = {
+			Color = ColorSequence.new(Color3.new(1,1,1),Color3.new(.5,.5,.5)),
+			Rotation = 90
+		}
+	},
+	{
+		Name = "Logo",
+		ClassName = "ImageLabel",
+		Parent = "Frame",
+		Properties = {
+			BackgroundTransparency = 1,
+			Position = UDim2.new(0,10,0,10),
+			Size = UDim2.new(0,80,0,80)
+		}
+	}
+}
 if not is_sirhurt_closure and (syn and syn.protect_gui or protect_gui) then 
 	(syn.protect_gui or protect_gui)(Gui)
 	Gui.Parent = Services.CoreGui
