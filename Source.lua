@@ -1,11 +1,10 @@
 local Global,Type,Nil = getgenv and getgenv() or shared,typeof,{}
-assert(not Global.UltimatumLoaded,"Utimatum is already loaded.")
-Global.UltimatumLoaded = true
+pcall(Global.Ultimatum)
 if not game:IsLoaded() then
 	game.Loaded:Wait()
 end
 local Services = setmetatable({},{__index = function(Services,ServiceName)
-	assert(pcall(game.GetService,game,ServiceName))
+	assert(pcall(game.GetService,game,ServiceName),"Invalid ServiceName")
 	if not rawget(Services,ServiceName) or rawget(Services,ServiceName) ~= game:GetService(ServiceName) then
 		rawset(Services,ServiceName,game:GetService(ServiceName))
 	end
@@ -60,21 +59,33 @@ local function NewInstance(ClassName,Parent,Properties)
 end
 local function Create(Data)
 	local Instances = {Destroy = function(Instances,Name)
-		pcall(game.Destroy,Instances[Name])
-		Instances[Name] = nil
+		if Type(Name) == "string" then
+			pcall(game.Destroy,Instances[Name])
+			Instances[Name] = nil
+		else
+			for _,Instance_ in pairs(Instances) do
+				pcall(game.Destroy,Instance_)
+			end
+			table.clear(Instances)
+		end
 	end}
 	for _,InstanceData in pairs(Data) do
 		Instances[InstanceData.Name] = NewInstance(InstanceData.ClassName,Type(InstanceData.Parent) == "string" and Instances[InstanceData.Parent] or InstanceData.Parent,InstanceData.Properties)
 	end
 	return Instances
 end
-local function ContainGui(Gui)
-	if Type(Gui) == "Instance" then
-		if not is_sirhurt_closure and syn and syn.protect_gui or protect_gui then 
-			(syn.protect_gui or protect_gui)(Gui)
-			Gui.Parent = Services.CoreGui
-			return
-		end
-		Gui.Parent = get_hidden_gui and get_hidden_gui() or gethui and gethui() or Services.CoreGui:FindFirstChild("RobloxGui") or Services.CoreGui
+local Gui = NewInstance("ScreenGui")
+if not is_sirhurt_closure and (syn and syn.protect_gui or protect_gui) then 
+	(syn.protect_gui or protect_gui)(Gui)
+	Gui.Parent = Services.CoreGui
+else
+	Gui.Parent = get_hidden_gui and get_hidden_gui() or gethui and gethui() or Services.CoreGui
+end
+local Connections = {}
+function Global.Ultimatum()
+	for _,Connection in pairs(Connections) do
+		pcall(Connection.Disconnect,Connection)
 	end
+	Gui:Destroy()
+	Global.Ultimatum = nil
 end
