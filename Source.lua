@@ -171,12 +171,12 @@ local Gui = Create{
 		}
 	}
 }
---[[if not is_sirhurt_closure and (syn and syn.protect_gui or protect_gui) then 
-	(syn.protect_gui or protect_gui)(Gui.Holder)]]
+if not is_sirhurt_closure and (syn and syn.protect_gui or protect_gui) then 
+	(syn.protect_gui or protect_gui)(Gui.Holder)
 	Gui.Holder.Parent = Services.CoreGui
---[[else
+else
 	Gui.Holder.Parent = get_hidden_gui and get_hidden_gui() or gethui and gethui() or Services.CoreGui
-end]]
+end
 local Connections = {
 	Services.RunService.Heartbeat:Connect(function()
 		if 10 < os.clock()-LastCheck then
@@ -203,7 +203,7 @@ local Connections = {
 	end),
 	Services.Players.LocalPlayer.OnTeleport:Connect(function(TeleportState)
 		if TeleportState == Enum.TeleportState.Started then
-			(queue_on_teleport or syn and syn.queue_on_teleport or warn)(readfile("Ultimatum.lua"))
+			(queue_on_teleport or syn and syn.queue_on_teleport or warn)(readfile("UltimatumSource.lua"))
 		end
 	end)
 }
