@@ -211,5 +211,5 @@ getgenv().Ultimatum = function()
 		pcall(Connection.Disconnect,Connection)
 	end
 	Gui:Destroy()
-	Global.Ultimatum = nil
+	getgenv().Ultimatum = nil
 end
