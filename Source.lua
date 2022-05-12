@@ -155,7 +155,7 @@ local Gui = Create{
 		ClassName = "UIGradient",
 		Parent = "Main",
 		Properties = {
-			Color = ColorSequence.new(Color3.new(1,1,1)),
+			Color = ColorSequence.new(Color3.new(1,1,1),Color3.new(.5,.5,.5)),
 			Rotation = 90
 		}
 	},
@@ -237,11 +237,6 @@ print("Ultimatum: Successfully loaded!")
 Animate(Gui.MainCorner,{
 	Properties = {
 		CornerRadius = UDim.new(0,5)
-	}
-})
-Animate(Gui.MainGradient,{
-	Properties = {
-		Color = ColorSequence.new(Color3.new(1,1,1),Color3.new(.5,.5,.5))
 	}
 })
 Animate(Gui.Logo,{
