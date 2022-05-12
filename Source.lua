@@ -132,7 +132,7 @@ local Gui = Create{
 		}
 	},
 	{
-		Name = "Frame",
+		Name = "Main",
 		ClassName = "Frame",
 		Parent = "Holder",
 		Properties = {
@@ -143,43 +143,62 @@ local Gui = Create{
 		}
 	},
 	{
-		Name = "FrameHolder",
+		Name = "MainCorner",
 		ClassName = "UICorner",
-		Parent = "Frame",
+		Parent = "Main",
 		Properties = {
-			CornerRadius = UDim.new(0,5)
+			CornerRadius = UDim.new(.5,0)
 		}
 	},
 	{
-		Name = "FrameGradient",
+		Name = "MainGradient",
 		ClassName = "UIGradient",
-		Parent = "Frame",
+		Parent = "Main",
 		Properties = {
-			Color = ColorSequence.new(Color3.new(1,1,1),Color3.new(.5,.5,.5)),
+			Color = ColorSequence.new(Color3.new(1,1,1)),
 			Rotation = 90
 		}
 	},
 	{
 		Name = "Logo",
 		ClassName = "ImageLabel",
-		Parent = "Frame",
+		Parent = "Main",
 		Properties = {
 			BackgroundTransparency = 1,
+			ImageTransparency = 1,
 			Position = UDim2.new(0,10,0,10),
 			Size = UDim2.new(0,80,0,80),
 			Image = getcustomasset("UltimatumLogo.png",false)
 		}
 	}
 }
---[[if not is_sirhurt_closure and (syn and syn.protect_gui or protect_gui) then 
-	(syn.protect_gui or protect_gui)(Gui.Holder)]]
+if not is_sirhurt_closure and (syn and syn.protect_gui or protect_gui) then 
+	(syn.protect_gui or protect_gui)(Gui.Holder)
 	Gui.Holder.Parent = Services.CoreGui
---[[else
+else
 	Gui.Holder.Parent = get_hidden_gui and get_hidden_gui() or gethui and gethui() or Services.CoreGui
-end]]
+end
+local function Animate(Instance_,Data)
+	if Valid.Instance(Instance_) then
+		Data = Valid.Table(Data,{
+			Time = 1,
+			EasingStyle = Enum.EasingStyle.Quad,
+			EasingDirection = Enum.EasingDirection.Out,
+			RepeatCount = 0,
+			Reverses = false,
+			Delay = 0,
+			Yields = false,
+			Properties = {}
+		})
+		Services.TweenService:Create(Instance_,TweenInfo.new(Data.Time,Data.EasingStyle,Data.EasingDirection,Data.RepeatCount,Data.Reverses,Data.Delay),Data.Properties):Play()
+		if Data.Yields then
+			task.wait((Data.Time+Data.Delay)*(1+Data.RepeatCout))
+		end
+	end
+end
 local Connections = {
 	Services.RunService.Heartbeat:Connect(function()
-		if 10 < os.clock()-LastCheck then
+		if 60 < os.clock()-LastCheck then
 			local Reload
 			for _,FileName in pairs{
 				"Logo.png",
@@ -215,3 +234,18 @@ getgenv().Ultimatum = function()
 	getgenv().Ultimatum = nil
 end
 print("Ultimatum: Successfully loaded!")
+Animate(Gui.MainCorner,{
+	Properties = {
+		CornerRadius = UDim.new(0,5)
+	}
+})
+Animate(Gui.MainGradient,{
+	Properties = {
+		Color = ColorSequence.new(Color3.new(1,1,1),Color3.new(.5,.5,.5))
+	}
+})
+Animate(Gui.Logo,{
+	Properties = {
+		ImageTransparency = 0
+	}
+})
