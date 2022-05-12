@@ -195,6 +195,7 @@ local Connections = {
 				end
 			end
 			if Reload then
+				print("Ultimatum: Detected update! Updating...")
 				loadstring(readfile("UltimatumSource.lua"),"Ultimatum")()
 			end
 			LastCheck = os.clock()
@@ -202,7 +203,7 @@ local Connections = {
 	end),
 	Services.Players.LocalPlayer.OnTeleport:Connect(function(TeleportState)
 		if TeleportState == Enum.TeleportState.Started then
-			(queue_on_teleport or syn and syn.queue_on_teleport or warn)(readfile("UltimatumSource.lua"))
+			(queue_on_teleport or syn and syn.queue_on_teleport or warn)(readfile("Ultimatum.lua"))
 		end
 	end)
 }
@@ -213,3 +214,4 @@ getgenv().Ultimatum = function()
 	Gui:Destroy()
 	getgenv().Ultimatum = nil
 end
+print("Ultimatum: Successfully loaded!")
