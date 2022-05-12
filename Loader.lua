@@ -30,8 +30,8 @@ for _,FileName in pairs{
 	"Version.ver"
 } do
 	task.spawn(function()
-		local Success,Result = pcall(game.HttpGet,game,("https://raw.hithubusercontent.com/Amourousity/Ultimatum/main/%s"):format(FileName),true)
-		if not isfile(("Ultimatum%s"):format(FileName)) or Success and Result:gsub("%s","") ~= readfile(("Ultimatum%s"):format(FileName)) then
+		local Success,Result = pcall(game.HttpGet,game,("https://raw.githubusercontent.com/Amourousity/Ultimatum/main/%s"):format(FileName),true)
+		if Success and (not isfile(("Ultimatum%s"):format(FileName)) or Result:gsub("%s","") ~= readfile(("Ultimatum%s"):format(FileName))) then
 			writefile(("Ultimatum%s"):format(FileName),Result)
 		elseif not Success and not isfile(("Ultimatum%s"):format(FileName)) then
 			error(Result)
