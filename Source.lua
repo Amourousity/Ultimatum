@@ -172,10 +172,10 @@ local Gui = Create{
 	}
 }
 if not is_sirhurt_closure and (syn and syn.protect_gui or protect_gui) then 
-	(syn.protect_gui or protect_gui)(Gui)
-	Gui.Parent = Services.CoreGui
+	(syn.protect_gui or protect_gui)(Gui.Holder)
+	Gui.Holder.Parent = Services.CoreGui
 else
-	Gui.Parent = get_hidden_gui and get_hidden_gui() or gethui and gethui() or Services.CoreGui
+	Gui.Holder.Parent = get_hidden_gui and get_hidden_gui() or gethui and gethui() or Services.CoreGui
 end
 local Connections = {
 	Services.RunService.Heartbeat:Connect(function()
