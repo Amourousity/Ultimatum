@@ -20,10 +20,8 @@ do
 			table.insert(Missing,Names[1])
 		end
 	end
-	if 0 < #Missing then
-		error(("Missing function%s '%s'"):format(1 < #Missing and "s" or "",table.concat(Missing,"', '")),0)
+	assert(#Missing < 1,("Ultimatum | Missing function%s '%s'"):format(1 < #Missing and "s" or "",table.concat(Missing,"', '")))
 	end
-end
 for _,FileName in pairs{
 	"Logo.png",
 	"Source.lua",
@@ -33,7 +31,9 @@ for _,FileName in pairs{
 	if Success and (not isfile(("Ultimatum%s"):format(FileName)) or Result:gsub("%s","") ~= readfile(("Ultimatum%s"):format(FileName)):gsub("%s","")) then
 		writefile(("Ultimatum%s"):format(FileName),Result)
 	elseif not Success and not isfile(("Ultimatum%s"):format(FileName)) then
-		error(Result)
+		(consoleprint or rconsoleprint or string.len)("@@RED@@")
+		(consoleprint or rconsoleprint or error)(("\nUltimatum | %s"):format(Result))
+		return
 	end
 end
 loadstring(readfile("UltimatumSource.lua"),"Ultimatum")()
