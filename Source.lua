@@ -20,18 +20,16 @@ do
 			table.insert(Missing,Names[1])
 		end
 	end
-	if 0 < #Missing then
-		error(("Missing function%s '%s'"):format(1 < #Missing and "s" or "",table.concat(Missing,"', '")),0)
-	end
+	assert(#Missing < 1,("Ultimatum | Missing function%s '%s'"):format(1 < #Missing and "s" or "",table.concat(Missing,"', '")))
 end
 pcall(Ultimatum)
-local Type,Nil,LastCheck = typeof,{},os.clock()
+local Type,Nil,LastCheck,Flying,Commands = typeof,{},0,false,nil
 if not game:IsLoaded() then
 	game.Loaded:Wait()
 end
 local Services = setmetatable({},{
 	__index = function(Services,ServiceName)
-		assert(pcall(game.GetService,game,ServiceName),"Invalid ServiceName")
+		assert(pcall(game.GetService,game,ServiceName),("Ultimatum | Invalid ServiceName (%s '%s')"):format(Type(ServiceName),tostring(ServiceName)))
 		if not rawget(Services,ServiceName) or rawget(Services,ServiceName) ~= game:GetService(ServiceName) then
 			rawset(Services,ServiceName,game:GetService(ServiceName))
 		end
@@ -71,13 +69,13 @@ Valid = {
 table.freeze(Valid)
 local Random = {String = function(Settings)
 	Settings = Valid.Table(Settings,{
-		Length = math.random(5,99),
 		CharacterSet = {
 			NumberRange.new(48,57),
 			NumberRange.new(65,90),
 			NumberRange.new(97,122)
 		},
-		Format = "\0%s"
+		Format = "\0%s",
+		Length = math.random(5,99)
 	})
 	return Settings.Format:format(("A"):rep(Settings.Length):gsub(".",function(Character)
 		local Range = Settings.CharacterSet[math.random(1,#Settings.CharacterSet)]
@@ -115,7 +113,7 @@ local function Create(Data)
 			table.clear(Instances)
 		end
 	end}
-	for _,InstanceData in pairs(Data) do
+	for _,InstanceData in pairs(Valid.Table(Data)) do
 		Instances[InstanceData.Name] = NewInstance(InstanceData.ClassName,Type(InstanceData.Parent) == "string" and Instances[InstanceData.Parent] or InstanceData.Parent,InstanceData.Properties)
 	end
 	return Instances
@@ -127,6 +125,7 @@ local Gui = Create{
 		Properties = {
 			DisplayOrder = 0x7FFFFFFF,
 			IgnoreGuiInset = true,
+			OnTopOfCoreBlur = true,
 			ResetOnSpawn = false,
 			ZIndexBehavior = Enum.ZIndexBehavior.Global
 		}
@@ -137,8 +136,9 @@ local Gui = Create{
 		Parent = "Holder",
 		Properties = {
 			AnchorPoint = Vector2.new(.5,.5),
-			BackgroundColor3 = Color3.fromRGB(80,80,100),
-			Position = UDim2.new(0.5,0,.5,0),
+			BackgroundColor3 = Color3.fromHex("505064"),
+			Position = UDim2.new(.5,0,0,-75),
+			Rotation = -35,
 			Size = UDim2.new(0,100,0,100)
 		}
 	},
@@ -147,7 +147,7 @@ local Gui = Create{
 		ClassName = "UICorner",
 		Parent = "Main",
 		Properties = {
-			CornerRadius = UDim.new(.5,0)
+			CornerRadius = UDim.new(0,5)
 		}
 	},
 	{
@@ -165,10 +165,9 @@ local Gui = Create{
 		Parent = "Main",
 		Properties = {
 			BackgroundTransparency = 1,
-			ImageTransparency = 1,
+			Image = getcustomasset("UltimatumLogo.png",false),
 			Position = UDim2.new(0,10,0,10),
-			Size = UDim2.new(0,80,0,80),
-			Image = getcustomasset("UltimatumLogo.png",false)
+			Size = UDim2.new(0,80,0,80)
 		}
 	}
 }
@@ -199,6 +198,7 @@ end
 local Connections = {
 	Services.RunService.Heartbeat:Connect(function()
 		if 60 < os.clock()-LastCheck then
+			LastCheck = os.clock()
 			local Reload
 			for _,FileName in pairs{
 				"Logo.png",
@@ -210,22 +210,50 @@ local Connections = {
 					writefile(("Ultimatum%s"):format(FileName),Result)
 					Reload = true
 				elseif not Success and not isfile(("Ultimatum%s"):format(FileName)) then
-					warn(Result)
+					(consoleprint or rconsoleprint or string.len)("@@YELLOW@@")
+					(consoleprint or rconsoleprint or warn)(("\nUltimatum | %s"):format(Result))
 				end
 			end
 			if Reload then
-				print("Ultimatum: Detected update! Updating...")
 				loadstring(readfile("UltimatumSource.lua"),"Ultimatum")()
 			end
-			LastCheck = os.clock()
 		end
 	end),
 	Services.Players.LocalPlayer.OnTeleport:Connect(function(TeleportState)
 		if TeleportState == Enum.TeleportState.Started then
-			(queue_on_teleport or syn and syn.queue_on_teleport or warn)(readfile("UltimatumSource.lua"))
+			(queue_on_teleport or syn and syn.queue_on_teleport or string.len)(readfile("UltimatumSource.lua"))
 		end
 	end)
 }
+Commands = {Fly = function()
+	if Flying then
+		Connections.Fly:Disconnect()
+		Connections.Fly = nil
+	else
+		local Character,BodyPart = Owner.Character or Owner.CharacterAdded:Wait(),nil
+		for _,Name in pairs{"HumanoidRootPart","Torso","UpperTorso","Head"} do
+			if Character:FindFirstChild(Name) then
+				BodyPart = Character[Name]
+				break
+			end
+		end
+		if Valid.Instance(BodyPart,"BasePart") then
+			Connections.Fly = game:GetService("RunService").Heartbeat:Connect(function()
+				for _,Direction in pairs{
+					Forward = Vector3.new(1,0,0),
+					Backward = Bector3.new(-1,0,0),
+					Left = Vector3.new(0,0,1),
+					Right = Vector3.new(0,0,-1),
+					Up = Vector3.new(0,1,0),
+					Down = Vector3.new(0,-1,0)
+				} do
+
+				end
+			end)
+		end
+	end
+	Flying = not Flying
+end}
 getgenv().Ultimatum = function()
 	for _,Connection in pairs(Connections) do
 		pcall(Connection.Disconnect,Connection)
@@ -233,14 +261,88 @@ getgenv().Ultimatum = function()
 	Gui:Destroy()
 	getgenv().Ultimatum = nil
 end
-print("Ultimatum: Successfully loaded!")
-Animate(Gui.MainCorner,{
-	Properties = {
-		CornerRadius = UDim.new(0,5)
-	}
-})
-Animate(Gui.Logo,{
-	Properties = {
-		ImageTransparency = 0
-	}
-})
+task.spawn(function()
+	Animate(Gui.Main,{
+		Time = .2,
+		EasingDirection = Enum.EasingDirection.InOut,
+		Yields = true,
+		Properties = {
+			Position = UDim2.new(.5,0,.75,0)
+		}
+	})
+	Animate(Gui.Main,{
+		Time = .2,
+		EasingDirection = Enum.EasingDirection.InOut,
+		Yields = true,
+		Properties = {
+			Position = UDim2.new(.5,0,.3,0)
+		}
+	})
+	Animate(Gui.Main,{
+		Time = .2,
+		EasingDirection = Enum.EasingDirection.InOut,
+		Yields = true,
+		Properties = {
+			Position = UDim2.new(.5,0,.65,0)
+		}
+	})
+	Animate(Gui.Main,{
+		Time = .2,
+		EasingDirection = Enum.EasingDirection.InOut,
+		Yields = true,
+		Properties = {
+			Position = UDim2.new(.5,0,.4,0)
+		}
+	})
+	Animate(Gui.Main,{
+		Time = .2,
+		EasingDirection = Enum.EasingDirection.InOut,
+		Yields = true,
+		Properties = {
+			Position = UDim2.new(.5,0,.5,0)
+		}
+	})
+end)
+task.spawn(function()
+	task.wait(.1)
+	Animate(Gui.Main,{
+		Time = .2,
+		EasingDirection = Enum.EasingDirection.InOut,
+		Yields = true,
+		Properties = {
+			Rotation = 28
+		}
+	})
+	Animate(Gui.Main,{
+		Time = .2,
+		EasingDirection = Enum.EasingDirection.InOut,
+		Yields = true,
+		Properties = {
+			Rotation = -21
+		}
+	})
+	Animate(Gui.Main,{
+		Time = .2,
+		EasingDirection = Enum.EasingDirection.InOut,
+		Yields = true,
+		Properties = {
+			Rotation = 14
+		}
+	})
+	Animate(Gui.Main,{
+		Time = .2,
+		EasingDirection = Enum.EasingDirection.InOut,
+		Yields = true,
+		Properties = {
+			Rotation = -7
+		}
+	})
+	Animate(Gui.Main,{
+		Time = .1,
+		EasingDirection = Enum.EasingDirection.InOut,
+		Yields = true,
+		Properties = {
+			Rotation = 0
+		}
+	})
+end)
