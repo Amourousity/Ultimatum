@@ -210,7 +210,7 @@ local Connections = {
 					writefile(("Ultimatum%s"):format(FileName),Result)
 					Reload = true
 				elseif not Success and not isfile(("Ultimatum%s"):format(FileName)) then
-					(consoleprint or rconsoleprint or string.len)("@@YELLOW@@")
+					(consoleprint or rconsoleprint or string.len)("@@YELLOW@@");
 					(consoleprint or rconsoleprint or warn)(("\nUltimatum | %s"):format(Result))
 				end
 			end
