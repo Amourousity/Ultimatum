@@ -278,7 +278,7 @@ Animate(Gui.Logo,{
 Animate(Gui.MainCorner,{
 	Delay = .25,
 	Properties = {
-		CornerRadius = UDim2.new(0,5)
+		CornerRadius = Udim.new(0,5)
 	},
 	Time = .25
 })
