@@ -137,8 +137,7 @@ local Gui = Create{
 		Properties = {
 			AnchorPoint = Vector2.new(.5,.5),
 			BackgroundColor3 = Color3.fromHex("505064"),
-			Position = UDim2.new(.5,0,0,-75),
-			Rotation = -35,
+			Position = UDim2.new(.5,0,0,-50),
 			Size = UDim2.new(0,100,0,100)
 		}
 	},
@@ -147,7 +146,7 @@ local Gui = Create{
 		ClassName = "UICorner",
 		Parent = "Main",
 		Properties = {
-			CornerRadius = UDim.new(0,5)
+			CornerRadius = UDim.new(.5,0)
 		}
 	},
 	{
@@ -166,6 +165,7 @@ local Gui = Create{
 		Properties = {
 			BackgroundTransparency = 1,
 			Image = getcustomasset("UltimatumLogo.png",false),
+			ImageTransparency = 1,
 			Position = UDim2.new(0,10,0,10),
 			Size = UDim2.new(0,80,0,80)
 		}
@@ -261,88 +261,24 @@ getgenv().Ultimatum = function()
 	Gui:Destroy()
 	getgenv().Ultimatum = nil
 end
-task.spawn(function()
-	Animate(Gui.Main,{
-		Time = .2,
-		EasingDirection = Enum.EasingDirection.InOut,
-		Yields = true,
-		Properties = {
-			Position = UDim2.new(.5,0,.75,0)
-		}
-	})
-	Animate(Gui.Main,{
-		Time = .2,
-		EasingDirection = Enum.EasingDirection.InOut,
-		Yields = true,
-		Properties = {
-			Position = UDim2.new(.5,0,.3,0)
-		}
-	})
-	Animate(Gui.Main,{
-		Time = .2,
-		EasingDirection = Enum.EasingDirection.InOut,
-		Yields = true,
-		Properties = {
-			Position = UDim2.new(.5,0,.65,0)
-		}
-	})
-	Animate(Gui.Main,{
-		Time = .2,
-		EasingDirection = Enum.EasingDirection.InOut,
-		Yields = true,
-		Properties = {
-			Position = UDim2.new(.5,0,.4,0)
-		}
-	})
-	Animate(Gui.Main,{
-		Time = .2,
-		EasingDirection = Enum.EasingDirection.InOut,
-		Yields = true,
-		Properties = {
-			Position = UDim2.new(.5,0,.5,0)
-		}
-	})
-end)
-task.spawn(function()
-	task.wait(.1)
-	Animate(Gui.Main,{
-		Time = .2,
-		EasingDirection = Enum.EasingDirection.InOut,
-		Yields = true,
-		Properties = {
-			Rotation = 28
-		}
-	})
-	Animate(Gui.Main,{
-		Time = .2,
-		EasingDirection = Enum.EasingDirection.InOut,
-		Yields = true,
-		Properties = {
-			Rotation = -21
-		}
-	})
-	Animate(Gui.Main,{
-		Time = .2,
-		EasingDirection = Enum.EasingDirection.InOut,
-		Yields = true,
-		Properties = {
-			Rotation = 14
-		}
-	})
-	Animate(Gui.Main,{
-		Time = .2,
-		EasingDirection = Enum.EasingDirection.InOut,
-		Yields = true,
-		Properties = {
-			Rotation = -7
-		}
-	})
-	Animate(Gui.Main,{
-		Time = .1,
-		EasingDirection = Enum.EasingDirection.InOut,
-		Yields = true,
-		Properties = {
-			Rotation = 0
-		}
-	})
-end)
+Animate(Gui.Main,{
+	EasingStyle = Enum.EasingStyle.Back,
+	Properties = {
+		Position = UDim2.new(.5,0,.5,0)
+	},
+	Time = .5
+})
+Animate(Gui.Logo,{
+	Delay = .25,
+	Properties = {
+		ImageTransparency = 0
+	},
+	Time = .25
+})
+Animate(Gui.MainCorner,{
+	Delay = .25,
+	Properties = {
+		CornerRadius = UDim2.new(0,5)
+	},
+	Time = .25
+})
