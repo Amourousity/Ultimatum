@@ -31,7 +31,7 @@ for _,FileName in pairs{
 	if Success and (not isfile(("Ultimatum%s"):format(FileName)) or Result:gsub("%s","") ~= readfile(("Ultimatum%s"):format(FileName)):gsub("%s","")) then
 		writefile(("Ultimatum%s"):format(FileName),Result)
 	elseif not Success and not isfile(("Ultimatum%s"):format(FileName)) then
-		(consoleprint or rconsoleprint or string.len)("@@RED@@")
+		(consoleprint or rconsoleprint or string.len)("@@RED@@");
 		(consoleprint or rconsoleprint or error)(("\nUltimatum | %s"):format(Result))
 		return
 	end
