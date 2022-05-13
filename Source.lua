@@ -191,7 +191,7 @@ local function Animate(Instance_,Data)
 		})
 		Services.TweenService:Create(Instance_,TweenInfo.new(Data.Time,Data.EasingStyle,Data.EasingDirection,Data.RepeatCount,Data.Reverses,Data.Delay),Data.Properties):Play()
 		if Data.Yields then
-			task.wait((Data.Time+Data.Delay)*(1+Data.RepeatCout))
+			task.wait((Data.Time+Data.Delay)*(1+Data.RepeatCount))
 		end
 	end
 end
