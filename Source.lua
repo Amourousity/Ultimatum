@@ -144,7 +144,8 @@ local Gui = Create{
 		Properties = {
 			AnchorPoint = Vector2.new(.5,.5),
 			BackgroundColor3 = Color3.fromHex("505064"),
-			Position = UDim2.new(.5,0,0,-50),
+			BackgroundTransparency = 1,
+			Position = UDim2.new(.5,0,.4,0),
 			Size = UDim2.new(0,100,0,100)
 		}
 	},
@@ -174,6 +175,7 @@ local Gui = Create{
 			Image = getcustomasset("UltimatumLogo.png",false),
 			ImageTransparency = 1,
 			Position = UDim2.new(0,10,0,10),
+			Rotation = 45,
 			Size = UDim2.new(0,80,0,80)
 		}
 	}
@@ -263,13 +265,6 @@ Commands = {
 		end)
 	end
 }]]
---[[
-   # #### 
-  ##     #
-   #  ### 
-   # #
-   # #####
-]]
 getgenv().Ultimatum = function()
 	for _,Connection in pairs(Connections) do
 		pcall(Connection.Disconnect,Connection)
@@ -279,16 +274,18 @@ getgenv().Ultimatum = function()
 end
 print("\n     :::    ::: :::    ::::::::::: ::::::::::: ::::    ::::      ::: ::::::::::: :::    ::: ::::    ::::\n    :+:    :+: :+:        :+:         :+:     +:+:+: :+:+:+   :+: :+:   :+:     :+:    :+: +:+:+: :+:+:+\n   +:+    +:+ +:+        +:+         +:+     +:+ +:+:+ +:+  +:+   +:+  +:+     +:+    +:+ +:+ +:+:+ +:+\n  +#+    +:+ +#+        +#+         +#+     +#+  +:+  +#+ +#++:++#++: +#+     +#+    +:+ +#+  +:+  +#+\n +#+    +#+ +#+        +#+         +#+     +#+       +#+ +#+     +#+ +#+     +#+    +#+ +#+       +#+\n#+#    #+# #+#        #+#         #+#     #+#       #+# #+#     #+# #+#     #+#    #+# #+#       #+#\n########  ########## ###     ########### ###       ### ###     ### ###      ########  ###       ###\n")
 Animate(Gui.Main,{
-	EasingStyle = Enum.EasingStyle.Back,
 	Properties = {
-		Position = UDim2.new(.5,0,.5,0)
+		Position = UDim2.new(.5,0,.5,0),
+		BackgroundTransparency = 0
 	},
-	Time = .5
+	Time = .5,
+	Yields = true
 })
 Animate(Gui.Logo,{
 	Delay = .25,
 	Properties = {
-		ImageTransparency = 0
+		ImageTransparency = 0,
+		Rotation = 0
 	},
 	Time = .25
 })
