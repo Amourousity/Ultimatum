@@ -282,17 +282,15 @@ Animate(Gui.Main,{
 	Yields = true
 })
 Animate(Gui.Logo,{
-	Delay = .25,
 	Properties = {
 		ImageTransparency = 0,
 		Rotation = 0
 	},
-	Time = .25
+	Time = .5
 })
 Animate(Gui.MainCorner,{
-	Delay = .25,
 	Properties = {
 		CornerRadius = UDim.new(0,5)
 	},
-	Time = .25
+	Time = .5
 })
