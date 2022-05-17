@@ -1,3 +1,10 @@
+--[[ :::    ::: :::    ::::::::::: ::::::::::: ::::    ::::      ::: ::::::::::: :::    ::: ::::    ::::
+    :+:    :+: :+:        :+:         :+:     +:+:+: :+:+:+   :+: :+:   :+:     :+:    :+: +:+:+: :+:+:+
+   +:+    +:+ +:+        +:+         +:+     +:+ +:+:+ +:+  +:+   +:+  +:+     +:+    +:+ +:+ +:+:+ +:+
+  +#+    +:+ +#+        +#+         +#+     +#+  +:+  +#+ +#++:++#++: +#+     +#+    +:+ +#+  +:+  +#+
+ +#+    +#+ +#+        +#+         +#+     +#+       +#+ +#+     +#+ +#+     +#+    +#+ +#+       +#+
+#+#    #+# #+#        #+#         #+#     #+#       #+# #+#     #+# #+#     #+#    #+# #+#       #+#
+########  ########## ###     ########### ###       ### ###     ### ###      ########  ###       ###   ]]
 do
 	local Missing = {}
 	for _,Names in pairs{
@@ -23,7 +30,7 @@ do
 	assert(#Missing < 1,("Ultimatum | Missing function%s '%s'"):format(1 < #Missing and "s" or "",table.concat(Missing,"', '")))
 end
 pcall(Ultimatum)
-local Type,Nil,LastCheck,Flying,Commands = typeof,{},0,false,nil
+local Type,Nil = typeof,{}
 if not game:IsLoaded() then
 	game.Loaded:Wait()
 end
@@ -195,6 +202,7 @@ local function Animate(Instance_,Data)
 		end
 	end
 end
+local LastCheck = 0
 local Connections = {
 	Services.RunService.Heartbeat:Connect(function()
 		if 60 < os.clock()-LastCheck then
@@ -210,8 +218,10 @@ local Connections = {
 					writefile(("Ultimatum%s"):format(FileName),Result)
 					Reload = true
 				elseif not Success and not isfile(("Ultimatum%s"):format(FileName)) then
-					(consoleprint or rconsoleprint or string.len)("@@YELLOW@@");
-					(consoleprint or rconsoleprint or warn)(("\nUltimatum | %s"):format(Result))
+					local cprint = consoleprint or rconsoleprint;
+					(cprint or string.len)("@@YELLOW@@");
+					(cprint or warn)(("\nUltimatum | %s"):format(Result));
+					(cprint or string.len)("@@WHITE@@");
 				end
 			end
 			if Reload then
@@ -225,35 +235,41 @@ local Connections = {
 		end
 	end)
 }
-Commands = {Fly = function()
-	if Flying then
-		Connections.Fly:Disconnect()
-		Connections.Fly = nil
-	else
-		local Character,BodyPart = Owner.Character or Owner.CharacterAdded:Wait(),nil
-		for _,Name in pairs{"HumanoidRootPart","Torso","UpperTorso","Head"} do
-			if Character:FindFirstChild(Name) then
-				BodyPart = Character[Name]
-				break
-			end
-		end
-		if Valid.Instance(BodyPart,"BasePart") then
-			Connections.Fly = game:GetService("RunService").Heartbeat:Connect(function()
-				for _,Direction in pairs{
-					Forward = Vector3.new(1,0,0),
-					Backward = Bector3.new(-1,0,0),
-					Left = Vector3.new(0,0,1),
-					Right = Vector3.new(0,0,-1),
-					Up = Vector3.new(0,1,0),
-					Down = Vector3.new(0,-1,0)
-				} do
-
-				end
-			end)
-		end
+--[[local function GetHumanoid(Target)
+	Target = ValidInstance(Target,"Model") or ValidInstance(Target,"Player") and (Target.Character or Target.CharacterAdded:Wait())
+	if Target then
+		return Target:FindFirstChildOfClass("Humanoid")
 	end
-	Flying = not Flying
-end}
+end
+local Commands
+Commands = {
+	["SpoofWalkSpeed/SpoofWS/HookWalkSpeed/HookWS"] = function()
+		local Humanoid = Owner.Character.Humanoid
+		local FakeWalkSpeed = Humanoid.WalkSpeed
+		local OldIndex,OldNewIndex
+		OldIndex = hookmetamethod(game,"__index",function(...)
+			if not checkcaller() and ... == Humanoid and select(2,...) == "WalkSpeed" then
+				return FakeWalkSpeed
+			end
+			return OldIndex(...)
+		end)
+		Humanoid.WalkSpeed = 100
+		OldNewIndex = hookmetamethod(game,"__newindex",function(...)
+			if not checkcaller() and ... == Humanoid and select(2,...) == "WalkSpeed" then
+				FakeWalkSpeed = tonumber(select(3,...)) or 0
+				return
+			end
+			return OldNewIndex(...)
+		end)
+	end
+}]]
+--[[
+   # #### 
+  ##     #
+   #  ### 
+   # #
+   # #####
+]]
 getgenv().Ultimatum = function()
 	for _,Connection in pairs(Connections) do
 		pcall(Connection.Disconnect,Connection)
@@ -261,6 +277,7 @@ getgenv().Ultimatum = function()
 	Gui:Destroy()
 	getgenv().Ultimatum = nil
 end
+print("     :::    ::: :::    ::::::::::: ::::::::::: ::::    ::::      ::: ::::::::::: :::    ::: ::::    ::::\n    :+:    :+: :+:        :+:         :+:     +:+:+: :+:+:+   :+: :+:   :+:     :+:    :+: +:+:+: :+:+:+\n   +:+    +:+ +:+        +:+         +:+     +:+ +:+:+ +:+  +:+   +:+  +:+     +:+    +:+ +:+ +:+:+ +:+\n  +#+    +:+ +#+        +#+         +#+     +#+  +:+  +#+ +#++:++#++: +#+     +#+    +:+ +#+  +:+  +#+\n +#+    +#+ +#+        +#+         +#+     +#+       +#+ +#+     +#+ +#+     +#+    +#+ +#+       +#+\n#+#    #+# #+#        #+#         #+#     #+#       #+# #+#     #+# #+#     #+#    #+# #+#       #+#\n########  ########## ###     ########### ###       ### ###     ### ###      ########  ###       ###")
 Animate(Gui.Main,{
 	EasingStyle = Enum.EasingStyle.Back,
 	Properties = {
