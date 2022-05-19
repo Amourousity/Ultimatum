@@ -1,39 +1,39 @@
---[[ :::    ::: :::    ::::::::::: ::::::::::: ::::    ::::      ::: ::::::::::: :::    ::: ::::    ::::
-    :+:    :+: :+:        :+:         :+:     +:+:+: :+:+:+   :+: :+:   :+:     :+:    :+: +:+:+: :+:+:+
-   +:+    +:+ +:+        +:+         +:+     +:+ +:+:+ +:+  +:+   +:+  +:+     +:+    +:+ +:+ +:+:+ +:+
-  +#+    +:+ +#+        +#+         +#+     +#+  +:+  +#+ +#++:++#++: +#+     +#+    +:+ +#+  +:+  +#+
- +#+    +#+ +#+        +#+         +#+     +#+       +#+ +#+     +#+ +#+     +#+    +#+ +#+       +#+
-#+#    #+# #+#        #+#         #+#     #+#       #+# #+#     #+# #+#     #+#    #+# #+#       #+#
-########  ########## ###     ########### ###       ### ###     ### ###      ########  ###       ###   ]]
+--[[ :::    ::: :::    ::::::::::: ::::::::::: ::::    ::::      ::: ::::::::::: :::    ::: ::::    ::::
+    :+:    :+: :+:        :+:         :+:     +:+:+: :+:+:+   :+: :+:   :+:     :+:    :+: +:+:+: :+:+:+
+   +:+    +:+ +:+        +:+         +:+     +:+ +:+:+ +:+  +:+   +:+  +:+     +:+    +:+ +:+ +:+:+ +:+ 
+  +#+    +:+ +#+        +#+         +#+     +#+  +:+  +#+ +#++:++#++: +#+     +#+    +:+ +#+  +:+  +#+  
+ +#+    +#+ +#+        +#+         +#+     +#+       +#+ +#+     +#+ +#+     +#+    +#+ +#+       +#+   
+#+#    #+# #+#        #+#         #+#     #+#       #+# #+#     #+# #+#     #+#    #+# #+#       #+#    
+########  ########## ###     ########### ###       ### ###     ### ###      ########  ###       ###   ]]
+assert(getgenv,"Ultimatum | Missing function 'getgenv'")
+for LibraryName,Interpret in pairs{
+	["\x73\x79\x6E"] = false,
+	http = false,
+	crypt = false,
+	base64 = "base64%s",
+	custom = "custom_%s",
+	cache = "cache_%s"
+} do
+	for FunctionName,Function in pairs(getgenv()[LibraryName] or {}) do
+		getfenv()[(Interpret or "%s"):format(FunctionName)] = Function
+	end
+end
 do
-	local Missing = {}
-	for _,Names in pairs{
-		"isfile",
-		"getgenv",
-		"readfile",
-		"writefile",
-		"getcustomasset/getsynasset"
-	} do
-		Names = Names:split("/")
-		local Exists
-		for _,FunctionName in pairs(Names) do
-			if (getgenv and getgenv() or getfenv())[FunctionName] then
-				(getgenv and getgenv() or getfenv())[Names[1]] = (getgenv and getgenv() or getfenv())[FunctionName]
-				Exists = true
-				break
-			end
-		end
-		if not Exists then
-			table.insert(Missing,Names[1])
+	local DebugBlacklist = {
+		"info",
+		"traceback",
+		"profileend",
+		"profilebegin",
+		"setmemorycategory",
+		"resetmemorycategory"
+	}
+	for FunctionName,Function in pairs(debug) do
+		if not table.find(DebugBlacklist,FunctionName) then
+			getfenv()[getfenv()[FunctionName] and ("debug_"):format(FunctionName) or FunctionName] = Function
 		end
 	end
-	assert(#Missing < 1,("Ultimatum | Missing function%s '%s'"):format(1 < #Missing and "s" or "",table.concat(Missing,"', '")))
 end
-pcall(Ultimatum)
 local Type,Nil = typeof,{}
-if not game:IsLoaded() then
-	game.Loaded:Wait()
-end
 local Services = setmetatable({},{
 	__index = function(Services,ServiceName)
 		assert(pcall(game.GetService,game,ServiceName),("Ultimatum | Invalid ServiceName (%s '%s')"):format(Type(ServiceName),tostring(ServiceName)))
@@ -46,6 +46,76 @@ local Services = setmetatable({},{
 	end,
 	__metatable = "nil"
 })
+for ReplacementFunction,FunctionNames in pairs{
+	"getsenv/getmenv",
+	"getupval/getupvalue",
+	"setupvalue/setupval",
+	"getconst/getconstant",
+	"getgc/get_gc_objects",
+	"setconstant/setconst",
+	"getupvals/getupvalues",
+	"protectui/protect_gui",
+	"getconsts/getconstants",
+	"isreadonly/is_readonly",
+	"consoleclear/rconsoleclear",
+	"consoleinput/rconsoleinput",
+	"isrbxactive/iswindowactive",
+	"setclipboard/writeclipboard",
+	"dumpstring/getscriptbytecode",
+	"hookfunction/detour_function",
+	"getconnections/get_signal_cons",
+	"getrawmetatable/debug_getmetatable",
+	"getcallingscript/get_calling_script",
+	"getcustomasset/get\x73\x79\x6Easset",
+	"getloadedmodules/get_loaded_modules",
+	"getnamecallmethod/get_namecall_method",
+	"consolecreate/createconsole/rconsolecreate",
+	"closeconsole/consoledestroy/rconsoledestroy",
+	"rconsolename/consolesettitle/rconsolesettitle",
+	"getidentity/getthreadcontext/getthreadidentity/get_thread_identity",
+	"setidentity/setthreadcontext/setthreadidentity/set_thread_identity",
+	"consoleprint/writeconsole/rconsoleprint/rconsoleerr/rconsoleinfo/rconsolewarn",
+	"checkclosure/istempleclosure/issentinelclosure/iselectronfunction/is_synapse_function/is_protosmasher_closure",
+	[(make_writeable or makewriteable) and function(Table,ReadOnly)
+		(ReadOnly and (make_readonly or makereadonly) or (make_writeable or makewriteable))(Table)
+	end or 0] = "setreadonly",
+	[hookfunction and getrawmetatable and function(Object,Method,Hook)
+		return hookfunction(getrawmetatable(Object)[Method],Hook)
+	end or -1] = "hookmetamethod",
+	[(iscclosure or is_c_closure) and function(Closure)
+		return not (iscclosure or is_c_closure)(Closure)
+	end or -2] = "islclosure/is_l_closure",
+	"getscriptclosure/get_script_function",
+	[protectui and (function()
+		local HiddenUI = Instance.new("Folder")
+		protectui(HiddenUI)
+		HiddenUI.Parent = Services.CoreGui
+		return function()
+			return HiddenUI
+		end
+	end)() or -3] = "gethui/get_hidden_gui"
+} do
+	FunctionNames = FunctionNames:split("/")
+	local Function
+	for _,FunctionName in pairs(FunctionNames) do
+		Function = getgenv()[FunctionName]
+		if Function then
+			for _,FunctionName in pairs(FunctionNames) do
+				getfenv()[FunctionName] = Function
+			end
+			break
+		end
+	end
+	if not Function and Type(ReplacementFunction) == "function" then
+		for _,FunctionName in pairs(FunctionNames) do
+			getfenv()[FunctionName] = ReplacementFunction
+		end
+	end
+end
+pcall(Ultimatum)
+if not game:IsLoaded() then
+	game.Loaded:Wait()
+end
 local function EscapeTable(Value,Escape)
 	if not Escape and Value == Nil then
 		return nil
@@ -172,7 +242,7 @@ local Gui = Create{
 		Parent = "Main",
 		Properties = {
 			BackgroundTransparency = 1,
-			Image = getcustomasset("UltimatumLogo.png",false),
+			Image = getcustomasset and getcustomasset("UltimatumLogo.png",false) or "rbxassetid://9666094136",
 			ImageTransparency = 1,
 			Position = UDim2.new(0,10,0,10),
 			Rotation = 45,
@@ -180,12 +250,7 @@ local Gui = Create{
 		}
 	}
 }
-if not is_sirhurt_closure and (syn and syn.protect_gui or protect_gui) then 
-	(syn.protect_gui or protect_gui)(Gui.Holder)
-	Gui.Holder.Parent = Services.CoreGui
-else
-	Gui.Holder.Parent = get_hidden_gui and get_hidden_gui() or gethui and gethui() or Services.CoreGui
-end
+Gui.Holder.Parent = gethui and gethui() or Services.CoreGui
 local function Animate(Instance_,Data)
 	if Valid.Instance(Instance_) then
 		Data = Valid.Table(Data,{
@@ -206,7 +271,7 @@ local function Animate(Instance_,Data)
 end
 local LastCheck = 0
 local Connections = {
-	Services.RunService.Heartbeat:Connect(function()
+	isfile and Services.RunService.Heartbeat:Connect(function()
 		if 60 < os.clock()-LastCheck then
 			LastCheck = os.clock()
 			local Reload
@@ -220,10 +285,13 @@ local Connections = {
 					writefile(("Ultimatum%s"):format(FileName),Result)
 					Reload = true
 				elseif not Success and not isfile(("Ultimatum%s"):format(FileName)) then
-					local cprint = consoleprint or rconsoleprint;
-					(cprint or string.len)("@@YELLOW@@");
-					(cprint or warn)(("\nUltimatum | %s"):format(Result));
-					(cprint or string.len)("@@WHITE@@");
+					if consoleprint then
+						consoleprint("@@YELLOW@@")
+						consoleprint(("\nUltimatum | %s"):format(Result))
+						consoleprint("@@WHITE@@")
+					else
+						warn(("\nUltimatum | %s"):format(Result))
+					end
 				end
 			end
 			if Reload then
@@ -231,9 +299,9 @@ local Connections = {
 			end
 		end
 	end),
-	Services.Players.LocalPlayer.OnTeleport:Connect(function(TeleportState)
+	queue_on_teleport and readfile and Services.Players.LocalPlayer.OnTeleport:Connect(function(TeleportState)
 		if TeleportState == Enum.TeleportState.Started then
-			(queue_on_teleport or syn and syn.queue_on_teleport or string.len)(readfile("UltimatumSource.lua"))
+			queue_on_teleport(readfile("UltimatumSource.lua"))
 		end
 	end)
 }
