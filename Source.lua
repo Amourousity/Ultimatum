@@ -68,6 +68,7 @@ for ReplacementFunction,FunctionNames in pairs{
 	"getcallingscript/get_calling_script",
 	"getcustomasset/get\x73\x79\x6Easset",
 	"getloadedmodules/get_loaded_modules",
+	"getscriptclosure/get_script_function",
 	"getnamecallmethod/get_namecall_method",
 	"consolecreate/createconsole/rconsolecreate",
 	"closeconsole/consoledestroy/rconsoledestroy",
@@ -85,7 +86,6 @@ for ReplacementFunction,FunctionNames in pairs{
 	[(iscclosure or is_c_closure) and function(Closure)
 		return not (iscclosure or is_c_closure)(Closure)
 	end or -2] = "islclosure/is_l_closure",
-	"getscriptclosure/get_script_function",
 	[protectui and (function()
 		local HiddenUI = Instance.new("Folder")
 		protectui(HiddenUI)
