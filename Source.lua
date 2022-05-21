@@ -144,23 +144,26 @@ Valid = {
 	end
 }
 table.freeze(Valid)
-local Random = {String = function(Settings)
-	Settings = Valid.Table(Settings,{
-		CharacterSet = {
-			NumberRange.new(48,57),
-			NumberRange.new(65,90),
-			NumberRange.new(97,122)
-		},
-		Format = "\0%s",
-		Length = math.random(5,99)
-	})
-	return Settings.Format:format(("A"):rep(Settings.Length):gsub(".",function(Character)
-		local Range = Settings.CharacterSet[math.random(1,#Settings.CharacterSet)]
-		return string.char(math.random(Range.Min,Range.Max))
-	end))
-end,Bool = function(Chance)
-	return math.random(1,1/Valid.Number(Chance,.5)) == 1
-end}
+local Random = {
+	String = function(Settings)
+		Settings = Valid.Table(Settings,{
+			CharacterSet = {
+				NumberRange.new(48,57),
+				NumberRange.new(65,90),
+				NumberRange.new(97,122)
+			},
+			Format = "\0%s",
+			Length = math.random(5,99)
+		})
+		return Settings.Format:format(("A"):rep(Settings.Length):gsub(".",function(Character)
+			local Range = Settings.CharacterSet[math.random(1,#Settings.CharacterSet)]
+			return string.char(math.random(Range.Min,Range.Max))
+		end))
+	end,
+	Bool = function(Chance)
+		return math.random(1,1/Valid.Number(Chance,.5)) == 1
+	end
+}
 table.freeze(Random)
 local function NewInstance(ClassName,Parent,Properties)
 	local NewInstance = select(2,pcall(Instance.new,ClassName))
@@ -179,17 +182,19 @@ local function NewInstance(ClassName,Parent,Properties)
 	end
 end
 local function Create(Data)
-	local Instances = {Destroy = function(Instances,Name)
-		if Type(Name) == "string" then
-			pcall(game.Destroy,Instances[Name])
-			Instances[Name] = nil
-		else
-			for _,Instance_ in pairs(Instances) do
-				pcall(game.Destroy,Instance_)
+	local Instances = {
+		Destroy = function(Instances,Name)
+			if Type(Name) == "string" then
+				pcall(game.Destroy,Instances[Name])
+				Instances[Name] = nil
+			else
+				for _,Instance_ in pairs(Instances) do
+					pcall(game.Destroy,Instance_)
+				end
+				table.clear(Instances)
 			end
-			table.clear(Instances)
 		end
-	end}
+	}
 	for _,InstanceData in pairs(Valid.Table(Data)) do
 		Instances[InstanceData.Name] = NewInstance(InstanceData.ClassName,Type(InstanceData.Parent) == "string" and Instances[InstanceData.Parent] or InstanceData.Parent,InstanceData.Properties)
 	end
@@ -394,7 +399,7 @@ for Name,Properties in pairs{
 		AnchorPoint = Vector2.new(1,0)
 	},
 	MainCorner = {
-		CornerRadius = UDim2.new{0,5}
+		CornerRadius = UDim.new(0,5)
 	},
 	Logo = {
 		ImageTransparency = 0,
