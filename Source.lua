@@ -29,7 +29,7 @@ do
 	}
 	for FunctionName,Function in pairs(debug) do
 		if not table.find(DebugBlacklist,FunctionName) then
-			getfenv()[getfenv()[FunctionName] and ("debug_"):format(FunctionName) or FunctionName] = Function
+			getfenv()[getfenv()[FunctionName] and ("debug_%s"):format(FunctionName) or FunctionName] = Function
 		end
 	end
 end
@@ -199,6 +199,7 @@ local Gui = Create{
 	{
 		Name = "Holder",
 		ClassName = "ScreenGui",
+		Parent = gethui and gethui() or Services.CoreGui,
 		Properties = {
 			DisplayOrder = 0x7FFFFFFF,
 			IgnoreGuiInset = true,
@@ -245,12 +246,11 @@ local Gui = Create{
 			Image = getcustomasset and getcustomasset("UltimatumLogo.png",false) or "rbxassetid://9666094136",
 			ImageTransparency = 1,
 			Position = UDim2.new(0,10,0,10),
-			Rotation = 45,
+			Rotation = 90,
 			Size = UDim2.new(0,80,0,80)
 		}
 	}
 }
-Gui.Holder.Parent = gethui and gethui() or Services.CoreGui
 local function Animate(Instance_,Data)
 	if Valid.Instance(Instance_) then
 		Data = Valid.Table(Data,{
@@ -359,6 +359,56 @@ Animate(Gui.Logo,{
 Animate(Gui.MainCorner,{
 	Properties = {
 		CornerRadius = UDim.new(0,5)
+	},
+	Time = .5,
+	Yields = true
+})
+task.wait(.5)
+Animate(Gui.Main,{
+	EasingDirection = Enum.EasingDirection.In,
+	EasingStyle = Enum.EasingStyle.Back,
+	Properties = {
+		Rotation = 180,
+		Size = UDim2.new()
+	},
+	Time = .5
+})
+Animate(Gui.MainCorner,{
+	Properties = {
+		CornerRadius = UDim2.new(.5,0)
+	},
+	Time = .5
+})
+Animate(Gui.Logo,{
+	Properties = {
+		ImageTransparency = 1
+	},
+	Time = .5,
+	Yields = true
+})
+for Name,Properties in pairs{
+	Main = {
+		Rotation = 0,
+		Size = UDim2.new(0,105,0,105),
+		Position = UDim2.new(0,0,1,0),
+		AnchorPoint = Vector2.new(1,0)
+	},
+	MainCorner = {
+		CornerRadius = UDim2.new{0,5}
+	},
+	Logo = {
+		ImageTransparency = 0,
+		Position = UDim2.new(0,15,0,10)
+	}
+} do
+	for Property,Value in pairs(Properties) do
+		Gui[Name][Property] = Value
+	end
+end
+Animate(Gui.Main,{
+	Properties = {
+		AnchorPoint = Vector2.new(0,1),
+		Position = UDim2.new(0,-5,1,-5)
 	},
 	Time = .5
 })
