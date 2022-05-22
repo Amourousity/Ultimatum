@@ -408,7 +408,7 @@ Animate(Gui.Main,{
 })
 Animate(Gui.MainCorner,{
 	Properties = {
-		CornerRadius = UDim2.new(.5,0)
+		CornerRadius = UDim.new(.5,0)
 	},
 	Time = .5
 })
