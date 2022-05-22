@@ -441,7 +441,7 @@ end
 Animate(Gui.Main,{
 	Properties = {
 		AnchorPoint = Vector2.yAxis,
-		Position = UDim2.new(0,-5,1,-5)
+		Position = UDim2.new(0,-5,1,5)
 	},
 	Time = .5
 })
