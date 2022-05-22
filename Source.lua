@@ -274,6 +274,34 @@ local function Animate(Instance_,Data)
 		end
 	end
 end
+local function Notify(Settings)
+	Settings = Valid.Table(Settings,{
+		Text = "(no text)",
+		Title = "Ultimmatum",
+		Buttons = {},
+		Duration = 5,
+		CalculateDuration = false
+	})
+	if Settings.CalculateDuration then
+		local Length = 0
+		for _ in utf8.graphemes(Settings.Title) do
+			Length = Length+1
+		end
+		for _ in utf8.graphemes(Settings.Text) do
+			Length = Length+1
+		end
+		Settings.Duration = 5+Length*.06
+	end
+	Create{
+		Name = "Main",
+		ClassName = "Frame",
+		Parent = Gui.Holder,
+		Properties = {
+			AnchorPoint = Vector2.xAxis,
+			Position = UDim2.new(1,0,0,0)
+		}
+	}
+end
 local LastCheck = 0
 local Connections = {
 	isfile and Services.RunService.Heartbeat:Connect(function()
@@ -396,7 +424,7 @@ for Name,Properties in pairs{
 		Rotation = 0,
 		Size = UDim2.new(0,105,0,105),
 		Position = UDim2.new(0,0,1,0),
-		AnchorPoint = Vector2.new(1,0)
+		AnchorPoint = Vector2.xAxis
 	},
 	MainCorner = {
 		CornerRadius = UDim.new(0,5)
@@ -412,7 +440,7 @@ for Name,Properties in pairs{
 end
 Animate(Gui.Main,{
 	Properties = {
-		AnchorPoint = Vector2.new(0,1),
+		AnchorPoint = Vector2.yAxis,
 		Position = UDim2.new(0,-5,1,-5)
 	},
 	Time = .5
