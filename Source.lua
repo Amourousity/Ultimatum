@@ -28,7 +28,7 @@ do
 	}
 	for FunctionName,Function in pairs(debug) do
 		if not table.find(DebugBlacklist,FunctionName) then
-			getfenv()[if getfenv()[FunctionName] then ('debug_%s'):format(FunctionName) else FunctionName] = Function
+			getfenv()[getfenv()[FunctionName] and ('debug_%s'):format(FunctionName) or FunctionName] = Function
 		end
 	end
 end
@@ -75,23 +75,23 @@ for ReplacementFunction,FunctionNames in pairs{
 	'consoleprint/writeconsole/rconsoleprint/rconsoleerr/rconsoleinfo/rconsolewarn',
 	'checkclosure/istempleclosure/issentinelclosure/iselectronfunction/is_synapse_function/is_protosmasher_closure',
 	--- @diagnostic disable:undefined-global
-	[if (make_writeable or makewriteable) then function(Table,ReadOnly)
-		(if ReadOnly then make_readonly or makereadonly else make_writeable or makewriteable)(Table)
-	end else 0] = 'setreadonly',
-	[if hookfunction and getrawmetatable then function(Object,Method,Hook)
+	[(make_writeable or makewriteable) and function(Table,ReadOnly)
+		(ReadOnly and (make_readonly or makereadonly) or (make_writeable or makewriteable))(Table)
+	end or 0] = 'setreadonly',
+	[hookfunction and getrawmetatable and function(Object,Method,Hook)
 		return hookfunction(getrawmetatable(Object)[Method],Hook)
-	end else -1] = 'hookmetamethod',
-	[if (iscclosure or is_c_closure) then function(Closure)
+	end or -1] = 'hookmetamethod',
+	[(iscclosure or is_c_closure) and function(Closure)
 		return not (iscclosure or is_c_closure)(Closure)
-	end else -2] = 'islclosure/is_l_closure',
-	[if protect_gui then (function()
+	end or -2] = 'islclosure/is_l_closure',
+	[protect_gui and (function()
 		local HiddenUI = Instance.new'Folder'
 		protect_gui(HiddenUI)
 		HiddenUI.Parent = Services.CoreGui
 		return function()
 			return HiddenUI
 		end
-	end)() else function()
+	end)() or function()
 		return Services.CoreGui
 	end] = 'gethui/get_hidden_gui'
 	--- @diagnostic enable:undefined-global
@@ -119,23 +119,28 @@ if not game:IsLoaded() then
 	game.Loaded:Wait()
 end
 local function EscapeTable(Value,Escape)
-	return if not Escape and Value == Nil then nil elseif Escape and Value == nil then Nil else Value
+    if not Escape and Value == nil then
+        return nil
+    elseif Escape and Value == nil then
+        return nil
+    end
+    return Value
 end
 local Valid
 Valid = {
 	String = function(String,Substitute)
-		return if type(String) == 'string' then String elseif type(Substitute) == 'string' then Substitute else ''
+		return type(String) == 'string' and String or type(Substitute) == 'string' and Substitute or ''
 	end,
 	Instance = function(Instance_,ClassName)
-		return if typeof(Instance_) == 'Instance' and select(2,pcall(game.IsA,Instance_,Valid.String(ClassName,'Instance'))) == true then Instance_ else nil
+		return typeof(Instance_) == 'Instance' and select(2,pcall(game.IsA,Instance_,Valid.String(ClassName,'Instance'))) == true and Instance_ or nil
 	end,
 	Number = function(Number,Substitute)
-		return if tonumber(Number) == tonumber(Number) then tonumber(Number) elseif tonumber(Substitute) == tonumber(Substitute) then tonumber(Substitute) else 0
+		return tonumber(Number) == tonumber(Number) and tonumber(Number) or tonumber(Substitute) == tonumber(Substitute) and tonumber(Substitute) or 0
 	end,
 	Table = function(Table,Substitute)
-		Table = if type(Table) == 'table' then Table else {}
-		for Index,Value in pairs(if type(Substitute) == 'table' then Substitute else {}) do
-			Table[Index] = if typeof(Table[Index]) == typeof(Value) then Table[Index] else Value
+		Table = type(Table) == 'table' and Table or {}
+		for Index,Value in pairs(type(Substitute) == 'table' and Substitute or {}) do
+			Table[Index] = typeof(Table[Index]) == typeof(Value) and Table[Index] or Value
 		end
 		return Table
 	end
@@ -180,7 +185,7 @@ local function NewInstance(ClassName,Parent,Properties)
 				NewInstance_[Property] = EscapeTable(Value)
 			end)
 		end
-		NewInstance_.Parent = if typeof(Parent) == 'Instance' then Parent else nil
+		NewInstance_.Parent = typeof(Parent) == 'Instance' and Parent or nil
 		return NewInstance_
 	end
 end
@@ -199,7 +204,7 @@ local function Create(Data)
 		end
 	}
 	for _,InstanceData in pairs(Valid.Table(Data)) do
-		Instances[InstanceData.Name] = NewInstance(InstanceData.ClassName,if type(InstanceData.Parent) == 'string' then Instances[InstanceData.Parent] else InstanceData.Parent,InstanceData.Properties)
+		Instances[InstanceData.Name] = NewInstance(InstanceData.ClassName,type(InstanceData.Parent) == 'string' and Instances[InstanceData.Parent] or InstanceData.Parent,InstanceData.Properties)
 	end
 	return Instances
 end
@@ -307,9 +312,9 @@ local function Notify(Settings)
 		}
 	}
 end
-local LastCheck,Focused,Debounce = 0,if isrbxactive then isrbxactive() else true,true
+local LastCheck,Focused,Debounce = 0,isrbxactive and isrbxactive() or true,true
 local Connections = {
-	if isfile then Services.RunService.Heartbeat:Connect(function()
+	isfile and Services.RunService.Heartbeat:Connect(function()
 		Delta,LastFrame = (os.clock()-LastFrame)*60,os.clock()
 		if 60 < os.clock()-LastCheck then
 			LastCheck = os.clock()
@@ -337,7 +342,7 @@ local Connections = {
 				loadstring(readfile'UltimatumSource.lua','Ultimatum')()
 			end
 		end
-	end) else Services.RunService.Heartbeat:Connect(function()
+	end) or Services.RunService.Heartbeat:Connect(function()
 		Delta,LastFrame = (os.clock()-LastFrame)*60,os.clock()
 	end),
 	queue_on_teleport and readfile and Services.Players.LocalPlayer.OnTeleport:Connect(function(TeleportState)
@@ -353,33 +358,44 @@ local Connections = {
 	end)
 }
 local function DeltaLerp(Start,Goal,Alpha)
-	return if type(Start) == 'number' and type(Goal) == 'number' then Goal+(Start-Goal)*math.clamp((1-Alpha)^Delta,0,1) else Goal:Lerp(Start,math.clamp((1-Alpha)^Delta,0,1))
+	return type(Start) == 'number' and type(Goal) == 'number' and Goal+(Start-Goal)*math.clamp((1-Alpha)^Delta,0,1) or Goal:Lerp(Start,math.clamp((1-Alpha)^Delta,0,1))
 end
 ---@diagnostic disable-next-line: unused-function
 local function EnableDrag(Frame)
 	local DragConnection
+	local FinalPosition = UDim2.new()
 	local InputBegan,InputEnded,Removed = Frame.InputBegan:Connect(function(Input,Ignore)
 		if not Ignore and not Debounce and Input.UserInputType == Enum.UserInputType.MouseButton1 then
 			DragConnection = Services.RunService.RenderStepped:Connect(function()
-				local MousePosition = Services.RunService:GetMouseLocation()
-				local XVelocity = MousePosition.X-Frame.AbsolutePosition.X
+				local MousePosition = Services.UserInputService:GetMouseLocation()
 				local ScreenSize,CardSize = workspace.CurrentCamera.ViewportSize,Frame.AbsoluteSize
+				local XVelocity = MousePosition.X-(Frame.AbsolutePosition.X+CardSize.X/2)
 				local NewMousePosition = Vector2.new(math.clamp(MousePosition.X,CardSize.X/2,ScreenSize.X-CardSize.X/2),math.clamp(MousePosition.Y,CardSize.Y/2,ScreenSize.Y-CardSize.Y/2))
 				if NewMousePosition ~= MousePosition then
 					MousePosition = NewMousePosition
 					if mousemoveabs and Focused then
-						mousemoveabs(MousePosition.X,MousePosition.Y)
+					    mousemoveabs(0,0)
+						mousemoverel(MousePosition.X,MousePosition.Y)
 					end
 				end
-				Frame.Position = DeltaLerp(Frame.Position,UDim2.fromScale((MousePosition.X-CardSize.X/2)/ScreenSize.X,(MousePosition.Y-CardSize.Y/2)/ScreenSize.X),.5)
-				Frame.Rotation = DeltaLerp(if Frame.Rotation < .1 then 0 else Frame.Rotation,0,.5)+math.clamp(XVelocity/(.065*CardSize.X),-1500/CardSize.X,1500/CardSize.X)
+				FinalPosition = UDim2.fromScale((MousePosition.X-CardSize.X/2)/ScreenSize.X,(MousePosition.Y-CardSize.Y/2)/ScreenSize.Y)
+				Frame.Position = DeltaLerp(Frame.Position,FinalPosition,.5)
+				Frame.Rotation = DeltaLerp(math.abs(Frame.Rotation) < .1 and 0 or Frame.Rotation,0,.5)+math.clamp(XVelocity/(.065*CardSize.X),-1500/CardSize.X,1500/CardSize.X)
 			end)
 			table.insert(Connections,DragConnection)
 		end
 	end),Services.UserInputService.InputEnded:Connect(function(Input,Ignore)
-		if not Ignore and Input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if DragConnection and Input.UserInputType == Enum.UserInputType.MouseButton1 then
 			DragConnection:Disconnect()
 			table.remove(Connections,table.find(Connections,DragConnection))
+			DragConnection = nil
+			Animate(Frame,{
+			    Time = .1,
+			    Properties = {
+			        Rotation = 0,
+			        Position = FinalPosition
+			    }
+			})
 		end
 	end)
 	Removed = Frame.AncestryChanged:Connect(function()
@@ -425,7 +441,7 @@ Commands = {
 	end
 }]]
 do
-	local ScriptEnvironment = if getgenv then getgenv() else shared
+	local ScriptEnvironment = getgenv and getgenv() or shared
 	ScriptEnvironment.Ultimatum = function()
 		for _,Connection in pairs(Connections) do
 			pcall(Connection.Disconnect,Connection)
@@ -492,16 +508,16 @@ Animate(Gui.Logo,{
 for Name,Properties in pairs{
 	Main = {
 		Rotation = 0,
-		Size = UDim2.new(0,40,0,40),
-		Position = UDim2.new(0,0,1,0),
-		AnchorPoint = Vector2.xAxis
+		Size = UDim2.new(0,35,0,35),
+		Position = UDim2.new(0,-17.5,1,0),
+		AnchorPoint = Vector2.zero
 	},
 	MainCorner = {
 		CornerRadius = UDim.new(0,5)
 	},
 	Logo = {
 		ImageTransparency = 0,
-		Position = UDim2.new(0,10,0,5),
+		Position = UDim2.new(0,5,0,5),
 		Size = UDim2.new(0,25,0,25)
 	}
 } do
@@ -514,8 +530,7 @@ for Name,Properties in pairs{
 end
 Animate(Gui.Main,{
 	Properties = {
-		AnchorPoint = Vector2.yAxis,
-		Position = UDim2.new(0,-5,1,5)
+		Position = UDim2.new(0,0,1,-35)
 	},
 	Time = .5
 })
