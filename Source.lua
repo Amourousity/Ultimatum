@@ -119,12 +119,12 @@ if not game:IsLoaded() then
 	game.Loaded:Wait()
 end
 local function EscapeTable(Value,Escape)
-    if not Escape and Value == nil then
-        return nil
-    elseif Escape and Value == nil then
-        return nil
-    end
-    return Value
+	if not Escape and Value == nil then
+		return nil
+	elseif Escape and Value == nil then
+		return nil
+	end
+	return Value
 end
 local Valid
 Valid = {
@@ -374,7 +374,7 @@ local function EnableDrag(Frame)
 				if NewMousePosition ~= MousePosition then
 					MousePosition = NewMousePosition
 					if mousemoveabs and Focused then
-					    mousemoveabs(0,0)
+						mousemoveabs(0,0)
 						mousemoverel(MousePosition.X,MousePosition.Y)
 					end
 				end
@@ -390,11 +390,11 @@ local function EnableDrag(Frame)
 			table.remove(Connections,table.find(Connections,DragConnection))
 			DragConnection = nil
 			Animate(Frame,{
-			    Time = .1,
-			    Properties = {
-			        Rotation = 0,
-			        Position = FinalPosition
-			    }
+				Time = .1,
+				Properties = {
+					Rotation = 0,
+					Position = FinalPosition
+				}
 			})
 		end
 	end)
@@ -448,6 +448,10 @@ do
 		end
 		ScriptEnvironment.Ultimatum = nil
 		Gui:Destroy()
+		--- @diagnostic disable-next-line:undefined-global
+		if protect_gui then
+			pcall(game.Destroy,gethui())
+		end
 	end
 end
 print'\
