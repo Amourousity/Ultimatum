@@ -9,9 +9,9 @@ for LibraryName,Interpret in pairs{
 	syn = false,
 	http = false,
 	crypt = false,
+	cache = 'cache_%s',
 	base64 = 'base64%s',
-	custom = 'custom_%s',
-	cache = 'cache_%s'
+	custom = 'custom_%s'
 } do
 	for FunctionName,Function in pairs(getfenv()[LibraryName] or {}) do
 		getfenv()[(Interpret or '%s'):format(FunctionName)] = Function
@@ -45,35 +45,35 @@ local Services = setmetatable({},{
 	__metatable = 'nil'
 })
 for ReplacementFunction,FunctionNames in pairs{
-	'getsenv/getmenv',
-	'getupval/getupvalue',
-	'setupvalue/setupval',
-	'getconst/getconstant',
-	'getgc/get_gc_objects',
-	'setconstant/setconst',
-	'getupvals/getupvalues',
-	'getconsts/getconstants',
-	'isreadonly/is_readonly',
-	'consoleclear/rconsoleclear',
-	'consoleinput/rconsoleinput',
-	'getcustomasset/getsynasset',
-	'isrbxactive/iswindowactive',
-	'setclipboard/writeclipboard',
-	'dumpstring/getscriptbytecode',
-	'hookfunction/detour_function',
-	'getconnections/get_signal_cons',
-	'getrawmetatable/debug_getmetatable',
-	'getcallingscript/get_calling_script',
-	'getloadedmodules/get_loaded_modules',
-	'getscriptclosure/get_script_function',
-	'getnamecallmethod/get_namecall_method',
-	'consolecreate/createconsole/rconsolecreate',
-	'closeconsole/consoledestroy/rconsoledestroy',
-	'rconsolename/consolesettitle/rconsolesettitle',
-	'getidentity/getthreadcontext/getthreadidentity/get_thread_identity',
-	'setidentity/setthreadcontext/setthreadidentity/set_thread_identity',
-	'consoleprint/writeconsole/rconsoleprint/rconsoleerr/rconsoleinfo/rconsolewarn',
-	'checkclosure/istempleclosure/issentinelclosure/iselectronfunction/is_synapse_function/is_protosmasher_closure',
+	'getsenv,getmenv',
+	'getupval,getupvalue',
+	'setupvalue,setupval',
+	'getconst,getconstant',
+	'getgc,get_gc_objects',
+	'setconstant,setconst',
+	'getupvals,getupvalues',
+	'getconsts,getconstants',
+	'isreadonly,is_readonly',
+	'consoleclear,rconsoleclear',
+	'consoleinput,rconsoleinput',
+	'getcustomasset,getsynasset',
+	'isrbxactive,iswindowactive',
+	'setclipboard,writeclipboard',
+	'dumpstring,getscriptbytecode',
+	'hookfunction,detour_function',
+	'getconnections,get_signal_cons',
+	'getrawmetatable,debug_getmetatable',
+	'getcallingscript,get_calling_script',
+	'getloadedmodules,get_loaded_modules',
+	'getscriptclosure,get_script_function',
+	'getnamecallmethod,get_namecall_method',
+	'consolecreate,createconsole,rconsolecreate',
+	'closeconsole,consoledestroy,rconsoledestroy',
+	'rconsolename,consolesettitle,rconsolesettitle',
+	'getidentity,getthreadcontext,getthreadidentity,get_thread_identity',
+	'setidentity,setthreadcontext,setthreadidentity,set_thread_identity',
+	'consoleprint,writeconsole,rconsoleprint,rconsoleerr,rconsoleinfo,rconsolewarn',
+	'checkclosure,istempleclosure,issentinelclosure,iselectronfunction,is_synapse_function,is_protosmasher_closure',
 	--- @diagnostic disable:undefined-global
 	[(make_writeable or makewriteable) and function(Table,ReadOnly)
 		(ReadOnly and (make_readonly or makereadonly) or (make_writeable or makewriteable))(Table)
@@ -81,9 +81,6 @@ for ReplacementFunction,FunctionNames in pairs{
 	[hookfunction and getrawmetatable and function(Object,Method,Hook)
 		return hookfunction(getrawmetatable(Object)[Method],Hook)
 	end or -1] = 'hookmetamethod',
-	[(iscclosure or is_c_closure) and function(Closure)
-		return not (iscclosure or is_c_closure)(Closure)
-	end or -2] = 'islclosure/is_l_closure',
 	[protect_gui and (function()
 		local HiddenUI = Instance.new'Folder'
 		protect_gui(HiddenUI)
@@ -93,10 +90,13 @@ for ReplacementFunction,FunctionNames in pairs{
 		end
 	end)() or function()
 		return Services.CoreGui
-	end] = 'gethui/get_hidden_gui'
+	end] = 'gethui,get_hidden_gui',
+	[(iscclosure or is_c_closure) and function(Closure)
+		return not (iscclosure or is_c_closure)(Closure)
+	end or -2] = 'islclosure,is_l_closure'
 	--- @diagnostic enable:undefined-global
 } do
-	FunctionNames = FunctionNames:split'/'
+	FunctionNames = FunctionNames:split()
 	local Function
 	for _,FunctionName in pairs(FunctionNames) do
 		Function = getfenv()[FunctionName]
@@ -113,7 +113,19 @@ for ReplacementFunction,FunctionNames in pairs{
 		end
 	end
 end
---- @diagnostic disable-next-line:undefined-global
+if not Ultimatum then
+	print((('!_5#_4#_#_4#9_#9_#2_4#2_6#_#9_#_4#_#2_4#2!_4#_4#_#_8#_9#_5#4_#4_3#_#_3#_5#_4#_#4_#4!_3#_4#_#_8#_9#_5#_#3_#_2#_3#_2#_5#_4#_#_#3_#!_2#_4#_#_8#_9#_5#_2#_2#_#9_#_5#_4#_#_2#_2#!_#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#6_2#8_#_5#9_#_7#_#_5#_#_6#6_2#_7#!'):gsub("%p%d?",function(Input)
+		for Character,Format in pairs{
+			['!'] = '\n',
+			_ = (' '):rep(1 < #Input and Input:sub(2,2) or 1),
+			['#'] = ('[%s]'):format(('|'):rep(1 < #Input and Input:sub(2,2) or 1))
+		} do
+			if Input:sub(1,1) == Character then
+				return Format
+			end
+		end
+	end)))
+end
 pcall(Ultimatum)
 if not game:IsLoaded() then
 	game.Loaded:Wait()
@@ -128,34 +140,34 @@ local function EscapeTable(Value,Escape)
 end
 local Valid
 Valid = {
-	String = function(String,Substitute)
-		return type(String) == 'string' and String or type(Substitute) == 'string' and Substitute or ''
-	end,
-	Instance = function(Instance_,ClassName)
-		return typeof(Instance_) == 'Instance' and select(2,pcall(game.IsA,Instance_,Valid.String(ClassName,'Instance'))) == true and Instance_ or nil
-	end,
-	Number = function(Number,Substitute)
-		return tonumber(Number) == tonumber(Number) and tonumber(Number) or tonumber(Substitute) == tonumber(Substitute) and tonumber(Substitute) or 0
-	end,
 	Table = function(Table,Substitute)
 		Table = type(Table) == 'table' and Table or {}
 		for Index,Value in pairs(type(Substitute) == 'table' and Substitute or {}) do
 			Table[Index] = typeof(Table[Index]) == typeof(Value) and Table[Index] or Value
 		end
 		return Table
+	end,
+	Number = function(Number,Substitute)
+		return tonumber(Number) == tonumber(Number) and tonumber(Number) or tonumber(Substitute) == tonumber(Substitute) and tonumber(Substitute) or 0
+	end,
+	String = function(String,Substitute)
+		return type(String) == 'string' and String or type(Substitute) == 'string' and Substitute or ''
+	end,
+	Instance = function(Instance_,ClassName)
+		return typeof(Instance_) == 'Instance' and select(2,pcall(game.IsA,Instance_,Valid.String(ClassName,'Instance'))) == true and Instance_ or nil
 	end
 }
 table.freeze(Valid)
 local Randomized = {
 	String = function(Settings)
 		Settings = Valid.Table(Settings,{
+			Format = '\0%s',
+			Length = math.random(5,99),
 			CharacterSet = {
 				NumberRange.new(48,57),
 				NumberRange.new(65,90),
 				NumberRange.new(97,122)
-			},
-			Format = '\0%s',
-			Length = math.random(5,99)
+			}
 		})
 		local AvailableCharacters = {}
 		for _,Set in pairs(Settings.CharacterSet) do
@@ -177,8 +189,8 @@ local function NewInstance(ClassName,Parent,Properties)
 	local NewInstance_ = select(2,pcall(Instance.new,ClassName))
 	if typeof(NewInstance_) == 'Instance' then
 		Properties = Valid.Table(Properties,{
-			Archivable = Randomized.Bool(),
-			Name = Randomized.String()
+			Name = Randomized.String(),
+			Archivable = Randomized.Bool()
 		})
 		for Property,Value in pairs(Properties) do
 			pcall(function()
@@ -208,59 +220,62 @@ local function Create(Data)
 	end
 	return Instances
 end
+if writefile and base64decode and not isfile'UltimatumLogo.png' then
+	writefile('UltimatumLogo.png',base64decode'iVBORw0KGgoAAAANSUhEUgAAAlgAAAJYCAMAAACJuGjuAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAMAUExURQAAAO/v7/Dw8PHx8fLy8vPz8/T09PX19fb29vj4+Pn5+fr6+vv7+/z8/P39/f7+/v///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOTFwIQAAAEAdFJOU////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wBT9wclAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAy2UlEQVR4Xu2diWLbOq+Eb7fknsSW/P4v238ATtItjoYQKdMmvmavAQnkEFxEyf/3c4OV35Okhk1hXb7zh+RWrMuFP90R28K6rJcU102xKlgudyaubWEtlxXSWi/P/ENyNBeTlVXCPYlLyFi/SG3dBJa+6ctSF/86OFXCMr7w78lhsOSd9fVyvovEVSWsZbksyMhLZq5DYelDVegS7csKcS38z1Gpy1gr/p28s19zPH8YXvTEpIX2bWlr7PF8XcYyYfl3y1uZuA7Cy97w4jdpQVeWvV7x06hDk9oxFiKDqk4ek8X4lS9L+uEFX0Cisq+Ws7wu0LzPlzNfNxR1wrIRFnRlESEe/4qu8YkvTfrgRW+YnPBpxX95sbIvaxD4spz42mGoHWNZL2jqKr8hb3nqypWInpQSNmzcjg9fL8Xne946lb/z9UNQ2xV+QmqrEyxfgfXyjTY3p6GwLK4UVwdYuipj9IpNhXXC53LJIVdjSuFKYLboo5Tb94pNhcXO/rJm4mpJKVoBH3NhFLx4E7+tuNp2hYjMQ7q8Zq/YDi9RjcWK35aDbHyPn2835GqcsaAsBGQTYWTlJcXVBJbtNt4Lnn3xFKJCXfxnf6SXg2k8eL8sZQnvtWgM4spucTdeogrWFbq4MNBaFus2rH2/4is9HUhrYSE6k5et3hWJ2WAytbULL0cJu+ZmBW4Ks4E8/vmPBp0dReOu8CqZuOKwCPdz5I6Iw4SFz3OKK0QpwSYgi9Fpbw4TlinLLkLkKlc1pQQbcL6crRoOGXIdJawirZON518zcdXBAmzDWnbcdN+WcoywPF8BTFXwIz5yL1cFpewasLik0G3YZBFzK/rvwkEZqwgLCQtB2RILfl+W7BU1vOya4hsj7MvabTx/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pLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxcpLDmgUEL0CAMXKSw5oFBC9AgDFyksOaBQQvQIAxc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')
+end
 local Gui = Create{
 	{
 		Name = 'Holder',
-		ClassName = 'ScreenGui',
 		Parent = gethui(),
+		ClassName = 'ScreenGui',
 		Properties = {
-			DisplayOrder = 0x7FFFFFFF,
+			ResetOnSpawn = false,
 			IgnoreGuiInset = true,
 			OnTopOfCoreBlur = true,
-			ResetOnSpawn = false,
+			DisplayOrder = 0x7FFFFFFF,
 			ZIndexBehavior = Enum.ZIndexBehavior.Global
 		}
 	},
 	{
 		Name = 'Main',
-		ClassName = 'Frame',
 		Parent = 'Holder',
+		ClassName = 'Frame',
 		Properties = {
-			AnchorPoint = Vector2.new(.5,.5),
-			BackgroundColor3 = Color3.fromHex'505064',
 			BackgroundTransparency = 1,
+			Size = UDim2.new(0,100,0,100),
 			Position = UDim2.new(.5,0,.4,0),
-			Size = UDim2.new(0,100,0,100)
+			AnchorPoint = Vector2.new(.5,.5),
+			BackgroundColor3 = Color3.fromHex'505064'
 		}
 	},
 	{
 		Name = 'MainCorner',
-		ClassName = 'UICorner',
 		Parent = 'Main',
+		ClassName = 'UICorner',
 		Properties = {
 			CornerRadius = UDim.new(.5,0)
 		}
 	},
 	{
 		Name = 'MainGradient',
-		ClassName = 'UIGradient',
 		Parent = 'Main',
+		ClassName = 'UIGradient',
 		Properties = {
-			Color = ColorSequence.new(Color3.new(1,1,1),Color3.new(.5,.5,.5)),
-			Rotation = 90
+			Rotation = 90,
+			Color = ColorSequence.new(Color3.new(1,1,1),Color3.new(.5,.5,.5))
 		}
 	},
 	{
 		Name = 'Logo',
-		ClassName = 'ImageLabel',
 		Parent = 'Main',
+		ClassName = 'ImageLabel',
 		Properties = {
-			BackgroundTransparency = 1,
-			Image = getcustomasset and getcustomasset('UltimatumLogo.png',false) or 'rbxassetid://9666094136',
-			ImageTransparency = 1,
-			Position = UDim2.new(0,10,0,10),
 			Rotation = 90,
-			Size = UDim2.new(0,80,0,80)
+			ImageTransparency = 1,
+			BackgroundTransparency = 1,
+			Size = UDim2.new(0,80,0,80),
+			Position = UDim2.new(0,10,0,10),
+			Image = getcustomasset and isfile and isfile'UltimatumLogo.png' and getcustomasset'UltimatumLogo.png' or 'rbxassetid://9666094136'
 		}
 	}
 }
@@ -268,13 +283,13 @@ local function Animate(Instance_,Data)
 	if Valid.Instance(Instance_) then
 		Data = Valid.Table(Data,{
 			Time = 1,
-			EasingStyle = Enum.EasingStyle.Quad,
-			EasingDirection = Enum.EasingDirection.Out,
-			RepeatCount = 0,
-			Reverses = false,
 			Delay = 0,
 			Yields = false,
-			Properties = {}
+			Properties = {},
+			RepeatCount = 0,
+			Reverses = false,
+			EasingStyle = Enum.EasingStyle.Quad,
+			EasingDirection = Enum.EasingDirection.Out
 		})
 		Services.TweenService:Create(Instance_,TweenInfo.new(Data.Time,Data.EasingStyle,Data.EasingDirection,Data.RepeatCount,Data.Reverses,Data.Delay),Data.Properties):Play()
 		if Data.Yields then
@@ -284,17 +299,17 @@ local function Animate(Instance_,Data)
 end
 local function Notify(Settings)
 	Settings = Valid.Table(Settings,{
-		Text = '(no text)',
-		Title = 'Ultimatum',
 		Buttons = {},
 		Duration = 5,
+		Text = '(no text)',
+		Title = 'Ultimatum',
 		CalculateDuration = false
 	})
 	if Settings.CalculateDuration then
 		local Length = 0
 		for _,Name in pairs{
-			'Title',
-			'Text'
+			'Text',
+			'Title'
 		} do
 			for _ in utf8.graphemes(Settings[Name]) do
 				Length += 1
@@ -304,8 +319,8 @@ local function Notify(Settings)
 	end
 	Create{
 		Name = 'Main',
-		ClassName = 'Frame',
 		Parent = Gui.Holder,
+		ClassName = 'Frame',
 		Properties = {
 			AnchorPoint = Vector2.xAxis,
 			Position = UDim2.new(1,0,0,0)
@@ -318,36 +333,26 @@ local Connections = {
 		Delta,LastFrame = (os.clock()-LastFrame)*60,os.clock()
 		if 60 < os.clock()-LastCheck then
 			LastCheck = os.clock()
-			local Reload
-			for _,FileName in pairs{
-				'Logo.png',
-				'Source.lua',
-				'Version.ver'
-			} do
-				local Success,Result = pcall(game.HttpGet,game,('https://raw.githubusercontent.com/Amourousity/Ultimatum/main/%s'):format(FileName),true)
-				if Success and (not isfile(('Ultimatum%s'):format(FileName)) or Result:gsub('%s','') ~= readfile(('Ultimatum%s'):format(FileName)):gsub('%s','')) then
-					writefile(('Ultimatum%s'):format(FileName),Result)
-					Reload = true
-				elseif not Success and not isfile(('Ultimatum%s'):format(FileName)) then
-					if consoleprint then
-						consoleprint'@@YELLOW@@'
-						consoleprint(('\nUltimatum | %s'):format(Result))
-						consoleprint'@@WHITE@@'
-					else
-						warn('Ultimatum |',Result)
-					end
+			local Success,Result = pcall(game.HttpGet,game,'https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source',true)
+			if Success and (not isfile'Source.Ultimatum' or Result ~= readfile'Source.Ultimatum') then
+				writefile('Source.Ultimatum',Result)
+				loadstring(Result,'Ultimatum')()
+			elseif not Success and not isfile'Source.Ultimatum' then
+				if consoleprint then
+					consoleprint'@@YELLOW@@'
+					consoleprint(('\nUltimatum | %s'):format(Result))
+					consoleprint'@@WHITE@@'
+				else
+					warn('Ultimatum |',Result)
 				end
-			end
-			if Reload then
-				loadstring(readfile'UltimatumSource.lua','Ultimatum')()
 			end
 		end
 	end) or Services.RunService.Heartbeat:Connect(function()
 		Delta,LastFrame = (os.clock()-LastFrame)*60,os.clock()
 	end),
-	queue_on_teleport and readfile and Services.Players.LocalPlayer.OnTeleport:Connect(function(TeleportState)
+	queue_on_teleport and isfile and Services.Players.LocalPlayer.OnTeleport:Connect(function(TeleportState)
 		if TeleportState == Enum.TeleportState.Started then
-			queue_on_teleport(readfile'UltimatumSource.lua')
+			queue_on_teleport(isfile'Source.Ultimatum' and readfile'Source.Ultimatum' or 'error"Source.Ultimatum missing from workspace folder"')
 		end
 	end),
 	Services.UserInputService.WindowFocused:Connect(function()
@@ -360,7 +365,6 @@ local Connections = {
 local function DeltaLerp(Start,Goal,Alpha)
 	return type(Start) == 'number' and type(Goal) == 'number' and Goal+(Start-Goal)*math.clamp((1-Alpha)^Delta,0,1) or Goal:Lerp(Start,math.clamp((1-Alpha)^Delta,0,1))
 end
----@diagnostic disable-next-line: unused-function
 local function EnableDrag(Frame)
 	local DragConnection
 	local FinalPosition = UDim2.new()
@@ -402,8 +406,8 @@ local function EnableDrag(Frame)
 		if not Frame:IsDescendantOf(gethui()) then
 			for _,Connection in pairs{
 				Removed,
-				InputEnded,
 				InputBegan,
+				InputEnded,
 				DragConnection
 			} do
 				pcall(Connection.Disconnect,Connection)
@@ -454,75 +458,66 @@ do
 		end
 	end
 end
-print'\
-     [|]    [|] [|]    [|||||||||] [|||||||||] [||]    [||]      [|] [|||||||||] [|]    [|] [||]    [||]\
-    [|]    [|] [|]        [|]         [|]     [||||] [||||]   [|] [|]   [|]     [|]    [|] [||||] [||||]\
-   [|]    [|] [|]        [|]         [|]     [|] [|||] [|]  [|]   [|]  [|]     [|]    [|] [|] [|||] [|]\
-  [|]    [|] [|]        [|]         [|]     [|]  [|]  [|] [|||||||||] [|]     [|]    [|] [|]  [|]  [|]\
- [|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]\
-[|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]\
-[||||||]  [||||||||] [|]     [|||||||||] [|]       [|] [|]     [|] [|]      [||||||]  [|]       [|]\
-'
 EnableDrag(Gui.Main)
 Animate(Gui.Main,{
+	Time = .5,
+	Yields = true,
 	Properties = {
 		Position = UDim2.new(.5,0,.5,0),
 		BackgroundTransparency = 0
-	},
-	Time = .5,
-	Yields = true
+	}
 })
 Animate(Gui.Logo,{
+	Time = .5,
 	Properties = {
 		ImageTransparency = 0,
 		Rotation = 0
-	},
-	Time = .5
+	}
 })
 Animate(Gui.MainCorner,{
+	Time = .5,
+	Yields = true,
 	Properties = {
 		CornerRadius = UDim.new(0,5)
-	},
-	Time = .5,
-	Yields = true
+	}
 })
 task.wait(.5)
 Animate(Gui.Main,{
-	EasingDirection = Enum.EasingDirection.In,
-	EasingStyle = Enum.EasingStyle.Back,
+	Time = .5,
 	Properties = {
 		Rotation = 180,
 		Size = UDim2.new()
 	},
-	Time = .5
+	EasingStyle = Enum.EasingStyle.Back,
+	EasingDirection = Enum.EasingDirection.In
 })
 Animate(Gui.MainCorner,{
+	Time = .5,
 	Properties = {
 		CornerRadius = UDim.new(.5,0)
-	},
-	Time = .5
+	}
 })
 Animate(Gui.Logo,{
+	Time = .5,
+	Yields = true,
 	Properties = {
 		ImageTransparency = 1
-	},
-	Time = .5,
-	Yields = true
+	}
 })
 for Name,Properties in pairs{
+	Logo = {
+		ImageTransparency = 0,
+		Size = UDim2.new(0,25,0,25),
+		Position = UDim2.new(0,5,0,5),
+	},
 	Main = {
 		Rotation = 0,
+		AnchorPoint = Vector2.zero,
 		Size = UDim2.new(0,35,0,35),
 		Position = UDim2.new(0,-17.5,1,0),
-		AnchorPoint = Vector2.zero
 	},
 	MainCorner = {
 		CornerRadius = UDim.new(0,5)
-	},
-	Logo = {
-		ImageTransparency = 0,
-		Position = UDim2.new(0,5,0,5),
-		Size = UDim2.new(0,25,0,25)
 	}
 } do
 	if not Gui or not Gui[Name] then
@@ -533,9 +528,9 @@ for Name,Properties in pairs{
 	end
 end
 Animate(Gui.Main,{
+	Time = .5,
 	Properties = {
 		Position = UDim2.new(0,0,1,-35)
-	},
-	Time = .5
+	}
 })
 Debounce = false
