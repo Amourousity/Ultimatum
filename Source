@@ -127,8 +127,15 @@ if not Ultimatum then
 	end)))
 end
 pcall(Ultimatum)
-if not game:IsLoaded() then
-	game.Loaded:Wait()
+if Services.CoreGui:FindFirstChild'RobloxLoadingGui' and Services.CoreGui.RobloxLoadingGui:FindFirstChild'BlackFrame' then
+	local LoadStart,Connection = os.clock()
+	Connection = Services.CoreGui.RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal'BackgroundTransparency':Connect(function()
+		Connection:Disconnect()
+		LoadStart = 0
+	end)
+	repeat
+		task.wait()
+	until 3 < os.clock()-LoadStart
 end
 local function EscapeTable(Value,Escape)
 	if not Escape and Value == nil then
