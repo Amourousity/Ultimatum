@@ -12,5 +12,5 @@
 In order for offline support to work, you ***MUST*** use the loader directly.
 
 Copy the [loader](/blob/main/Loader.lua), paste it in your exploit's script editor, press Execute and enjoy!
-##Commands, 
+## Commands, 
 *None at the moment, I'm working on that...*
