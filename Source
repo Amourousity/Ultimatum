@@ -5,84 +5,86 @@
  [|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]
 [|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]
 [||||||]  [||||||||] [|]     [|||||||||] [|]       [|] [|]     [|] [|]      [||||||]  [|]       []]
-for LibraryName,Interpret in pairs{
-	syn = false,
-	http = false,
-	crypt = false,
-	cache = 'cache_%s',
-	base64 = 'base64%s',
-	custom = 'custom_%s'
+for _,Table in pairs{
+	{"fluxus",false},
+	{"syn",false},
+	{"http",false},
+	{"crypt",false},
+	{"cache","cache_%s"},
+	{"base64","base64%s"},
+	{"custom","custom_%s"}
 } do
+	local LibraryName,Interpret = unpack(Table)
 	for FunctionName,Function in pairs(getfenv()[LibraryName] or {}) do
-		getfenv()[(Interpret or '%s'):format(FunctionName)] = Function
+		getfenv()[(Interpret or "%s"):format(FunctionName)] = Function
 	end
 end
 do
 	local DebugBlacklist = {
-		'info',
-		'traceback',
-		'profileend',
-		'profilebegin',
-		'setmemorycategory',
-		'resetmemorycategory'
+		"info",
+		"traceback",
+		"profileend",
+		"profilebegin",
+		"setmemorycategory",
+		"resetmemorycategory"
 	}
 	for FunctionName,Function in pairs(debug) do
 		if not table.find(DebugBlacklist,FunctionName) then
-			getfenv()[getfenv()[FunctionName] and ('debug_%s'):format(FunctionName) or FunctionName] = Function
+			getfenv()[getfenv()[FunctionName] and ("debug_%s"):format(FunctionName) or FunctionName] = Function
 		end
 	end
 end
 local Nil,Delta,LastFrame = {},10,os.clock()
 local Services = setmetatable({},{
 	__index = function(Services,ServiceName)
-		assert(pcall(game.GetService,game,ServiceName),('Ultimatum | Invalid ServiceName (%s "%s")'):format(typeof(ServiceName),tostring(ServiceName)))
+		assert(pcall(game.GetService,game,ServiceName),("Ultimatum | Invalid ServiceName (%s '%s')"):format(typeof(ServiceName),tostring(ServiceName)))
 		if not rawget(Services,ServiceName) or rawget(Services,ServiceName) ~= game:GetService(ServiceName) then
 			rawset(Services,ServiceName,game:GetService(ServiceName))
 		end
 		return rawget(Services,ServiceName)
 	end,
 	__newindex = function() end,
-	__metatable = 'nil'
+	__metatable = "nil"
 })
 for ReplacementFunction,FunctionNames in pairs{
-	'getsenv,getmenv',
-	'getupval,getupvalue',
-	'setupvalue,setupval',
-	'getconst,getconstant',
-	'getgc,get_gc_objects',
-	'setconstant,setconst',
-	'getupvals,getupvalues',
-	'getconsts,getconstants',
-	'isreadonly,is_readonly',
-	'consoleclear,rconsoleclear',
-	'consoleinput,rconsoleinput',
-	'getcustomasset,getsynasset',
-	'isrbxactive,iswindowactive',
-	'setclipboard,writeclipboard',
-	'dumpstring,getscriptbytecode',
-	'hookfunction,detour_function',
-	'getconnections,get_signal_cons',
-	'getrawmetatable,debug_getmetatable',
-	'getcallingscript,get_calling_script',
-	'getloadedmodules,get_loaded_modules',
-	'getscriptclosure,get_script_function',
-	'getnamecallmethod,get_namecall_method',
-	'consolecreate,createconsole,rconsolecreate',
-	'closeconsole,consoledestroy,rconsoledestroy',
-	'rconsolename,consolesettitle,rconsolesettitle',
-	'getidentity,getthreadcontext,getthreadidentity,get_thread_identity',
-	'setidentity,setthreadcontext,setthreadidentity,set_thread_identity',
-	'consoleprint,writeconsole,rconsoleprint,rconsoleerr,rconsoleinfo,rconsolewarn',
-	'checkclosure,istempleclosure,issentinelclosure,iselectronfunction,is_synapse_function,is_protosmasher_closure',
+	"getsenv,getmenv",
+	"getupval,getupvalue",
+	"setupvalue,setupval",
+	"getconst,getconstant",
+	"getgc,get_gc_objects",
+	"setconstant,setconst",
+	"getupvals,getupvalues",
+	"getconsts,getconstants",
+	"isreadonly,is_readonly",
+	"consoleclear,rconsoleclear",
+	"consoleinput,rconsoleinput",
+	"getcustomasset,getsynasset",
+	"isrbxactive,iswindowactive",
+	"setclipboard,writeclipboard",
+	"dumpstring,getscriptbytecode",
+	"hookfunction,detour_function",
+	"getconnections,get_signal_cons",
+	"getrawmetatable,debug_getmetatable",
+	"getcallingscript,get_calling_script",
+	"getloadedmodules,get_loaded_modules",
+	"getscriptclosure,get_script_function",
+	"getnamecallmethod,get_namecall_method",
+	"consolecreate,createconsole,rconsolecreate",
+	"closeconsole,consoledestroy,rconsoledestroy",
+	"rconsolename,consolesettitle,rconsolesettitle",
+	"getidentity,getthreadcontext,getthreadidentity,get_thread_identity",
+	"setidentity,setthreadcontext,setthreadidentity,set_thread_identity",
+	"consoleprint,writeconsole,rconsoleprint,rconsoleerr,rconsoleinfo,rconsolewarn",
+	"checkclosure,istempleclosure,issentinelclosure,iselectronfunction,is_synapse_function,is_protosmasher_closure",
 	--- @diagnostic disable:undefined-global
 	[(make_writeable or makewriteable) and function(Table,ReadOnly)
 		(ReadOnly and (make_readonly or makereadonly) or (make_writeable or makewriteable))(Table)
-	end or 0] = 'setreadonly',
+	end or 30] = "setreadonly",
 	[hookfunction and getrawmetatable and function(Object,Method,Hook)
 		return hookfunction(getrawmetatable(Object)[Method],Hook)
-	end or -1] = 'hookmetamethod',
+	end or 31] = "hookmetamethod",
 	[protect_gui and (function()
-		local HiddenUI = Instance.new'Folder'
+		local HiddenUI = Instance.new"Folder"
 		protect_gui(HiddenUI)
 		HiddenUI.Parent = Services.CoreGui
 		return function()
@@ -90,10 +92,10 @@ for ReplacementFunction,FunctionNames in pairs{
 		end
 	end)() or function()
 		return Services.CoreGui
-	end] = 'gethui,get_hidden_gui',
+	end] = "gethui,get_hidden_gui",
 	[(iscclosure or is_c_closure) and function(Closure)
 		return not (iscclosure or is_c_closure)(Closure)
-	end or -2] = 'islclosure,is_l_closure'
+	end or 32] = "islclosure,is_l_closure"
 	--- @diagnostic enable:undefined-global
 } do
 	FunctionNames = FunctionNames:split()
@@ -107,18 +109,18 @@ for ReplacementFunction,FunctionNames in pairs{
 			break
 		end
 	end
-	if not Function and type(ReplacementFunction) == 'function' then
+	if not Function and type(ReplacementFunction) == "function" then
 		for _,FunctionName in pairs(FunctionNames) do
 			getfenv()[FunctionName] = ReplacementFunction
 		end
 	end
 end
 if not Ultimatum then
-	print((('!_5#_4#_#_4#9_#9_#2_4#2_6#_#9_#_4#_#2_4#2!_4#_4#_#_8#_9#_5#4_#4_3#_#_3#_5#_4#_#4_#4!_3#_4#_#_8#_9#_5#_#3_#_2#_3#_2#_5#_4#_#_#3_#!_2#_4#_#_8#_9#_5#_2#_2#_#9_#_5#_4#_#_2#_2#!_#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#6_2#8_#_5#9_#_7#_#_5#_#_6#6_2#_7#!'):gsub("%p%d?",function(Input)
+	print((("!_5#_4#_#_4#9_#9_#2_4#2_6#_#9_#_4#_#2_4#2!_4#_4#_#_8#_9#_5#4_#4_3#_#_3#_5#_4#_#4_#4!_3#_4#_#_8#_9#_5#_#3_#_2#_3#_2#_5#_4#_#_#3_#!_2#_4#_#_8#_9#_5#_2#_2#_#9_#_5#_4#_#_2#_2#!_#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#6_2#8_#_5#9_#_7#_#_5#_#_6#6_2#_7#!"):gsub("%p%d?",function(Input)
 		for Character,Format in pairs{
-			['!'] = '\n',
-			_ = (' '):rep(1 < #Input and Input:sub(2,2) or 1),
-			['#'] = ('[%s]'):format(('|'):rep(1 < #Input and Input:sub(2,2) or 1))
+			["!"] = "\n",
+			_ = (" "):rep(1 < #Input and Input:sub(2,2) or 1),
+			["#"] = ("[%s]"):format(("|"):rep(1 < #Input and Input:sub(2,2) or 1))
 		} do
 			if Input:sub(1,1) == Character then
 				return Format
@@ -127,9 +129,9 @@ if not Ultimatum then
 	end)))
 end
 pcall(Ultimatum)
-if Services.CoreGui:FindFirstChild'RobloxLoadingGui' and Services.CoreGui.RobloxLoadingGui:FindFirstChild'BlackFrame' then
+if Services.CoreGui:FindFirstChild"RobloxLoadingGui" and Services.CoreGui.RobloxLoadingGui:FindFirstChild"BlackFrame" then
 	local LoadStart,Connection = os.clock()
-	Connection = Services.CoreGui.RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal'BackgroundTransparency':Connect(function()
+	Connection = Services.CoreGui.RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency":Connect(function()
 		Connection:Disconnect()
 		LoadStart = 0
 	end)
@@ -148,8 +150,8 @@ end
 local Valid
 Valid = {
 	Table = function(Table,Substitute)
-		Table = type(Table) == 'table' and Table or {}
-		for Index,Value in pairs(type(Substitute) == 'table' and Substitute or {}) do
+		Table = type(Table) == "table" and Table or {}
+		for Index,Value in pairs(type(Substitute) == "table" and Substitute or {}) do
 			Table[Index] = typeof(Table[Index]) == typeof(Value) and Table[Index] or Value
 		end
 		return Table
@@ -158,17 +160,17 @@ Valid = {
 		return tonumber(Number) == tonumber(Number) and tonumber(Number) or tonumber(Substitute) == tonumber(Substitute) and tonumber(Substitute) or 0
 	end,
 	String = function(String,Substitute)
-		return type(String) == 'string' and String or type(Substitute) == 'string' and Substitute or ''
+		return type(String) == "string" and String or type(Substitute) == "string" and Substitute or ""
 	end,
 	Instance = function(Instance_,ClassName)
-		return typeof(Instance_) == 'Instance' and select(2,pcall(game.IsA,Instance_,Valid.String(ClassName,'Instance'))) == true and Instance_ or nil
+		return typeof(Instance_) == "Instance" and select(2,pcall(game.IsA,Instance_,Valid.String(ClassName,"Instance"))) == true and Instance_ or nil
 	end
 }
 table.freeze(Valid)
 local Randomized = {
 	String = function(Settings)
 		Settings = Valid.Table(Settings,{
-			Format = '\0%s',
+			Format = "\0%s",
 			Length = math.random(5,99),
 			CharacterSet = {
 				NumberRange.new(48,57),
@@ -182,7 +184,7 @@ local Randomized = {
 				table.insert(AvailableCharacters,string.char(Character))
 			end
 		end
-		return Settings.Format:format(('A'):rep(Settings.Length):gsub('.',function()
+		return Settings.Format:format(("A"):rep(Settings.Length):gsub(".",function()
 			local Range = Settings.CharacterSet[math.random(1,#Settings.CharacterSet)]
 			return string.char(math.random(Range.Min,Range.Max))
 		end))
@@ -194,7 +196,7 @@ local Randomized = {
 table.freeze(Randomized)
 local function NewInstance(ClassName,Parent,Properties)
 	local NewInstance_ = select(2,pcall(Instance.new,ClassName))
-	if typeof(NewInstance_) == 'Instance' then
+	if typeof(NewInstance_) == "Instance" then
 		Properties = Valid.Table(Properties,{
 			Name = Randomized.String(),
 			Archivable = Randomized.Bool()
@@ -204,14 +206,14 @@ local function NewInstance(ClassName,Parent,Properties)
 				NewInstance_[Property] = EscapeTable(Value)
 			end)
 		end
-		NewInstance_.Parent = typeof(Parent) == 'Instance' and Parent or nil
+		NewInstance_.Parent = typeof(Parent) == "Instance" and Parent or nil
 		return NewInstance_
 	end
 end
 local function Create(Data)
 	local Instances = {
 		Destroy = function(Instances,Name)
-			if type(Name) == 'string' then
+			if type(Name) == "string" then
 				pcall(game.Destroy,Instances[Name])
 				Instances[Name] = nil
 			else
@@ -223,15 +225,15 @@ local function Create(Data)
 		end
 	}
 	for _,InstanceData in pairs(Valid.Table(Data)) do
-		Instances[InstanceData.Name] = NewInstance(InstanceData.ClassName,type(InstanceData.Parent) == 'string' and Instances[InstanceData.Parent] or InstanceData.Parent,InstanceData.Properties)
+		Instances[InstanceData.Name] = NewInstance(InstanceData.ClassName,type(InstanceData.Parent) == "string" and Instances[InstanceData.Parent] or InstanceData.Parent,InstanceData.Properties)
 	end
 	return Instances
 end
 local Gui = Create{
 	{
-		Name = 'Holder',
+		Name = "Holder",
 		Parent = gethui(),
-		ClassName = 'ScreenGui',
+		ClassName = "ScreenGui",
 		Properties = {
 			ResetOnSpawn = false,
 			IgnoreGuiInset = true,
@@ -241,45 +243,53 @@ local Gui = Create{
 		}
 	},
 	{
-		Name = 'Main',
-		Parent = 'Holder',
-		ClassName = 'Frame',
+		Name = "Main",
+		Parent = "Holder",
+		ClassName = "Frame",
 		Properties = {
 			BackgroundTransparency = 1,
-			Size = UDim2.new(0,100,0,100),
+			Size = UDim2.new(.25,0,.25,0),
 			Position = UDim2.new(.5,0,.4,0),
 			AnchorPoint = Vector2.new(.5,.5),
-			BackgroundColor3 = Color3.fromHex'505064'
+			BackgroundColor3 = Color3.fromHex"505064"
 		}
 	},
 	{
-		Name = 'MainCorner',
-		Parent = 'Main',
-		ClassName = 'UICorner',
+		Name = "MainCorner",
+		Parent = "Main",
+		ClassName = "UICorner",
 		Properties = {
 			CornerRadius = UDim.new(.5,0)
 		}
 	},
 	{
-		Name = 'MainGradient',
-		Parent = 'Main',
-		ClassName = 'UIGradient',
+		Name = "MainGradient",
+		Parent = "Main",
+		ClassName = "UIGradient",
 		Properties = {
 			Rotation = 90,
 			Color = ColorSequence.new(Color3.new(1,1,1),Color3.new(.5,.5,.5))
 		}
 	},
 	{
-		Name = 'Logo',
-		Parent = 'Main',
-		ClassName = 'ImageLabel',
+		Name = "MainAspectRatioConstraint",
+		Parent = "Main",
+		ClassName = "UIAspectRatioConstraint",
+		Properties = {
+			DominantAxis = Enum.DominantAxis.Height
+		}
+	},
+	{
+		Name = "Logo",
+		Parent = "Main",
+		ClassName = "ImageLabel",
 		Properties = {
 			Rotation = 90,
 			ImageTransparency = 1,
 			BackgroundTransparency = 1,
-			Size = UDim2.new(0,80,0,80),
-			Position = UDim2.new(0,10,0,10),
-			Image = 'rbxassetid://9666094136'
+			Size = UDim2.new(.8,0,.8,0),
+			Position = UDim2.new(0,.1,0,.1),
+			Image = "rbxassetid://9666094136"
 		}
 	}
 }
@@ -301,35 +311,114 @@ local function Animate(Instance_,Data)
 		end
 	end
 end
+---@diagnostic disable-next-line: unused-function
 local function Notify(Settings)
 	Settings = Valid.Table(Settings,{
 		Buttons = {},
 		Duration = 5,
-		Text = '(no text)',
-		Title = 'Ultimatum',
-		CalculateDuration = false
+		Yields = false,
+		CalculateDuration = false,
+		Text = "Ultimatum\n(no text)"
 	})
+	local Notification = Create{
+		{
+			Name = "Main",
+			Parent = Gui.Holder,
+			ClassName = "Frame",
+			Properties = {
+				ClipsDescendants = true,
+				AnchorPoint = Vector2.one,
+				BackgroundTransparency = 1,
+				Position = UDim2.new(1,-10,1,0),
+				BackgroundColor3 = Color3.fromHex"505064"
+			}
+		},
+		{
+			Name = "MainCorner",
+			Parent = "Main",
+			ClassName = "UICorner",
+			Properties = {
+				CornerRadius = UDim.new(0,5)
+			}
+		},
+		{
+			Name = "MainGradient",
+			Parent = "Main",
+			ClassName = "UIGradient",
+			Properties = {
+				Rotation = 90,
+				Color = ColorSequence.new(Color3.new(1,1,1),Color3.new(.5,.5,.5))
+			}
+		},
+			{
+			Name = "Content",
+			Parent = "Main",
+			ClassName = "TextLabel",
+			Properties = {
+				TextSize = 13,
+				RichText = true,
+				TextWrapped = true,
+				Text = Settings.Text,
+				TextTransparency = 1,
+				Font = Enum.Font.Arial,
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,-20,1,-20),
+				TextColor3 = Color3.new(1,1,1),
+				Position = UDim2.new(0,10,0,10),
+				TextXAlignment = Enum.TextXAlignment.Left
+			}
+		}
+	}
 	if Settings.CalculateDuration then
 		local Length = 0
-		for _,Name in pairs{
-			'Text',
-			'Title'
-		} do
-			for _ in utf8.graphemes(Settings[Name]) do
-				Length += 1
-			end
+		for _ in utf8.graphemes(Notification.Content.ContentText) do
+			Length += 1
 		end
 		Settings.Duration += Length*.06
 	end
-	Create{
-		Name = 'Main',
-		Parent = Gui.Holder,
-		ClassName = 'Frame',
+	Settings.Duration += .25
+	local Size = Services.TextService:GetTextSize(Notification.Content.ContentText,13,Enum.Font.Arial,Vector2.new(workspace.CurrentCamera.ViewportSize.X/3,workspace.CurrentCamera.ViewportSize.Y-40))
+	Notification.Main.Size = UDim2.new(0,Size.X,0,Size.Y+20)
+	repeat
+		Notification.Main.Size -= UDim2.new(0,1,0,0)
+	until not Notification.Content.TextFits
+	Notification.Main.Size += UDim2.new(0,1,0,0)
+	Animate(Notification.Main,{
+		Time = .25,
 		Properties = {
-			AnchorPoint = Vector2.xAxis,
-			Position = UDim2.new(1,0,0,0)
+			Position = UDim2.new(1,-10,1,-10),
+			BackgroundTransparency = 0
 		}
-	}
+	})
+	Animate(Notification.Content,{
+		Time = .25,
+		Properties = {
+			TextTransparency = 0
+		},
+		EasingStyle = Enum.EasingStyle.Linear
+	})
+	task.spawn(function()
+		task.wait(Settings.Duration)
+		Animate(Notification.Main,{
+			Time = 1,
+			Properties = {
+				BackgroundTransparency = 1
+			}
+		})
+		Animate(Notification.Content,{
+			Time = 1,
+			Properties = {
+				TextTransparency = 1
+			},
+			EasingStyle = Enum.EasingStyle.Linear
+		})
+	end)
+	if Settings.Yields then
+		task.wait(Settings.Duration)
+		Notification:Destroy()
+	else
+		task.delay(Settings.Duration,Notification.Destroy,Notification)
+	end
 end
 local LastCheck,Focused,Debounce = 0,isrbxactive and isrbxactive() or true,true
 local Connections = {
@@ -337,18 +426,15 @@ local Connections = {
 		Delta,LastFrame = (os.clock()-LastFrame)*60,os.clock()
 		if 60 < os.clock()-LastCheck then
 			LastCheck = os.clock()
-			local Success,Result = pcall(game.HttpGet,game,'https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source',true)
-			if Success and (not isfile'Source.Ultimatum' or Result ~= readfile'Source.Ultimatum') then
-				writefile('Source.Ultimatum',Result)
-				loadstring(Result,'Ultimatum')()
-			elseif not Success and not isfile'Source.Ultimatum' then
-				if consoleprint then
-					consoleprint'@@YELLOW@@'
-					consoleprint(('\nUltimatum | %s'):format(Result))
-					consoleprint'@@WHITE@@'
-				else
-					warn('Ultimatum |',Result)
-				end
+			local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source",true)
+			if Success and (not isfile"Source.Ultimatum" or Result ~= readfile"Source.Ultimatum") then
+				writefile("Source.Ultimatum",Result)
+				loadstring(Result,"Ultimatum")()
+			elseif not Success and not isfile"Source.Ultimatum" then
+				Notify{
+					CalculateDuration = true,
+					Text = ("<b>Error</b>\n%s"):format(Result)
+				}
 			end
 		end
 	end) or Services.RunService.Heartbeat:Connect(function()
@@ -356,7 +442,7 @@ local Connections = {
 	end),
 	queue_on_teleport and isfile and Services.Players.LocalPlayer.OnTeleport:Connect(function(TeleportState)
 		if TeleportState == Enum.TeleportState.Started then
-			queue_on_teleport(isfile'Source.Ultimatum' and readfile'Source.Ultimatum' or 'error"Source.Ultimatum missing from workspace folder"')
+			queue_on_teleport(isfile"Source.Ultimatum" and readfile"Source.Ultimatum" or "error'Source.Ultimatum missing from workspace folder'")
 		end
 	end),
 	Services.UserInputService.WindowFocused:Connect(function()
@@ -367,7 +453,7 @@ local Connections = {
 	end)
 }
 local function DeltaLerp(Start,Goal,Alpha)
-	return type(Start) == 'number' and type(Goal) == 'number' and Goal+(Start-Goal)*math.clamp((1-Alpha)^Delta,0,1) or Goal:Lerp(Start,math.clamp((1-Alpha)^Delta,0,1))
+	return type(Start) == "number" and type(Goal) == "number" and Goal+(Start-Goal)*math.clamp((1-Alpha)^Delta,0,1) or Goal:Lerp(Start,math.clamp((1-Alpha)^Delta,0,1))
 end
 local function EnableDrag(Frame)
 	local DragConnection
@@ -421,26 +507,26 @@ local function EnableDrag(Frame)
 	end)
 end
 --[[local function GetHumanoid(Target)
-	Target = ValidInstance(Target,'Model') or ValidInstance(Target,'Player') and (Target.Character or Target.CharacterAdded:Wait())
+	Target = ValidInstance(Target,"Model") or ValidInstance(Target,"Player") and (Target.Character or Target.CharacterAdded:Wait())
 	if Target then
-		return Target:FindFirstChildOfClass'Humanoid'
+		return Target:FindFirstChildOfClass"Humanoid"
 	end
 end
 local Commands
 Commands = {
-	['SpoofWalkSpeed/SpoofWS/HookWalkSpeed/HookWS'] = function()
+	["SpoofWalkSpeed/SpoofWS/HookWalkSpeed/HookWS"] = function()
 		local Humanoid = Owner.Character.Humanoid
 		local FakeWalkSpeed = Humanoid.WalkSpeed
 		local OldIndex,OldNewIndex
-		OldIndex = hookmetamethod(game,'__index',function(...)
-			if not checkcaller() and ... == Humanoid and select(2,...) == 'WalkSpeed' then
+		OldIndex = hookmetamethod(game,"__index",function(...)
+			if not checkcaller() and ... == Humanoid and select(2,...) == "WalkSpeed" then
 				return FakeWalkSpeed
 			end
 			return OldIndex(...)
 		end)
 		Humanoid.WalkSpeed = 100
-		OldNewIndex = hookmetamethod(game,'__newindex',function(...)
-			if not checkcaller() and ... == Humanoid and select(2,...) == 'WalkSpeed' then
+		OldNewIndex = hookmetamethod(game,"__newindex",function(...)
+			if not checkcaller() and ... == Humanoid and select(2,...) == "WalkSpeed" then
 				FakeWalkSpeed = tonumber(select(3,...)) or 0
 				return
 			end
@@ -525,6 +611,7 @@ for Name,Properties in pairs{
 	}
 } do
 	if not Gui or not Gui[Name] then
+		print(Gui,Gui and Gui[Name])
 		return
 	end
 	for Property,Value in pairs(Properties) do
