@@ -246,6 +246,7 @@ do
 		__metatable = "nil"
 	})
 end
+OwnerSettings._ = nil
 if Services.CoreGui:FindFirstChild"RobloxLoadingGui" and Services.CoreGui.RobloxLoadingGui:FindFirstChild"BlackFrame" then
 	local LoadStart,Connection = os.clock()
 	Connection = Services.CoreGui.RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency":Connect(function()
