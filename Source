@@ -46,78 +46,92 @@ local Services = setmetatable({},{
 	__newindex = function() end,
 	__metatable = "nil"
 })
-for ReplacementFunction,FunctionNames in pairs{
-	"getsenv,getmenv",
-	"getupval,getupvalue",
-	"setupvalue,setupval",
-	"getconst,getconstant",
-	"getgc,get_gc_objects",
-	"setconstant,setconst",
-	"getupvals,getupvalues",
-	"getconsts,getconstants",
-	"isreadonly,is_readonly",
-	"consoleclear,rconsoleclear",
-	"consoleinput,rconsoleinput",
-	"getcustomasset,getsynasset",
-	"isrbxactive,iswindowactive",
-	"setclipboard,writeclipboard",
-	"dumpstring,getscriptbytecode",
-	"hookfunction,detour_function",
-	"getconnections,get_signal_cons",
-	"getrawmetatable,debug_getmetatable",
-	"getcallingscript,get_calling_script",
-	"getloadedmodules,get_loaded_modules",
-	"getscriptclosure,get_script_function",
-	"getnamecallmethod,get_namecall_method",
-	"consolecreate,createconsole,rconsolecreate",
-	"closeconsole,consoledestroy,rconsoledestroy",
-	"rconsolename,consolesettitle,rconsolesettitle",
-	"getidentity,getthreadcontext,getthreadidentity,get_thread_identity",
-	"setidentity,setthreadcontext,setthreadidentity,set_thread_identity",
-	"consoleprint,writeconsole,rconsoleprint,rconsoleerr,rconsoleinfo,rconsolewarn",
-	"checkclosure,istempleclosure,issentinelclosure,iselectronfunction,is_synapse_function,is_protosmasher_closure",
-	--- @diagnostic disable:undefined-global
-	[(make_writeable or makewriteable) and function(Table,ReadOnly)
-		(ReadOnly and (make_readonly or makereadonly) or (make_writeable or makewriteable))(Table)
-	end or 30] = "setreadonly",
-	[hookfunction and getrawmetatable and function(Object,Method,Hook)
-		return hookfunction(getrawmetatable(Object)[Method],Hook)
-	end or 31] = "hookmetamethod",
-	[protect_gui and (function()
-		local HiddenUI = Instance.new"Folder"
-		protect_gui(HiddenUI)
-		HiddenUI.Parent = Services.CoreGui
-		return function()
-			return HiddenUI
-		end
-	end)() or function()
-		return Services.CoreGui
-	end] = "gethui,get_hidden_gui",
-	[(iscclosure or is_c_closure) and function(Closure)
-		return not (iscclosure or is_c_closure)(Closure)
-	end or 32] = "islclosure,is_l_closure"
-	--- @diagnostic enable:undefined-global
-} do
-	FunctionNames = FunctionNames:split()
-	local Function
-	for _,FunctionName in pairs(FunctionNames) do
-		Function = getfenv()[FunctionName]
-		if Function then
-			for _,FunctionName_ in pairs(FunctionNames) do
-				getfenv()[FunctionName_] = Function
-			end
-			break
-		end
-	end
-	if not Function and type(ReplacementFunction) == "function" then
+do
+	local function CheckCompatibility(FunctionNames)
+		FunctionNames = FunctionNames:split()
+		local Function
 		for _,FunctionName in pairs(FunctionNames) do
-			getfenv()[FunctionName] = ReplacementFunction
+			Function = getfenv()[FunctionName]
+			if Function then
+				for _,FunctionName_ in pairs(FunctionNames) do
+					getfenv()[FunctionName_] = Function
+				end
+				break
+			end
+		end
+		return Function
+	end
+	for _,FunctionNames in pairs{
+		"getsenv,getmenv",
+		"getupval,getupvalue",
+		"setupvalue,setupval",
+		"getconst,getconstant",
+		"getgc,get_gc_objects",
+		"setconstant,setconst",
+		"getupvals,getupvalues",
+		"getconsts,getconstants",
+		"isreadonly,is_readonly",
+		"consoleclear,rconsoleclear",
+		"consoleinput,rconsoleinput",
+		"getcustomasset,getsynasset",
+		"isrbxactive,iswindowactive",
+		"setclipboard,writeclipboard",
+		"dumpstring,getscriptbytecode",
+		"hookfunction,detour_function",
+		"getconnections,get_signal_cons",
+		"getrawmetatable,debug_getmetatable",
+		"getcallingscript,get_calling_script",
+		"getloadedmodules,get_loaded_modules",
+		"getscriptclosure,get_script_function",
+		"getnamecallmethod,get_namecall_method",
+		"consoleprint,writeconsole,rconsoleprint",
+		"consolecreate,createconsole,rconsolecreate",
+		"closeconsole,consoledestroy,rconsoledestroy",
+		"rconsolename,consolesettitle,rconsolesettitle",
+		"getidentity,getthreadcontext,getthreadidentity,get_thread_identity",
+		"setidentity,setthreadcontext,setthreadidentity,set_thread_identity",
+		"checkclosure,istempleclosure,issentinelclosure,iselectronfunction,is_synapse_function,is_protosmasher_closure",
+	} do
+		CheckCompatibility(FunctionNames)
+	end
+	for FunctionNames,Replacement in pairs{
+		--- @diagnostic disable:undefined-global
+		setreadonly = (make_writeable or makewriteable) and function(Table,ReadOnly)
+			(ReadOnly and (make_readonly or makereadonly) or (make_writeable or makewriteable))(Table)
+		end or 0,
+		hootmetamethod = hookfunction and getrawmetatable and function(Object,Method,Hook)
+			return hookfunction(getrawmetatable(Object)[Method],Hook)
+		end or 0,
+		setparentinternal = protect_gui and function(Object,Parent)
+			protect_gui(Object)
+			Object.Parent = Parent
+		end or 0,
+		["gethui,get_hidden_gui"] = protect_gui and (function()
+			local HiddenUI = Instance.new"Folder"
+			protect_gui(HiddenUI)
+			HiddenUI.Parent = Services.CoreGui
+			return function()
+				return HiddenUI
+			end
+		end)() or function()
+			return Services.CoreGui
+		end,
+		["islclosure,is_l_closure"] = (iscclosure or is_c_closure) and function(Closure)
+			return not (iscclosure or is_c_closure)(Closure)
+		end or 0
+		--- @diagnostic enable:undefined-global
+	} do
+		local Function = CheckCompatibility(FunctionNames)
+		if not Function and type(Replacement) == "function" then
+			for _,FunctionName in pairs(FunctionNames:split()) do
+				getfenv()[FunctionName] = Replacement
+			end
 		end
 	end
 end
 local ScriptEnvironment = getgenv and getgenv() or shared
 if not ScriptEnvironment.UltimatumLoaded then
-	Services.TestService:Message((("!!_5#_4#_#_4#9_#9_#2_4#2_6#_#9_#_4#_#2_4#2!_4#_4#_#_8#_9#_5#4_#4_3#_#_3#_5#_4#_#4_#4!_3#_4#_#_8#_9#_5#_#3_#_2#_3#_2#_5#_4#_#_#3_#!_2#_4#_#_8#_9#_5#_2#_2#_#9_#_5#_4#_#_2#_2#!_#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#6_2#8_#_5#9_#_7#_#_5#_#_6#6_2#_7#!"):gsub("%p%d?",function(Input)
+	print((("!!_5#_4#_#_4#9_#9_#2_4#2_6#_#9_#_4#_#2_4#2!_4#_4#_#_8#_9#_5#4_#4_3#_#_3#_5#_4#_#4_#4!_3#_4#_#_8#_9#_5#_#3_#_2#_3#_2#_5#_4#_#_#3_#!_2#_4#_#_8#_9#_5#_2#_2#_#9_#_5#_4#_#_2#_2#!_#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#6_2#8_#_5#9_#_7#_#_5#_#_6#6_2#_7#!"):gsub("%p%d?",function(Input)
 		for Character,Format in pairs{
 			["!"] = "\n",
 			_ = (" "):rep(1 < #Input and Input:sub(2,2) or 1),
