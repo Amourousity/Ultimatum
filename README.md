@@ -7,7 +7,7 @@
 - **Highly undetectable** - You won't be getting banned any time soon!
 - **High exploit support** - Practically any exploit can run it!
 
-*Keep in mind that the effectiveness of these features is dependent on the quality of your exploit. Exploits like [Script-Ware](https://script-ware.com) or [Synapse](https://x.synapse.to) are recommended.*
+*Keep in mind that the effectiveness of these features is dependent on the quality of your exploit. Exploits like [Script-Ware](https://script-ware.com) ($20) or [Krnl](https://krnl.ca) (free) are recommended.*
 ## Usage
 In order for offline support to work, you ***MUST*** use the loader directly.
 
