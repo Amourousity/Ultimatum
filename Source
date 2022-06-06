@@ -115,7 +115,8 @@ for ReplacementFunction,FunctionNames in pairs{
 		end
 	end
 end
-if not Ultimatum then
+local ScriptEnvironment = getgenv and getgenv() or shared
+if not ScriptEnvironment.UltimatumLoaded then
 	Services.TestService:Message((("!!_5#_4#_#_4#9_#9_#2_4#2_6#_#9_#_4#_#2_4#2!_4#_4#_#_8#_9#_5#4_#4_3#_#_3#_5#_4#_#4_#4!_3#_4#_#_8#_9#_5#_#3_#_2#_3#_2#_5#_4#_#_#3_#!_2#_4#_#_8#_9#_5#_2#_2#_#9_#_5#_4#_#_2#_2#!_#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#6_2#8_#_5#9_#_7#_#_5#_#_6#6_2#_7#!"):gsub("%p%d?",function(Input)
 		for Character,Format in pairs{
 			["!"] = "\n",
@@ -128,17 +129,7 @@ if not Ultimatum then
 		end
 	end)))
 end
-pcall(Ultimatum)
-if Services.CoreGui:FindFirstChild"RobloxLoadingGui" and Services.CoreGui.RobloxLoadingGui:FindFirstChild"BlackFrame" then
-	local LoadStart,Connection = os.clock()
-	Connection = Services.CoreGui.RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency":Connect(function()
-		Connection:Disconnect()
-		LoadStart = 0
-	end)
-	repeat
-		task.wait()
-	until 3 < os.clock()-LoadStart
-end
+pcall(ScriptEnvironment.Ultimatum)
 local function EscapeTable(Value,Escape)
 	if not Escape and Value == nil then
 		return nil
@@ -229,6 +220,42 @@ local function Create(Data)
 	end
 	return Instances
 end
+local OwnerSettings
+do
+	local Success,Output = pcall(Services.HttpService.JSONDecode,Services.HttpService,isfile and isfile"Settings.Ultimatum" and readfile"Settings.Ultimatum" or "[]")
+	local Settings = Valid.Table(Success and Output or {},{
+		Scale = 1,
+		BlurType = "All",
+		AutoUpdate = true,
+		LoadOnRejoin = true,
+		FancyDragging = true,
+		PlayIntro = "Always",
+		Notifications = "All",
+		EdgeDetect = "Gui & Mouse"
+	})
+	OwnerSettings = setmetatable({},{
+		__index = function(_,Index)
+			return Settings[Index]
+		end,
+		__newindex = function(_,Index,Value)
+			Settings[Index] = Value
+			if writefile then
+				writefile("Settings.Ultimatum",Services.HttpService:JSONEncode(Settings))
+			end
+		end,
+		__metatable = "nil"
+	})
+end
+if Services.CoreGui:FindFirstChild"RobloxLoadingGui" and Services.CoreGui.RobloxLoadingGui:FindFirstChild"BlackFrame" then
+	local LoadStart,Connection = os.clock()
+	Connection = Services.CoreGui.RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency":Connect(function()
+		Connection:Disconnect()
+		LoadStart = 0
+	end)
+	repeat
+		task.wait()
+	until 3 < os.clock()-LoadStart
+end
 local Gui = Create{
 	{
 		Name = "Holder",
@@ -311,15 +338,18 @@ local function Animate(Instance_,Data)
 		end
 	end
 end
----@diagnostic disable-next-line: unused-function
 local function Notify(Settings)
 	Settings = Valid.Table(Settings,{
 		Buttons = {},
 		Duration = 5,
+		Urgent = false,
 		Yields = false,
 		CalculateDuration = false,
-		Text = "Ultimatum\n(no text)"
+		Text = "<b>Ultimatum</b>\n(no text)"
 	})
+	if OwnerSettings.Notifications == "Off" or OwnerSettings.Notifications == "Urgent" and not Settings.Urgent then
+		return
+	end
 	local Notification = Create{
 		{
 			Name = "Main",
@@ -424,7 +454,7 @@ local LastCheck,Focused,Debounce = 0,isrbxactive and isrbxactive() or true,true
 local Connections = {
 	isfile and Services.RunService.Heartbeat:Connect(function()
 		Delta,LastFrame = (os.clock()-LastFrame)*60,os.clock()
-		if 60 < os.clock()-LastCheck then
+		if OwnerSettings.AutoUpdate and 60 < os.clock()-LastCheck then
 			LastCheck = os.clock()
 			local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source",true)
 			if Success and (not isfile"Source.Ultimatum" or Result ~= readfile"Source.Ultimatum") then
@@ -432,6 +462,7 @@ local Connections = {
 				loadstring(Result,"Ultimatum")()
 			elseif not Success and not isfile"Source.Ultimatum" then
 				Notify{
+					Urgent = true,
 					CalculateDuration = true,
 					Text = ("<b>Error</b>\n%s"):format(Result)
 				}
@@ -441,7 +472,7 @@ local Connections = {
 		Delta,LastFrame = (os.clock()-LastFrame)*60,os.clock()
 	end),
 	queue_on_teleport and isfile and Services.Players.LocalPlayer.OnTeleport:Connect(function(TeleportState)
-		if TeleportState == Enum.TeleportState.Started then
+		if OwnerSettings.LoadOnRejoin and TeleportState == Enum.TeleportState.Started then
 			queue_on_teleport(isfile"Source.Ultimatum" and readfile"Source.Ultimatum" or "error'Source.Ultimatum missing from workspace folder'")
 		end
 	end),
@@ -464,17 +495,16 @@ local function EnableDrag(Frame)
 				local MousePosition = Services.UserInputService:GetMouseLocation()
 				local ScreenSize,CardSize = workspace.CurrentCamera.ViewportSize,Frame.AbsoluteSize
 				local XVelocity = MousePosition.X-(Frame.AbsolutePosition.X+CardSize.X/2)
-				local NewMousePosition = Vector2.new(math.clamp(MousePosition.X,CardSize.X/2,ScreenSize.X-CardSize.X/2),math.clamp(MousePosition.Y,CardSize.Y/2,ScreenSize.Y-CardSize.Y/2))
-				if NewMousePosition ~= MousePosition then
-					MousePosition = NewMousePosition
-					if mousemoveabs and Focused then
-						mousemoveabs(0,0)
-						mousemoverel(MousePosition.X,MousePosition.Y)
+				local NewPosition = OwnerSettings.EdgeDetect ~= "None" and Vector2.new(math.clamp(MousePosition.X,CardSize.X/2,ScreenSize.X-CardSize.X/2),math.clamp(MousePosition.Y,CardSize.Y/2,ScreenSize.Y-CardSize.Y/2)) or MousePosition
+				if NewPosition ~= MousePosition then
+					if OwnerSettings.EdgeDetect == "Gui & Mouse" and mousemoverel and Focused then
+						mousemoverel(NewPosition.X-MousePosition.X,NewPosition.Y-MousePosition.Y)
 					end
+					MousePosition = NewPosition
 				end
 				FinalPosition = UDim2.fromScale((MousePosition.X-CardSize.X/2)/ScreenSize.X,(MousePosition.Y-CardSize.Y/2)/ScreenSize.Y)
-				Frame.Position = DeltaLerp(Frame.Position,FinalPosition,.5)
-				Frame.Rotation = DeltaLerp(math.abs(Frame.Rotation) < .1 and 0 or Frame.Rotation,0,.5)+math.clamp(XVelocity/(.065*CardSize.X),-1500/CardSize.X,1500/CardSize.X)
+				Frame.Position = OwnerSettings.FancyDragging and DeltaLerp(Frame.Position,FinalPosition,.5) or FinalPosition
+				Frame.Rotation = OwnerSettings.FancyDragging and (DeltaLerp(math.abs(Frame.Rotation) < .1 and 0 or Frame.Rotation,0,.5)+math.clamp(XVelocity/(.065*CardSize.X),-1500/CardSize.X,1500/CardSize.X)) or 0
 			end)
 			table.insert(Connections,DragConnection)
 		end
@@ -505,6 +535,13 @@ local function EnableDrag(Frame)
 			end
 		end
 	end)
+	for _,Connection in pairs{
+		Removed,
+		InputBegan,
+		InputEnded
+	} do
+		table.insert(Connections,Connection)
+	end
 end
 --[[local function GetHumanoid(Target)
 	Target = ValidInstance(Target,"Model") or ValidInstance(Target,"Player") and (Target.Character or Target.CharacterAdded:Wait())
@@ -518,93 +555,93 @@ Commands = {
 		local Humanoid = Owner.Character.Humanoid
 		local FakeWalkSpeed = Humanoid.WalkSpeed
 		local OldIndex,OldNewIndex
-		OldIndex = hookmetamethod(game,"__index",function(...)
+		OldIndex = hookmetamethod(game,"__index",newcclosure(function(...)
 			if not checkcaller() and ... == Humanoid and select(2,...) == "WalkSpeed" then
 				return FakeWalkSpeed
 			end
 			return OldIndex(...)
-		end)
+		end))
 		Humanoid.WalkSpeed = 100
-		OldNewIndex = hookmetamethod(game,"__newindex",function(...)
+		OldNewIndex = hookmetamethod(game,"__newindex",newcclosure(function(...)
 			if not checkcaller() and ... == Humanoid and select(2,...) == "WalkSpeed" then
 				FakeWalkSpeed = tonumber(select(3,...)) or 0
 				return
 			end
 			return OldNewIndex(...)
-		end)
+		end))
 	end
 }]]
-do
-	local ScriptEnvironment = getgenv and getgenv() or shared
-	ScriptEnvironment.Ultimatum = function()
-		for _,Connection in pairs(Connections) do
-			pcall(Connection.Disconnect,Connection)
-		end
-		ScriptEnvironment.Ultimatum = nil
-		Gui:Destroy()
-		--- @diagnostic disable-next-line:undefined-global
-		if protect_gui then
-			pcall(game.Destroy,gethui())
-		end
+ScriptEnvironment.Ultimatum = function()
+	for _,Connection in pairs(Connections) do
+		pcall(Connection.Disconnect,Connection)
+	end
+	ScriptEnvironment.Ultimatum = nil
+	Gui:Destroy()
+	--- @diagnostic disable-next-line:undefined-global
+	if protect_gui then
+		pcall(game.Destroy,gethui())
 	end
 end
 EnableDrag(Gui.Main)
-Animate(Gui.Main,{
-	Time = .5,
-	Yields = true,
-	Properties = {
-		Position = UDim2.new(.5,0,.5,0),
-		BackgroundTransparency = 0
-	}
-})
-Animate(Gui.Logo,{
-	Time = .5,
-	Properties = {
-		ImageTransparency = 0,
-		Rotation = 0
-	}
-})
-Animate(Gui.MainCorner,{
-	Time = .5,
-	Yields = true,
-	Properties = {
-		CornerRadius = UDim.new(0,5)
-	}
-})
-task.wait(.5)
-Animate(Gui.Main,{
-	Time = .5,
-	Properties = {
-		Rotation = 180,
-		Size = UDim2.new()
-	},
-	EasingStyle = Enum.EasingStyle.Back,
-	EasingDirection = Enum.EasingDirection.In
-})
-Animate(Gui.MainCorner,{
-	Time = .5,
-	Properties = {
-		CornerRadius = UDim.new(.5,0)
-	}
-})
-Animate(Gui.Logo,{
-	Time = .5,
-	Yields = true,
-	Properties = {
-		ImageTransparency = 1
-	}
-})
+if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not ScriptEnvironment.UltimatumLoaded then
+	ScriptEnvironment.UltimatumLoaded = true
+	Animate(Gui.Main,{
+		Time = .5,
+		Yields = true,
+		Properties = {
+			Position = UDim2.new(.5,0,.5,0),
+			BackgroundTransparency = 0
+		}
+	})
+	Animate(Gui.Logo,{
+		Time = .5,
+		Properties = {
+			ImageTransparency = 0,
+			Rotation = 0
+		}
+	})
+	Animate(Gui.MainCorner,{
+		Time = .5,
+		Yields = true,
+		Properties = {
+			CornerRadius = UDim.new(0,5)
+		}
+	})
+	task.wait(.5)
+	Animate(Gui.Main,{
+		Time = .5,
+		Properties = {
+			Rotation = 180,
+			Size = UDim2.new()
+		},
+		EasingStyle = Enum.EasingStyle.Back,
+		EasingDirection = Enum.EasingDirection.In
+	})
+	Animate(Gui.MainCorner,{
+		Time = .5,
+		Properties = {
+			CornerRadius = UDim.new(.5,0)
+		}
+	})
+	Animate(Gui.Logo,{
+		Time = .5,
+		Yields = true,
+		Properties = {
+			ImageTransparency = 1
+		}
+	})
+end
 for Name,Properties in pairs{
 	Logo = {
-		ImageTransparency = 0,
-		Size = UDim2.new(0,25,0,25),
-		Position = UDim2.new(0,5,0,5),
+		Rotation = 0,
+		ImageTransparency = 0
 	},
 	Main = {
 		Rotation = 0,
 		AnchorPoint = Vector2.zero,
-		Size = UDim2.new(0,35,0,35),
-		Position = UDim2.new(0,-17.5,1,0),
+		BackgroundTransparency = 0,
+		Size = UDim2.new(0,35*OwnerSettings.Scale,0,35*OwnerSettings.Scale),
+		Position = UDim2.new(0,0,1,0),
 	},
 	MainCorner = {
 		CornerRadius = UDim.new(0,5)
@@ -621,7 +658,7 @@ end
 Animate(Gui.Main,{
 	Time = .5,
 	Properties = {
-		Position = UDim2.new(0,0,1,-35)
+		Position = UDim2.new(0,0,1,-35*OwnerSettings.Scale)
 	}
 })
 Debounce = false
