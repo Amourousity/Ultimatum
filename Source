@@ -602,14 +602,9 @@ if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and 
 	ScriptEnvironment.UltimatumLoaded = true
 	if OwnerSettings.BlurType ~= "None" then
 		task.spawn(function()
-			local Blur = NewInstance("BlurEffect",nil,{
+			local Blur = NewInstance("BlurEffect",Services.Lighting,{
 				Size = 0
 			})
-			if setparentinternal then
-				setparentinternal(Blur,Services.Lighting)
-			else
-				Blur.Parent = Services.Lighting
-			end
 			Animate(Blur,{
 				Time = .5,
 				Yields = true,
