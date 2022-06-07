@@ -600,26 +600,41 @@ end
 EnableDrag(Gui.Main)
 if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not ScriptEnvironment.UltimatumLoaded then
 	ScriptEnvironment.UltimatumLoaded = true
-	if OwnerSettings.BlurType == "Background" then
-		local Blur = NewInstance("BlurEffect",nil,{
-			Size = 0
-		})
-		if setparentinternal then
-			setparentinternal(Blur,Services.Lighting)
-		else
-			Blur.Parent = Services.Lighting
-		end
-		Animate(Blur,{
-			Time = .1,
-			Properties = {
-				Size = 50
-			},
-			EasingStyle = Enum.EasingStyle.Linear
-		})
-		task.delay(2,game.Destroy,Blur)
-	elseif OwnerSettings.BlurType == "All" then
-		Services.RunService:SetRobloxGuiFocused(true)
-		task.delay(2,Services.RunService.SetRobloxGuiFocused,Services.RunService,false)
+	if OwnerSettings.BlurType ~= "None" then
+		task.spawn(function()
+			local Blur = NewInstance("BlurEffect",nil,{
+				Size = 0
+			})
+			if setparentinternal then
+				setparentinternal(Blur,Services.Lighting)
+			else
+				Blur.Parent = Services.Lighting
+			end
+			Animate(Blur,{
+				Time = .5,
+				Yields = true,
+				Properties = {
+					Size = 50
+				},
+				EasingStyle = Enum.EasingStyle.Linear
+			})
+			if OwnerSettings.BlurType == "All" then
+				Services.RunService:SetRobloxGuiFocused(true)
+				Blur.Enabled = false
+				task.delay(1,Services.RunService.SetRobloxGuiFocused,Services.RunService,false)
+			end
+			task.wait(1)
+			Blur.Enabled = true
+			Animate(Blur,{
+				Time = .5,
+				Yields = true,
+				Properties = {
+					Size = 0
+				},
+				EasingStyle = Enum.EasingStyle.Linear
+			})
+			Blur:Destroy()
+		end)
 	end
 	Animate(Gui.Main,{
 		Time = .5,
