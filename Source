@@ -1,18 +1,18 @@
-   --[[]    [|] [|]    [|||||||||] [|||||||||] [||]    [||]      [|] [|||||||||] [|]    [|] [||]    [||]
-    [|]    [|] [|]        [|]         [|]     [||||] [||||]   [|] [|]   [|]     [|]    [|] [||||] [||||]
-   [|]    [|] [|]        [|]         [|]     [|] [|||] [|]  [|]   [|]  [|]     [|]    [|] [|] [|||] [|]
-  [|]    [|] [|]        [|]         [|]     [|]  [|]  [|] [|||||||||] [|]     [|]    [|] [|]  [|]  [|]
- [|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]
-[|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]
-[||||||]  [||||||||] [|]     [|||||||||] [|]       [|] [|]     [|] [|]      [||||||]  [|]       []]
+   --[[]	[|] [|]	[|||||||||] [|||||||||] [||]	[||]	  [|] [|||||||||] [|]	[|] [||]	[||]
+	[|]	[|] [|]		[|]		 [|]	 [||||] [||||]   [|] [|]   [|]	 [|]	[|] [||||] [||||]
+   [|]	[|] [|]		[|]		 [|]	 [|] [|||] [|]  [|]   [|]  [|]	 [|]	[|] [|] [|||] [|]
+  [|]	[|] [|]		[|]		 [|]	 [|]  [|]  [|] [|||||||||] [|]	 [|]	[|] [|]  [|]  [|]
+ [|]	[|] [|]		[|]		 [|]	 [|]	   [|] [|]	 [|] [|]	 [|]	[|] [|]	   [|]
+[|]	[|] [|]		[|]		 [|]	 [|]	   [|] [|]	 [|] [|]	 [|]	[|] [|]	   [|]
+[||||||]  [||||||||] [|]	 [|||||||||] [|]	   [|] [|]	 [|] [|]	  [||||||]  [|]	   []]
 for _,Table in pairs{
-	{"fluxus",false},
-	{"syn",false},
-	{"http",false},
-	{"crypt",false},
-	{"cache","cache_%s"},
-	{"base64","base64%s"},
-	{"custom","custom_%s"}
+	[3] = {"http",false},
+	[4] = {"crypt",false},
+	[5] = {"cache","cache_%s"},
+	[6] = {"base64","base64%s"},
+	[2] = {"\x73\x79\x6E",false},
+	[7] = {"custom","custom_%s"},
+	[1] = {"\x66\x6C\x75\x78\x75\x73",false}
 } do
 	local LibraryName,Interpret = unpack(Table)
 	for FunctionName,Function in pairs(getfenv()[LibraryName] or {}) do
@@ -73,7 +73,6 @@ do
 		"isreadonly,is_readonly",
 		"consoleclear,rconsoleclear",
 		"consoleinput,rconsoleinput",
-		"getcustomasset,getsynasset",
 		"isrbxactive,iswindowactive",
 		"setclipboard,writeclipboard",
 		"dumpstring,getscriptbytecode",
@@ -81,6 +80,7 @@ do
 		"getconnections,get_signal_cons",
 		"getrawmetatable,debug_getmetatable",
 		"getcallingscript,get_calling_script",
+		"getcustomasset,get\x73\x79\x6Easset",
 		"getloadedmodules,get_loaded_modules",
 		"getscriptclosure,get_script_function",
 		"getnamecallmethod,get_namecall_method",
@@ -90,12 +90,12 @@ do
 		"rconsolename,consolesettitle,rconsolesettitle",
 		"getidentity,getthreadcontext,getthreadidentity,get_thread_identity",
 		"setidentity,setthreadcontext,setthreadidentity,set_thread_identity",
-		"checkclosure,istempleclosure,issentinelclosure,iselectronfunction,is_synapse_function,is_protosmasher_closure",
+		"checkclosure,is\x74\x65\x6D\x70\x6C\x65closure,is\x73\x65\x6E\x74\x69\x6E\x65\x6Cclosure,is\x65\x6C\x65\99\x74\x72\x6F\x6Efunction,is_\x73\x79\x6E\97\x70\x73\x65_function,is_\x70\x72\x6F\x74\x6F\x73\x6D\97\x73\x68\x65\x72_closure"
 	} do
 		CheckCompatibility(FunctionNames)
 	end
+	--- @diagnostic disable:undefined-global
 	for FunctionNames,Replacement in pairs{
-		--- @diagnostic disable:undefined-global
 		setreadonly = (make_writeable or makewriteable) and function(Table,ReadOnly)
 			(ReadOnly and (make_readonly or makereadonly) or (make_writeable or makewriteable))(Table)
 		end or 0,
@@ -119,7 +119,6 @@ do
 		["islclosure,is_l_closure"] = (iscclosure or is_c_closure) and function(Closure)
 			return not (iscclosure or is_c_closure)(Closure)
 		end or 0
-		--- @diagnostic enable:undefined-global
 	} do
 		local Function = CheckCompatibility(FunctionNames)
 		if not Function and type(Replacement) == "function" then
@@ -128,6 +127,7 @@ do
 			end
 		end
 	end
+	--- @diagnostic enable:undefined-global
 end
 local ScriptEnvironment = getgenv and getgenv() or shared
 if not ScriptEnvironment.UltimatumLoaded then
@@ -600,6 +600,27 @@ end
 EnableDrag(Gui.Main)
 if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not ScriptEnvironment.UltimatumLoaded then
 	ScriptEnvironment.UltimatumLoaded = true
+	if OwnerSettings.BlurType == "Guis" then
+		local Blur = NewInstance("BlurEffect",nil,{
+			Size = 0
+		})
+		if setparentinternal then
+			setparentinternal(Blur,Services.Lighting)
+		else
+			Blur.Parent = Services.Lighting
+		end
+		Animate(Blur,{
+			Time = .1,
+			Properties = {
+				Size = 50
+			},
+			EasingStyle = Enum.EasingStyle.Linear
+		})
+		task.delay(2,game.Destroy,Blur)
+	elseif OwnerSettings.BlurType == "All" then
+		Services.RunService:SetRobloxGuiFocused(true)
+		task.delay(2,Services.RunService.SetRobloxGuiFocused,Services.RunService,false)
+	end
 	Animate(Gui.Main,{
 		Time = .5,
 		Yields = true,
