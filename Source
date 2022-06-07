@@ -600,7 +600,7 @@ end
 EnableDrag(Gui.Main)
 if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not ScriptEnvironment.UltimatumLoaded then
 	ScriptEnvironment.UltimatumLoaded = true
-	if OwnerSettings.BlurType == "Guis" then
+	if OwnerSettings.BlurType == "Background" then
 		local Blur = NewInstance("BlurEffect",nil,{
 			Size = 0
 		})
