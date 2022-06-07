@@ -471,7 +471,7 @@ local Connections = {
 		Delta,LastFrame = (os.clock()-LastFrame)*60,os.clock()
 		if OwnerSettings.AutoUpdate and 60 < os.clock()-LastCheck then
 			LastCheck = os.clock()
-			local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source",true)
+			local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua",true)
 			if Success and (not isfile"Source.Ultimatum" or Result ~= readfile"Source.Ultimatum") then
 				writefile("Source.Ultimatum",Result)
 				loadstring(Result,"Ultimatum")()
