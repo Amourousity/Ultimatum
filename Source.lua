@@ -482,7 +482,7 @@ do
 			Time = .25,
 			Properties = {
 				Size = UDim2.new(0,(Expand and 350 or 35)*OwnerSettings.Scale,0,35*OwnerSettings.Scale),
-				Position = Expand and UDim2.new(0,workspace.CurrentCamera.ViewportSize.X/2 < Gui.Main.AbsolutePosition.X+Gui.Main.AbsoluteSize.X/2 and Gui.Main.AbsolutePosition.X-(350*OwnerSettings.Scale-Gui.Main.AbsoluteSize.X) or Gui.Main.AbsolutePosition.X,0,Gui.Main.AbsoluteSize.Y) or LastPosition
+				Position = Expand and UDim2.new(0,workspace.CurrentCamera.ViewportSize.X/2 < Gui.Main.AbsolutePosition.X+Gui.Main.AbsoluteSize.X/2 and Gui.Main.AbsolutePosition.X-(350*OwnerSettings.Scale-Gui.Main.AbsoluteSize.X) or Gui.Main.AbsolutePosition.X,0,Gui.Main.AbsolutePosition.Y) or LastPosition
 			}
 		})
 	end
