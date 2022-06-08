@@ -10,7 +10,7 @@ if isfile then
 	if Success and (not isfile"Source.Ultimatum" or Result ~= readfile"Source.Ultimatum") then
 		writefile("Source.Ultimatum",Result)
 	elseif not Success and not isfile"Source.Ultimatum" then
-		error("Ultimatum |",Result)
+		error("Ultimatum | "..tostring(Result),0)
 	end
 	loadstring(readfile"Source.Ultimatum","Ultimatum")()
 else
