@@ -247,6 +247,7 @@ do
 	local Settings = Valid.Table(Success and Output or {},{
 		Scale = 1,
 		BlurType = "All",
+		StayOpen = false,
 		AutoUpdate = true,
 		LoadOnRejoin = true,
 		FancyDragging = true,
@@ -477,14 +478,16 @@ local ExpandGui
 do
 	local LastPosition
 	ExpandGui = function(Expand)
-		LastPosition = Expand and Gui.Main.Position or LastPosition
-		Animate(Gui.Main,{
-			Time = .25,
-			Properties = {
-				Size = UDim2.new(0,(Expand and 350 or 35)*OwnerSettings.Scale,0,35*OwnerSettings.Scale),
-				Position = Expand and UDim2.new((workspace.CurrentCamera.ViewportSize.X/2 < Gui.Main.AbsolutePosition.X+Gui.Main.AbsoluteSize.X/2 and Gui.Main.AbsolutePosition.X-(350*OwnerSettings.Scale-Gui.Main.AbsoluteSize.X) or Gui.Main.AbsolutePosition.X)/workspace.CurrentCamera.ViewportSize.X,0,(Gui.Main.AbsolutePosition.Y+36)/workspace.CurrentCamera.ViewportSize.Y,0) or LastPosition
-			}
-		})
+		if not Debounce and not OwnerSettings.StayOpen then
+			LastPosition = Expand and Gui.Main.Position or LastPosition
+			Animate(Gui.Main,{
+				Time = .25,
+				Properties = {
+					Size = UDim2.new(0,(Expand and 350 or 35)*OwnerSettings.Scale,0,35*OwnerSettings.Scale),
+					Position = Expand and UDim2.new((workspace.CurrentCamera.ViewportSize.X/2 < Gui.Main.AbsolutePosition.X+Gui.Main.AbsoluteSize.X/2 and Gui.Main.AbsolutePosition.X-(350*OwnerSettings.Scale-Gui.Main.AbsoluteSize.X) or Gui.Main.AbsolutePosition.X)/workspace.CurrentCamera.ViewportSize.X,0,(Gui.Main.AbsolutePosition.Y+36)/workspace.CurrentCamera.ViewportSize.Y,0) or LastPosition
+				}
+			})
+		end
 	end
 end
 local Connections = {
@@ -509,7 +512,7 @@ local Connections = {
 	end),
 	queue_on_teleport and isfile and Services.Players.LocalPlayer.OnTeleport:Connect(function(TeleportState)
 		if OwnerSettings.LoadOnRejoin and TeleportState == Enum.TeleportState.Started then
-			queue_on_teleport(isfile"Source.Ultimatum" and readfile"Source.Ultimatum" or "error'Source.Ultimatum missing from workspace folder'")
+			queue_on_teleport(isfile"Source.Ultimatum" and readfile"Source.Ultimatum" or "error('Source.Ultimatum missing from workspace folder',0)")
 		end
 	end),
 	Services.UserInputService.WindowFocused:Connect(function()
@@ -538,6 +541,8 @@ local function EnableDrag(Frame)
 	local FinalPosition = UDim2.new()
 	local InputBegan,InputEnded,Removed = Frame.InputBegan:Connect(function(Input,Ignore)
 		if not Ignore and not Debounce and Input.UserInputType == Enum.UserInputType.MouseButton1 then
+			ExpandGui(false)
+			Debounce = true
 			DragConnection = Services.RunService.RenderStepped:Connect(function()
 				local MousePosition = Services.UserInputService:GetMouseLocation()
 				local ScreenSize,CardSize = workspace.CurrentCamera.ViewportSize,Frame.AbsoluteSize
@@ -567,6 +572,8 @@ local function EnableDrag(Frame)
 					Position = FinalPosition
 				}
 			})
+			Debounce = false
+			ExpandGui(true)
 		end
 	end)
 	Removed = Frame.AncestryChanged:Connect(function()
@@ -735,7 +742,7 @@ for Name,Properties in pairs{
 		Gui[Name][Property] = Value
 	end
 end
-Gui:Destroy"MainAspectRatioConstraint"
+Gui.MainAspectRatioConstraint.Parent = Gui.Logo
 Animate(Gui.Main,{
 	Time = .5,
 	Properties = {
