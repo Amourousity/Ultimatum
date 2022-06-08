@@ -321,6 +321,14 @@ local Gui = Create{
 		}
 	},
 	{
+		Name = "MainAspectRatioConstraint",
+		Parent = "Main",
+		ClassName = "UIAspectRatioConstraint",
+		Properties = {
+			DominantAxis = Enum.DominantAxis.Height
+		}
+	},
+	{
 		Name = "Logo",
 		Parent = "Main",
 		ClassName = "ImageLabel",
@@ -474,7 +482,7 @@ do
 			Time = .25,
 			Properties = {
 				Size = UDim2.new(0,(Expand and 350 or 35)*OwnerSettings.Scale,0,35*OwnerSettings.Scale),
-				Position = Expand and UDim2.new((workspace.CurrentCamera.ViewportSize.X/2 < Gui.Main.AbsolutePosition.X+Gui.Main.AbsoluteSize.X/2 and Gui.Main.AbsolutePosition.X-(350*OwnerSettings.Scale-Gui.Main.AbsoluteSize.X) or Gui.Main.AbsolutePosition.X)/workspace.CurrentCamera.ViewportSize.Y,0,(Gui.Main.AbsolutePosition.Y+36)/workspace.CurrentCamera.ViewportSize.Y,0) or LastPosition
+				Position = Expand and UDim2.new(0,workspace.CurrentCamera.ViewportSize.X/2 < Gui.Main.AbsolutePosition.X+Gui.Main.AbsoluteSize.X/2 and Gui.Main.AbsolutePosition.X-(350*OwnerSettings.Scale-Gui.Main.AbsoluteSize.X) or Gui.Main.AbsolutePosition.X,0,Gui.Main.AbsolutePosition.Y) or LastPosition
 			}
 		})
 	end
@@ -727,6 +735,7 @@ for Name,Properties in pairs{
 		Gui[Name][Property] = Value
 	end
 end
+Gui:Destroy"MainAspectRatioConstraint"
 Animate(Gui.Main,{
 	Time = .5,
 	Properties = {
