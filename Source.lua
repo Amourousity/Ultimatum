@@ -5,33 +5,40 @@
  [|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]
 [|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]
 [||||||]  [||||||||] [|]     [|||||||||] [|]       [|] [|]     [|] [|]      [||||||]  [|]       []]
+local ScriptEnvironment = getfenv()
 for _,Table in pairs{
-	[3] = {"http",false},
-	[4] = {"crypt",false},
-	[5] = {"cache","cache_%s"},
-	[6] = {"base64","base64%s"},
-	[2] = {"\x73\x79\x6E",false},
-	[7] = {"custom","custom_%s"},
-	[1] = {"\x66\x6C\x75\x78\x75\x73",false}
+	[3] = "http",
+	[4] = "crypt",
+	[5] = {
+		"cache",
+		"cache_%s"
+	},
+	[6] = {
+		"base64",
+		"base64%s"
+	},
+	[7] = {
+		"custom",
+		"custom_%s"
+	},
+	[2] = "\x73\x79\x6E",
+	[1] = "\x66\x6C\x75\x78\x75\x73"
 } do
-	local LibraryName,Interpret = unpack(Table)
-	for FunctionName,Function in pairs(getfenv()[LibraryName] or {}) do
-		getfenv()[(Interpret or "%s"):format(FunctionName)] = Function
+	local LibraryName,Interpret = unpack(type(Table) == "table" and Table or {Table})
+	for FunctionName,Function in pairs(ScriptEnvironment[LibraryName] or {}) do
+		ScriptEnvironment[(Interpret or "%s"):format(FunctionName)] = Function
 	end
 end
-do
-	local DebugBlacklist = {
+for FunctionName,Function in pairs(debug) do
+	if not table.find({
 		"info",
 		"traceback",
 		"profileend",
 		"profilebegin",
 		"setmemorycategory",
 		"resetmemorycategory"
-	}
-	for FunctionName,Function in pairs(debug) do
-		if not table.find(DebugBlacklist,FunctionName) then
-			getfenv()[getfenv()[FunctionName] and ("debug_%s"):format(FunctionName) or FunctionName] = Function
-		end
+	},FunctionName) then
+		ScriptEnvironment[ScriptEnvironment[FunctionName] and ("debug_%s"):format(FunctionName) or FunctionName] = Function
 	end
 end
 local Nil,Delta,LastFrame = {},10,os.clock()
@@ -51,10 +58,10 @@ do
 		FunctionNames = FunctionNames:split()
 		local Function
 		for _,FunctionName in pairs(FunctionNames) do
-			Function = getfenv()[FunctionName]
+			Function = ScriptEnvironment[FunctionName]
 			if Function then
 				for _,FunctionName_ in pairs(FunctionNames) do
-					getfenv()[FunctionName_] = Function
+					ScriptEnvironment[FunctionName_] = Function
 				end
 				break
 			end
@@ -94,7 +101,7 @@ do
 	} do
 		CheckCompatibility(FunctionNames)
 	end
-	--- @diagnostic disable:undefined-global
+	--- @diagnostic disable undefined-global
 	for FunctionNames,Replacement in pairs{
 		setreadonly = (make_writeable or makewriteable) and function(Table,ReadOnly)
 			(ReadOnly and (make_readonly or makereadonly) or (make_writeable or makewriteable))(Table)
@@ -123,14 +130,14 @@ do
 		local Function = CheckCompatibility(FunctionNames)
 		if not Function and type(Replacement) == "function" then
 			for _,FunctionName in pairs(FunctionNames:split()) do
-				getfenv()[FunctionName] = Replacement
+				ScriptEnvironment[FunctionName] = Replacement
 			end
 		end
 	end
-	--- @diagnostic enable:undefined-global
+	--- @diagnostic enable undefined-global
 end
-local ScriptEnvironment = getgenv and getgenv() or shared
-if not ScriptEnvironment.UltimatumLoaded then
+local GlobalEnvironment = getgenv and getgenv() or shared
+if not GlobalEnvironment.UltimatumLoaded then
 	print((("!!_5#_4#_#_4#9_#9_#2_4#2_6#_#9_#_4#_#2_4#2!_4#_4#_#_8#_9#_5#4_#4_3#_#_3#_5#_4#_#4_#4!_3#_4#_#_8#_9#_5#_#3_#_2#_3#_2#_5#_4#_#_#3_#!_2#_4#_#_8#_9#_5#_2#_2#_#9_#_5#_4#_#_2#_2#!_#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#6_2#8_#_5#9_#_7#_#_5#_#_6#6_2#_7#!"):gsub("%p%d?",function(Input)
 		for Character,Format in pairs{
 			["!"] = "\n",
@@ -143,11 +150,11 @@ if not ScriptEnvironment.UltimatumLoaded then
 		end
 	end)))
 end
-pcall(ScriptEnvironment.Ultimatum)
-local function EscapeTable(Value,Escape)
-	if not Escape and Value == nil then
-		return nil
-	elseif Escape and Value == nil then
+pcall(GlobalEnvironment.Ultimatum)
+local function NilConvert(Value)
+	if Value == nil then
+		return Nil
+	elseif Value == Nil then
 		return nil
 	end
 	return Value
@@ -208,7 +215,7 @@ local function NewInstance(ClassName,Parent,Properties)
 		})
 		for Property,Value in pairs(Properties) do
 			pcall(function()
-				NewInstance_[Property] = EscapeTable(Value)
+				NewInstance_[Property] = NilConvert(Value)
 			end)
 		end
 		NewInstance_.Parent = typeof(Parent) == "Instance" and Parent or nil
@@ -465,7 +472,21 @@ local function Notify(Settings)
 		task.delay(Settings.Duration,Notification.Destroy,Notification)
 	end
 end
-local LastCheck,Focused,Debounce = 0,isrbxactive and isrbxactive() or true,true
+local LastCheck,Focused,Debounce,LastLeft = 0,isrbxactive and isrbxactive() or true,true,0
+local ExpandGui
+do
+	local LastPosition
+	ExpandGui = function(Expand)
+		LastPosition = Expand and Gui.Main.Position or LastPosition
+		Animate(Gui.Main,{
+			Time = .25,
+			Properties = {
+				Size = UDim2.new(0,(Expand and 350 or 35)*OwnerSettings.Scale,0,35*OwnerSettings.Scale),
+				Position = Expand and UDim2.new(0,workspace.CurrentCamera.ViewportSize.X/2 < Gui.Main.AbsolutePosition.X+Gui.Main.AbsoluteSize.X/2 and Gui.Main.AbsolutePosition.X-(350*OwnerSettings.Scale-Gui.Main.AbsoluteSize.X) or Gui.Main.AbsolutePosition.X,0,Gui.Main.AbsoluteSize.Y) or LastPosition
+			}
+		})
+	end
+end
 local Connections = {
 	isfile and Services.RunService.Heartbeat:Connect(function()
 		Delta,LastFrame = (os.clock()-LastFrame)*60,os.clock()
@@ -496,6 +517,17 @@ local Connections = {
 	end),
 	Services.UserInputService.WindowFocusReleased:Connect(function()
 		Focused = false
+	end),
+	Gui.Main.MouseEnter:Connect(function()
+		LastLeft = os.clock()
+		ExpandGui(true)
+	end),
+	Gui.Main.MouseLeave:Connect(function()
+		LastLeft = os.clock()
+		task.wait(1)
+		if 1 < os.clock()-LastLeft then
+			ExpandGui(false)
+		end
 	end)
 }
 local function DeltaLerp(Start,Goal,Alpha)
@@ -558,7 +590,8 @@ local function EnableDrag(Frame)
 		table.insert(Connections,Connection)
 	end
 end
---[[local function GetHumanoid(Target)
+--[[```lua
+local function GetHumanoid(Target)
 	Target = ValidInstance(Target,"Model") or ValidInstance(Target,"Player") and (Target.Character or Target.CharacterAdded:Wait())
 	if Target then
 		return Target:FindFirstChildOfClass"Humanoid"
@@ -585,21 +618,22 @@ Commands = {
 			return OldNewIndex(...)
 		end))
 	end
-}]]
-ScriptEnvironment.Ultimatum = function()
+}
+```]]
+GlobalEnvironment.Ultimatum = function()
 	for _,Connection in pairs(Connections) do
 		pcall(Connection.Disconnect,Connection)
 	end
-	ScriptEnvironment.Ultimatum = nil
+	GlobalEnvironment.Ultimatum = nil
 	Gui:Destroy()
-	--- @diagnostic disable-next-line:undefined-global
+	--- @diagnostic disable-next-line undefined-global
 	if protect_gui then
 		pcall(game.Destroy,gethui())
 	end
 end
 EnableDrag(Gui.Main)
-if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not ScriptEnvironment.UltimatumLoaded then
-	ScriptEnvironment.UltimatumLoaded = true
+if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
+	GlobalEnvironment.UltimatumLoaded = true
 	if OwnerSettings.BlurType ~= "None" then
 		task.spawn(function()
 			local Blur = NewInstance("BlurEffect",Services.Lighting,{
