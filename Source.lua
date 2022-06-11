@@ -41,10 +41,11 @@ for FunctionName,Function in pairs(debug) do
 		ScriptEnvironment[ScriptEnvironment[FunctionName] and ("debug_%s"):format(FunctionName) or FunctionName] = Function
 	end
 end
+local GlobalEnvironment = getgenv and getgenv() or shared
 local Nil,Delta,LastFrame = {},10,os.clock()
 local Services = setmetatable({},{
 	__index = function(Services,ServiceName)
-		assert(pcall(game.GetService,game,ServiceName),("Ultimatum | Invalid ServiceName (%s '%s')"):format(typeof(ServiceName),tostring(ServiceName)))
+		(GlobalEnvironment.UltimatumDebug and assert or function() end)(pcall(game.GetService,game,ServiceName),("Ultimatum | Invalid ServiceName (%s '%s')"):format(typeof(ServiceName),tostring(ServiceName)))
 		if not rawget(Services,ServiceName) or rawget(Services,ServiceName) ~= game:GetService(ServiceName) then
 			rawset(Services,ServiceName,game:GetService(ServiceName))
 		end
@@ -136,7 +137,6 @@ do
 	end
 	--- @diagnostic enable undefined-global
 end
-local GlobalEnvironment = getgenv and getgenv() or shared
 if not GlobalEnvironment.UltimatumLoaded then
 	print((("!!_5#_4#_#_4#9_#9_#2_4#2_6#_#9_#_4#_#2_4#2!_4#_4#_#_8#_9#_5#4_#4_3#_#_3#_5#_4#_#4_#4!_3#_4#_#_8#_9#_5#_#3_#_2#_3#_2#_5#_4#_#_#3_#!_2#_4#_#_8#_9#_5#_2#_2#_#9_#_5#_4#_#_2#_2#!_#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#6_2#8_#_5#9_#_7#_#_5#_#_6#6_2#_7#!"):gsub("%p%d?",function(Input)
 		for Character,Format in pairs{
@@ -197,8 +197,7 @@ local Randomized = {
 			end
 		end
 		return Settings.Format:format(("A"):rep(Settings.Length):gsub(".",function()
-			local Range = Settings.CharacterSet[math.random(1,#Settings.CharacterSet)]
-			return string.char(math.random(Range.Min,Range.Max))
+			return AvailableCharacters[math.random(1,#AvailableCharacters)]
 		end))
 	end,
 	Bool = function(Chance)
@@ -222,6 +221,22 @@ local function NewInstance(ClassName,Parent,Properties)
 		return NewInstance_
 	end
 end
+local Destroy
+do
+	local DestroyInstance = game.Destroy
+	Destroy = function(Object)
+		for Type,Function in pairs{
+			Instance = function()
+				pcall(DestroyInstance,Object)
+			end
+		} do
+			if typeof(Object) == Type then
+				Function()
+			end
+		end
+	end
+end
+Destroy()
 local function Create(Data)
 	local Instances = {
 		Destroy = function(Instances,Name)
@@ -246,7 +261,7 @@ do
 	local Success,Output = pcall(Services.HttpService.JSONDecode,Services.HttpService,isfile and isfile"Settings.Ultimatum" and readfile"Settings.Ultimatum" or "[]")
 	local Settings = Valid.Table(Success and Output or {},{
 		Scale = 1,
-		BlurType = "All",
+		Blur = true,
 		StayOpen = false,
 		AutoUpdate = true,
 		LoadOnRejoin = true,
@@ -340,6 +355,46 @@ local Gui = Create{
 			Size = UDim2.new(.8,0,.8,0),
 			Position = UDim2.new(.1,0,.1,0),
 			Image = "rbxassetid://9666094136"
+		}
+	},
+	{
+		Name = "CommandBarBackground",
+		Parent = "Main",
+		ClassName = "Frame",
+		Properties = {
+			Visible = false,
+			ClipsDescendants = true,
+			AnchorPoint = Vector2.xAxis,
+			BackgroundColor3 = Color3.fromHex"191932",
+			Size = UDim2.new(1,-38.5*OwnerSettings.Scale,.8,0),
+			Position = UDim2.new(1,-3.5*OwnerSettings.Scale,.1,0)
+		}
+	},
+	{
+		Name = "CommandBar",
+		Parent = "CommandBarBackground",
+		ClassName = "TextBox",
+		Properties = {
+			Text = "",
+			RichText = true,
+			Font = Enum.Font.Arial,
+			ClearTextOnFocus = false,
+			BackgroundTransparency = 1,
+			Position = UDim2.new(0,10,0,0),
+			TextColor3 = Color3.new(1,1,1),
+			TextSize = 13*OwnerSettings.Scale,
+			PlaceholderText = "Enter a command...",
+			TextXAlignment = Enum.TextXAlignment.Left,
+			PlaceholderColor3 = Color3.fromHex"A0A0A0",
+			Size = UDim2.new(1,-10*OwnerSettings.Scale,1,0)
+		}
+	},
+	{
+		Name = "CommandBarCorner",
+		Parent = "CommandBarBackground",
+		ClassName = "UICorner",
+		Properties = {
+			CornerRadius = UDim.new(0,5)
 		}
 	}
 }
@@ -476,22 +531,29 @@ end
 local LastCheck,Focused,Debounce,LastLeft = 0,isrbxactive and isrbxactive() or true,true,0
 local ExpandGui
 do
-	local LastPosition
-	ExpandGui = function(Expand)
-		if not Debounce and not OwnerSettings.StayOpen then
+	local LastPosition,Expanded
+	ExpandGui = function(Expand,Ignore)
+		if Expanded ~= Expand and not Debounce and (Ignore or not OwnerSettings.StayOpen) then
+			Expanded = Expand
 			LastPosition = Expand and Gui.Main.Position or LastPosition
 			Animate(Gui.Main,{
-				Time = .25,
+				Time = Expand and .25 or .5,
 				Properties = {
-					Size = UDim2.new(0,(Expand and 350 or 35)*OwnerSettings.Scale,0,35*OwnerSettings.Scale),
-					Position = Expand and UDim2.new((workspace.CurrentCamera.ViewportSize.X/2 < Gui.Main.AbsolutePosition.X+Gui.Main.AbsoluteSize.X/2 and Gui.Main.AbsolutePosition.X-(350*OwnerSettings.Scale-Gui.Main.AbsoluteSize.X) or Gui.Main.AbsolutePosition.X)/workspace.CurrentCamera.ViewportSize.X,0,(Gui.Main.AbsolutePosition.Y+36)/workspace.CurrentCamera.ViewportSize.Y,0) or LastPosition
+					Size = UDim2.new(0,math.floor((Expand and 350 or 35)*OwnerSettings.Scale),0,math.floor(35*OwnerSettings.Scale)),
+					Position = Expand and workspace.CurrentCamera.ViewportSize.X/2 < Gui.Main.AbsolutePosition.X+Gui.Main.AbsoluteSize.X/2 and UDim2.new((Gui.Main.AbsolutePosition.X-(350*OwnerSettings.Scale-Gui.Main.AbsoluteSize.X))/workspace.CurrentCamera.ViewportSize.X,0,(Gui.Main.AbsolutePosition.Y+36)/workspace.CurrentCamera.ViewportSize.Y,0) or LastPosition
+				}
+			})
+			Animate(Gui.CommandBarBackground,{
+				Time = Expand and .25 or .45,
+				Properties = {
+					Visible = Expand
 				}
 			})
 		end
 	end
 end
 local Connections = {
-	isfile and Services.RunService.Heartbeat:Connect(function()
+	not GlobalEnvironment.UltimatumDebug and isfile and Services.RunService.Heartbeat:Connect(function()
 		Delta,LastFrame = (os.clock()-LastFrame)*60,os.clock()
 		if OwnerSettings.AutoUpdate and 60 < os.clock()-LastCheck then
 			LastCheck = os.clock()
@@ -510,7 +572,7 @@ local Connections = {
 	end) or Services.RunService.Heartbeat:Connect(function()
 		Delta,LastFrame = (os.clock()-LastFrame)*60,os.clock()
 	end),
-	queue_on_teleport and isfile and Services.Players.LocalPlayer.OnTeleport:Connect(function(TeleportState)
+	not GlobalEnvironment.UltimatumDebug and queue_on_teleport and isfile and Services.Players.LocalPlayer.OnTeleport:Connect(function(TeleportState)
 		if OwnerSettings.LoadOnRejoin and TeleportState == Enum.TeleportState.Started then
 			queue_on_teleport(isfile"Source.Ultimatum" and readfile"Source.Ultimatum" or "error('Source.Ultimatum missing from workspace folder',0)")
 		end
@@ -531,17 +593,43 @@ local Connections = {
 		if 1 < os.clock()-LastLeft then
 			ExpandGui(false)
 		end
+	end),
+	Gui.CommandBar.Focused:Connect(function()
+		Debounce = true
+	end),
+	Gui.CommandBar.FocusLost:Connect(function()
+		Debounce = false
+		ExpandGui(false)
 	end)
 }
+local function AddConnections(Connections_)
+	for _,Connection in pairs(Valid.Table(Connections_)) do
+		if typeof(Connection) == "RBXScriptConnection" and Connection.Connected then
+			table.insert(Connections,Connection)
+		end
+	end
+end
+local function RemoveConnections(Connections_)
+	for _,Connection in pairs(Valid.Table(Connections_)) do
+		if typeof(Connection) == "RBXScriptConnection" then
+			if Connection.Connected then
+				Connection:Disconnect()
+			end
+			pcall(table.remove,Connections,table.find(Connections,Connection))
+		end
+	end
+end
 local function DeltaLerp(Start,Goal,Alpha)
 	return type(Start) == "number" and type(Goal) == "number" and Goal+(Start-Goal)*math.clamp((1-Alpha)^Delta,0,1) or Goal:Lerp(Start,math.clamp((1-Alpha)^Delta,0,1))
 end
-local function EnableDrag(Frame)
+local function EnableDrag(Frame,Expand)
 	local DragConnection
 	local FinalPosition = UDim2.new()
 	local InputBegan,InputEnded,Removed = Frame.InputBegan:Connect(function(Input,Ignore)
 		if not Ignore and not Debounce and Input.UserInputType == Enum.UserInputType.MouseButton1 then
-			ExpandGui(false)
+			if Expand then
+				ExpandGui(false)
+			end
 			Debounce = true
 			DragConnection = Services.RunService.RenderStepped:Connect(function()
 				local MousePosition = Services.UserInputService:GetMouseLocation()
@@ -554,48 +642,61 @@ local function EnableDrag(Frame)
 					end
 					MousePosition = NewPosition
 				end
-				FinalPosition = UDim2.fromScale((MousePosition.X-CardSize.X/2)/ScreenSize.X,(MousePosition.Y-CardSize.Y/2)/ScreenSize.Y)
-				Frame.Position = OwnerSettings.FancyDragging and DeltaLerp(Frame.Position,FinalPosition,.5) or FinalPosition
+				FinalPosition = UDim2.new((MousePosition.X-CardSize.X/2)/ScreenSize.X,0,(MousePosition.Y-CardSize.Y/2)/ScreenSize.Y,0)
+				Animate(Frame,{
+					Time = OwnerSettings.FancyDragging and .1 or 0,
+					Properties = {
+						Position = FinalPosition
+					}
+				})
 				Frame.Rotation = OwnerSettings.FancyDragging and (DeltaLerp(math.abs(Frame.Rotation) < .1 and 0 or Frame.Rotation,0,.5)+math.clamp(XVelocity/(.065*CardSize.X),-1500/CardSize.X,1500/CardSize.X)) or 0
 			end)
-			table.insert(Connections,DragConnection)
+			AddConnections{
+				DragConnection
+			}
 		end
 	end),Services.UserInputService.InputEnded:Connect(function(Input,Ignore)
 		if DragConnection and Input.UserInputType == Enum.UserInputType.MouseButton1 then
-			DragConnection:Disconnect()
-			table.remove(Connections,table.find(Connections,DragConnection))
+			RemoveConnections{
+				DragConnection
+			}
 			DragConnection = nil
 			Animate(Frame,{
-				Time = .1,
+				Time = .5,
 				Properties = {
 					Rotation = 0,
 					Position = FinalPosition
-				}
+				},
+				EasingDirection = Enum.EasingDirection.InOut
 			})
 			Debounce = false
-			ExpandGui(true)
+			if Expand then
+				ExpandGui(true)
+			end
 		end
 	end)
 	Removed = Frame.AncestryChanged:Connect(function()
 		if not Frame:IsDescendantOf(gethui()) then
-			for _,Connection in pairs{
+			RemoveConnections{
 				Removed,
 				InputBegan,
 				InputEnded,
 				DragConnection
-			} do
-				pcall(Connection.Disconnect,Connection)
-				table.remove(Connections,table.find(Connections,Connection))
-			end
+			}
 		end
 	end)
-	for _,Connection in pairs{
+	AddConnections{
 		Removed,
 		InputBegan,
 		InputEnded
-	} do
-		table.insert(Connections,Connection)
+	}
+end
+local function CloneTable(Table)
+	local NewTable = {}
+	for Key,Value in pairs(Valid.Table(Table)) do
+		NewTable[Key] = Value
 	end
+	return NewTable
 end
 --[[```lua
 local function GetHumanoid(Target)
@@ -626,11 +727,74 @@ Commands = {
 		end))
 	end
 }
+------------------------------------------------------------------------------------------------------------------------------------------------
+local Owner = game:GetService"Players".LocalPlayer
+local Spoofed = {}
+local Humanoid
+local function Check(Character)
+	local Humanoid_ = Character:FindFirstChildOfClass"Humanoid"
+	while not Humanoid_ do
+		Character.ChildAdded:Wait()
+		Humanoid_ = Character:FindFirstChildOfClass"Humanoid"
+	end
+	Spoofed.WalkSpeed = Humanoid_.WalkSpeed
+end
+if Owner.Character then
+	Check(Owner.Character)
+end
+Owner.CharacterAdded:Connect(Check)
+local OldIndex
+local function CheckProperties(Properties,Property)
+	if type(Property) == "string" then
+		for _,PropertyNames in pairs(Properties) do
+			PropertyNames = PropertyNames:split()
+			for _,PropertyName in pairs(PropertyNames) do
+				if Property == PropertyName then
+					return true,Spoofed[PropertyNames[1] ]
+				end
+			end
+		end
+	end
+	return false
+end
+OldIndex = hookmetamethod(game,"__index",function(...)
+	local Object,Property = ...
+	if not checkcaller() and typeof(Object) == "Instance" then
+		for Properties,Instance_ in pairs{
+			[{
+				"WalkSpeed,walkSpeed",
+				"FloorMaterial",
+				"MoveDirection"
+			}] = Humanoid,
+			[{
+				"Velocity,AssemblyLinearVelocity",
+				"RotVelocity,AssemblyAngularVelocity",
+				"CFrame"
+			}] = RootPart
+		} do
+			if Instance_ == Object then
+				local Passed,Spoof = CheckProperties(Properties,Property)
+				if Passed then
+					return Spoof
+				end
+				break
+			end
+		end
+	end
+	return OldIndex(...)
+end)
+local OldNewIndex
+OldNewIndex = hookmetamethod(game,"__newindex",function(...)
+	if not checkcaller() and typeof((...)) == "Instance" then
+		if Humanoid and ... == Humanoid and (select(2,...) == "WalkSpeed" or select(2,...) == "walkSpeed") then
+			Spoofed.WalkSpeed = tonumber((select(3,...))) or 0
+		end
+	end
+	return OldIndex(...)
+end)
 ```]]
 GlobalEnvironment.Ultimatum = function()
-	for _,Connection in pairs(Connections) do
-		pcall(Connection.Disconnect,Connection)
-	end
+	RemoveConnections(CloneTable(Connections))
 	GlobalEnvironment.Ultimatum = nil
 	Gui:Destroy()
 	--- @diagnostic disable-next-line undefined-global
@@ -638,39 +802,14 @@ GlobalEnvironment.Ultimatum = function()
 		pcall(game.Destroy,gethui())
 	end
 end
-EnableDrag(Gui.Main)
-if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
+EnableDrag(Gui.Main,true)
+task.defer(function()
 	GlobalEnvironment.UltimatumLoaded = true
-	if OwnerSettings.BlurType ~= "None" then
-		task.spawn(function()
-			local Blur = NewInstance("BlurEffect",Services.Lighting,{
-				Size = 0
-			})
-			Animate(Blur,{
-				Time = .5,
-				Yields = true,
-				Properties = {
-					Size = 50
-				},
-				EasingStyle = Enum.EasingStyle.Linear
-			})
-			if OwnerSettings.BlurType == "All" then
-				Services.RunService:SetRobloxGuiFocused(true)
-				Blur.Enabled = false
-				task.delay(1,Services.RunService.SetRobloxGuiFocused,Services.RunService,false)
-			end
-			task.wait(1)
-			Blur.Enabled = true
-			Animate(Blur,{
-				Time = .5,
-				Yields = true,
-				Properties = {
-					Size = 0
-				},
-				EasingStyle = Enum.EasingStyle.Linear
-			})
-			Blur:Destroy()
-		end)
+end)
+if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
+	if OwnerSettings.Blur then
+		Services.RunService:SetRobloxGuiFocused(true)
+		task.delay(1.5,Services.RunService.SetRobloxGuiFocused,Services.RunService,false)
 	end
 	Animate(Gui.Main,{
 		Time = .5,
@@ -721,7 +860,8 @@ end
 for Name,Properties in pairs{
 	Logo = {
 		Rotation = 0,
-		ImageTransparency = 0
+		ImageTransparency = 0,
+		Position = UDim2.new(0,3.5*OwnerSettings.Scale,.1,0)
 	},
 	Main = {
 		Rotation = 0,
@@ -732,21 +872,25 @@ for Name,Properties in pairs{
 	},
 	MainCorner = {
 		CornerRadius = UDim.new(0,5)
+	},
+	MainAspectRatioConstraint = {
+		Parent = Gui.Logo
 	}
 } do
 	if not Gui or not Gui[Name] then
-		print(Gui,Gui and Gui[Name])
 		return
 	end
 	for Property,Value in pairs(Properties) do
 		Gui[Name][Property] = Value
 	end
 end
-Gui.MainAspectRatioConstraint.Parent = Gui.Logo
 Animate(Gui.Main,{
 	Time = .5,
 	Properties = {
-		Position = UDim2.new(0,0,1,-35*OwnerSettings.Scale)
+		Position = UDim2.new(0,0,1,math.floor(-35*OwnerSettings.Scale))
 	}
 })
 Debounce = false
+if OwnerSettings.StayOpen then
+	task.delay(.5,ExpandGui,true,true)
+end
