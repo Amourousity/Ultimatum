@@ -43,18 +43,32 @@ for FunctionName,Function in pairs(debug) do
 end
 local GlobalEnvironment = getgenv and getgenv() or shared
 local Nil,Delta,LastFrame = {},10,os.clock()
-local Services = setmetatable({},{
-	__index = function(Services,ServiceName)
-		(GlobalEnvironment.UltimatumDebug and assert or function() end)(pcall(game.GetService,game,ServiceName),("Ultimatum | Invalid ServiceName (%s '%s')"):format(typeof(ServiceName),tostring(ServiceName)))
-		if not rawget(Services,ServiceName) or rawget(Services,ServiceName) ~= game:GetService(ServiceName) then
-			rawset(Services,ServiceName,game:GetService(ServiceName))
-		end
-		return rawget(Services,ServiceName)
-	end,
-	__newindex = function() end,
-	__metatable = "nil"
-})
+local Destroy
 do
+	local DestroyInstance = game.Destroy
+	Destroy = function(Object)
+		for Type,Function in pairs{
+			Instance = function()
+				pcall(DestroyInstance,Object)
+			end,
+			RBXScriptConnection = function()
+				if Object.Connected then
+					Object:Disconnect()
+				end
+			end,
+			table = function()
+				for Index,Value in pairs(Object) do
+					Object[Index] = nil
+					Destroy(Index)
+					Destroy(Value)
+				end
+			end
+		} do
+			if typeof(Object) == Type then
+				Function()
+			end
+		end
+	end
 	local function CheckCompatibility(FunctionNames)
 		FunctionNames = FunctionNames:split()
 		local Function
@@ -117,16 +131,43 @@ do
 		["gethui,get_hidden_gui"] = protect_gui and (function()
 			local HiddenUI = Instance.new"Folder"
 			protect_gui(HiddenUI)
-			HiddenUI.Parent = Services.CoreGui
+			HiddenUI.Parent = cloneref and cloneref(game:GetService"CoreGui") or game:GetService"CoreGui"
 			return function()
 				return HiddenUI
 			end
 		end)() or function()
-			return Services.CoreGui
+			return cloneref and cloneref(game:GetService"CoreGui") or game:GetService"CoreGui"
 		end,
 		["islclosure,is_l_closure"] = (iscclosure or is_c_closure) and function(Closure)
 			return not (iscclosure or is_c_closure)(Closure)
-		end or 0
+		end or 0,
+		cloneref = getreg and (function()
+			local TestPart = Instance.new"Part"
+			local InstanceList
+			for _,InstanceTable in pairs(getreg()) do
+				if type(InstanceTable) == "table" and #InstanceTable then
+					if rawget(InstanceTable,"__mode") == "kvs" then
+						for _,PartCheck in pairs(InstanceTable) do
+							if PartCheck == TestPart then
+								InstanceList = InstanceTable
+								Destroy(TestPart)
+								break
+							end
+						end
+					end
+				end
+			end
+			if InstanceList then
+				return function(Object)
+					for Index,Value in pairs(InstanceList) do
+						if Value == Object then
+							InstanceList[Index] = nil
+							return Object
+						end
+					end
+				end
+			end
+		end)() or 0
 	} do
 		local Function = CheckCompatibility(FunctionNames)
 		if not Function and type(Replacement) == "function" then
@@ -137,6 +178,18 @@ do
 	end
 	--- @diagnostic enable undefined-global
 end
+local Services = setmetatable({},{
+	__index = function(Services,ServiceName)
+		(GlobalEnvironment.UltimatumDebug and assert or function() end)(pcall(game.GetService,game,ServiceName),("Ultimatum | Invalid ServiceName (%s '%s')"):format(typeof(ServiceName),tostring(ServiceName)))
+		if not rawget(Services,ServiceName) or rawget(Services,ServiceName) ~= game:GetService(ServiceName) then
+			rawset(Services,ServiceName,game:GetService(ServiceName))
+		end
+		return cloneref and rawget(Services,ServiceName) and cloneref(rawget(Services,ServiceName)) or rawget(Services,ServiceName)
+	end,
+	__newindex = function() end,
+	__metatable = "nil"
+})
+
 if not GlobalEnvironment.UltimatumLoaded then
 	print((("!!_5#_4#_#_4#9_#9_#2_4#2_6#_#9_#_4#_#2_4#2!_4#_4#_#_8#_9#_5#4_#4_3#_#_3#_5#_4#_#4_#4!_3#_4#_#_8#_9#_5#_#3_#_2#_3#_2#_5#_4#_#_#3_#!_2#_4#_#_8#_9#_5#_2#_2#_#9_#_5#_4#_#_2#_2#!_#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#6_2#8_#_5#9_#_7#_#_5#_#_6#6_2#_7#!"):gsub("%p%d?",function(Input)
 		for Character,Format in pairs{
@@ -221,33 +274,14 @@ local function NewInstance(ClassName,Parent,Properties)
 		return NewInstance_
 	end
 end
-local Destroy
-do
-	local DestroyInstance = game.Destroy
-	Destroy = function(Object)
-		for Type,Function in pairs{
-			Instance = function()
-				pcall(DestroyInstance,Object)
-			end
-		} do
-			if typeof(Object) == Type then
-				Function()
-			end
-		end
-	end
-end
-Destroy()
 local function Create(Data)
 	local Instances = {
 		Destroy = function(Instances,Name)
 			if type(Name) == "string" then
-				pcall(game.Destroy,Instances[Name])
+				Destroy(Instances[Name])
 				Instances[Name] = nil
 			else
-				for _,Instance_ in pairs(Instances) do
-					pcall(game.Destroy,Instance_)
-				end
-				table.clear(Instances)
+				Destroy(Instances)
 			end
 		end
 	}
@@ -268,7 +302,11 @@ do
 		FancyDragging = true,
 		PlayIntro = "Always",
 		Notifications = "All",
-		EdgeDetect = "Gui & Mouse"
+		CommandSeperator = "/",
+		ArgumentSeperator = " ",
+		Keybind = "LeftBracket",
+		ExpressionSeperator = ",",
+		EdgeDetect = "GuiAndMouse"
 	})
 	OwnerSettings = setmetatable({},{
 		__index = function(_,Index)
@@ -287,7 +325,7 @@ OwnerSettings._ = nil
 if Services.CoreGui:FindFirstChild"RobloxLoadingGui" and Services.CoreGui.RobloxLoadingGui:FindFirstChild"BlackFrame" then
 	local LoadStart,Connection = os.clock()
 	Connection = Services.CoreGui.RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency":Connect(function()
-		Connection:Disconnect()
+		Destroy(Connection)
 		LoadStart = 0
 	end)
 	repeat
@@ -376,17 +414,16 @@ local Gui = Create{
 		ClassName = "TextBox",
 		Properties = {
 			Text = "",
-			RichText = true,
 			Font = Enum.Font.Arial,
 			ClearTextOnFocus = false,
 			BackgroundTransparency = 1,
 			Position = UDim2.new(0,10,0,0),
 			TextColor3 = Color3.new(1,1,1),
-			TextSize = 13*OwnerSettings.Scale,
-			PlaceholderText = "Enter a command...",
 			TextXAlignment = Enum.TextXAlignment.Left,
 			PlaceholderColor3 = Color3.fromHex"A0A0A0",
-			Size = UDim2.new(1,-10*OwnerSettings.Scale,1,0)
+			TextSize = math.floor(13*OwnerSettings.Scale),
+			Size = UDim2.new(1,-10*OwnerSettings.Scale,1,0),
+			PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Services.UserInputService:GetStringForKeyCode(Enum.KeyCode[OwnerSettings.Keybind]))
 		}
 	},
 	{
@@ -552,6 +589,11 @@ do
 		end
 	end
 end
+local Commands = {
+	serverinformation_serverinfo_sinfo_info = {
+		Function = function() end -- finish later
+	}
+}
 local Connections = {
 	not GlobalEnvironment.UltimatumDebug and isfile and Services.RunService.Heartbeat:Connect(function()
 		Delta,LastFrame = (os.clock()-LastFrame)*60,os.clock()
@@ -575,6 +617,7 @@ local Connections = {
 	not GlobalEnvironment.UltimatumDebug and queue_on_teleport and isfile and Services.Players.LocalPlayer.OnTeleport:Connect(function(TeleportState)
 		if OwnerSettings.LoadOnRejoin and TeleportState == Enum.TeleportState.Started then
 			queue_on_teleport(isfile"Source.Ultimatum" and readfile"Source.Ultimatum" or "error('Source.Ultimatum missing from workspace folder',0)")
+			pcall(GlobalEnvironment.Ultimatum)
 		end
 	end),
 	Services.UserInputService.WindowFocused:Connect(function()
@@ -595,12 +638,57 @@ local Connections = {
 		end
 	end),
 	Gui.CommandBar.Focused:Connect(function()
+		Gui.CommandBar.PlaceholderText = "Enter a command..."
+		ExpandGui(true)
 		Debounce = true
 	end),
-	Gui.CommandBar.FocusLost:Connect(function()
+	Gui.CommandBar.FocusLost:Connect(function(Sent)
+		Gui.CommandBar.PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Services.UserInputService:GetStringForKeyCode(Enum.KeyCode[OwnerSettings.Keybind]))
+		if Sent then
+			for _,Input in pairs(Gui.CommandBar.Text:split(OwnerSettings.CommandSeperator)) do
+				local Arguments = Input:split(OwnerSettings.ArgumentSeperator)
+				local Command = Arguments[1]
+				table.remove(Arguments,1)
+				for CommandNames,CommandInfo in pairs(Commands) do
+					for _,CommandName in pairs(CommandNames:split"_") do
+						if CommandName == Command then
+							CommandInfo.Function(unpack(Arguments))
+						end
+					end
+				end
+			end
+			Gui.CommandBar.Text = ""
+		end
 		Debounce = false
 		ExpandGui(false)
-	end)
+	end),
+	Services.UserInputService.InputBegan:Connect(function(Input,Ignore)
+		if not Ignore and Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode.Name == OwnerSettings.Keybind then
+			task.defer(Gui.CommandBar.CaptureFocus,Gui.CommandBar)
+		end
+	end),
+	--[[Gui.CommandBar:GetPropertyChangedSignal"Text":Connect(function()
+		if Services.UserInputService:GetFocusedTextBox() == Gui.CommandBar then
+			local Command = Gui.CommandBar.Text:split(OwnerSettings.CommandSeperator)
+			Command = (Command[#Command] or ""):split(OwnerSettings.ArgumentSeperator)[1] or ""
+			for CommandNames,CommandInfo in pairs(Commands) do
+				CommandNames = CommandNames:split"_"
+				for _,CommandName in pairs(CommandNames) do
+					if CommandName:find(Command) then
+						NewInstance("TextLabel",Gui.CommandRecommendations,{
+							Font = Enum.Font.Arial,
+							BackgroundTransparency = 1,
+							TextColor3 = Color3.new(1,1,1),
+							TextXAlignment = Enum.TextXAlignment.Left,
+							TextSize = math.floor(13*OwnerSettings.Scale),
+							Text = ("%s%s%s"):format(CommandNames[1],CommandInfo.Arguments and OwnerSettings.ArgumentSeperator or "",CommandInfo.Arguments and table.concat(CommandInfo.Arguments,OwnerSettings.ArgumentSeperator) or "")
+						})
+						break
+					end
+				end
+			end
+		end
+	end)]]
 }
 local function AddConnections(Connections_)
 	for _,Connection in pairs(Valid.Table(Connections_)) do
@@ -612,9 +700,7 @@ end
 local function RemoveConnections(Connections_)
 	for _,Connection in pairs(Valid.Table(Connections_)) do
 		if typeof(Connection) == "RBXScriptConnection" then
-			if Connection.Connected then
-				Connection:Disconnect()
-			end
+			Destroy(Connection)
 			pcall(table.remove,Connections,table.find(Connections,Connection))
 		end
 	end
@@ -637,7 +723,7 @@ local function EnableDrag(Frame,Expand)
 				local XVelocity = MousePosition.X-(Frame.AbsolutePosition.X+CardSize.X/2)
 				local NewPosition = OwnerSettings.EdgeDetect ~= "None" and Vector2.new(math.clamp(MousePosition.X,CardSize.X/2,ScreenSize.X-CardSize.X/2),math.clamp(MousePosition.Y,CardSize.Y/2,ScreenSize.Y-CardSize.Y/2)) or MousePosition
 				if NewPosition ~= MousePosition then
-					if OwnerSettings.EdgeDetect == "Gui & Mouse" and mousemoverel and Focused then
+					if OwnerSettings.EdgeDetect == "GuiAndMouse" and mousemoverel and Focused then
 						mousemoverel(NewPosition.X-MousePosition.X,NewPosition.Y-MousePosition.Y)
 					end
 					MousePosition = NewPosition
@@ -690,13 +776,6 @@ local function EnableDrag(Frame,Expand)
 		InputBegan,
 		InputEnded
 	}
-end
-local function CloneTable(Table)
-	local NewTable = {}
-	for Key,Value in pairs(Valid.Table(Table)) do
-		NewTable[Key] = Value
-	end
-	return NewTable
 end
 --[[```lua
 local function GetHumanoid(Target)
@@ -794,12 +873,12 @@ OldNewIndex = hookmetamethod(game,"__newindex",function(...)
 end)
 ```]]
 GlobalEnvironment.Ultimatum = function()
-	RemoveConnections(CloneTable(Connections))
+	Destroy(Connections)
 	GlobalEnvironment.Ultimatum = nil
 	Gui:Destroy()
 	--- @diagnostic disable-next-line undefined-global
 	if protect_gui then
-		pcall(game.Destroy,gethui())
+		Destroy(gethui())
 	end
 end
 EnableDrag(Gui.Main,true)
