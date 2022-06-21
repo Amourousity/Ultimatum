@@ -13,4 +13,10 @@ In order for offline support to work, you ***MUST*** use the loader directly.
 
 Copy the [loader](/Loader.lua), paste it in your exploit's script editor, press Execute and enjoy!
 ## Commands
-*None at the moment, I'm working on that...*
+- **Exit** - Closes the current Roblox window/proccess
+- **Rejoin** - Rejoins the current Roblox server you're in
+- **CopyJoinScript** - Copies JavaScript to your clipboard used to join the same server
+- **DisableRendering** - Disables 3D rendering (everything except for GUIs are invisible), boosting FPS. Usually used with auto-farms to improve their efficiency
+- **CloseRobloxMessage** - Closes any messages/errors (the grey containers with the blurred background) displayed by Roblox
+
+*Only safe commands are included until I write a system for metamethod hooks*
