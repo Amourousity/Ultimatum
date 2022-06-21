@@ -349,7 +349,7 @@ end
 local Gui = Create{
 	{
 		Name = "Holder",
-		Parent = Services.CoreGui,
+		Parent = gethui(),
 		ClassName = "ScreenGui",
 		Properties = {
 			ResetOnSpawn = false,
