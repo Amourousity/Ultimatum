@@ -1,7 +1,7 @@
-# \	Ultimatum
+# \tUltimatum
 [![Ultimatum Logo](https://raw.githubusercontent.com/Amourousity/Ultimatum/main/SmallLogo.png)](https://github.com/Amourousity/Ultimatum#Ultimatum)
 
-\	"*One Script to rule them all*"
+\t"*One Script to rule them all*"
 ## Features
 - **Open-source** - Want to contribute to Ultimatum? Just submit a pull request!
 - **Auto-updates** - No need to reset the script to receive updates!
