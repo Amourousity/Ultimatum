@@ -46,26 +46,28 @@ local Nil = {}
 local Destroy
 do
 	local DestroyInstance = game.Destroy
-	Destroy = function(Object)
-		for Type,Function in pairs{
-			Instance = function()
-				pcall(DestroyInstance,Object)
-			end,
-			RBXScriptConnection = function()
-				if Object.Connected then
-					Object:Disconnect()
+	Destroy = function(...)
+		for _,Object in pairs{...} do
+			for Type,Function in pairs{
+				Instance = function()
+					pcall(DestroyInstance,Object)
+				end,
+				RBXScriptConnection = function()
+					if Object.Connected then
+						Object:Disconnect()
+					end
+				end,
+				table = function()
+					for Index,Value in pairs(Object) do
+						Object[Index] = nil
+						Destroy(Index)
+						Destroy(Value)
+					end
 				end
-			end,
-			table = function()
-				for Index,Value in pairs(Object) do
-					Object[Index] = nil
-					Destroy(Index)
-					Destroy(Value)
+			} do
+				if typeof(Object) == Type then
+					Function()
 				end
-			end
-		} do
-			if typeof(Object) == Type then
-				Function()
 			end
 		end
 	end
@@ -231,10 +233,10 @@ Valid = {
 		return typeof(Instance_) == "Instance" and select(2,pcall(game.IsA,Instance_,Valid.String(ClassName,"Instance"))) == true and Instance_ or nil
 	end,
 	Boolean = function(Boolean,Substitute)
-		Boolean = tostring(Boolean)
+		Boolean = tostring(Boolean):lower()
 		for Names,Value in pairs{
-			true_yes_on_positive_1 = true,
-			false_no_off_negative_0 = false
+			true_yes_on_positive_1_i = true,
+			false_no_off_negative_0_o = false
 		} do
 			for _,Name in pairs(Names:split"_") do
 				if Boolean == Name then
@@ -289,16 +291,7 @@ local function NewInstance(ClassName,Parent,Properties)
 	end
 end
 local function Create(Data)
-	local Instances = {
-		Destroy = function(Instances,Name)
-			if type(Name) == "string" then
-				Destroy(Instances[Name])
-				Instances[Name] = nil
-			else
-				Destroy(Instances)
-			end
-		end
-	}
+	local Instances = {}
 	for _,InstanceData in pairs(Valid.Table(Data)) do
 		Instances[InstanceData.Name] = NewInstance(InstanceData.ClassName,type(InstanceData.Parent) == "string" and Instances[InstanceData.Parent] or InstanceData.Parent,InstanceData.Properties)
 	end
@@ -313,7 +306,6 @@ do
 		StayOpen = false,
 		AutoUpdate = true,
 		LoadOnRejoin = true,
-		FancyDragging = true,
 		PlayIntro = "Always",
 		Notifications = "All",
 		CommandSeperator = "/",
@@ -632,9 +624,9 @@ local function Notify(Settings)
 	end)
 	if Settings.Yields then
 		task.wait(Settings.Duration+1)
-		Notification:Destroy()
+		Destroy(Notification)
 	else
-		task.delay(Settings.Duration+1,Notification.Destroy,Notification)
+		task.delay(Settings.Duration+1,Destroy,Notification)
 	end
 end
 local function CheckAxis(Axis)
@@ -722,6 +714,18 @@ local Commands = { -- Currently only safe commands are included until I write a 
 		Description = "Closes any messages/errors (the grey containers with the blurred background) displayed by Roblox"
 	},
 }
+for Replace,Settings in pairs(({})[tostring(game.PlaceId)] or {}) do
+	Commands[Replace] = nil
+	Commands[Settings.Names] = Settings.Info
+end
+local function GetContentText(String)
+	local CheckTextBox = NewInstance("TextBox",nil,{
+		Text = String,
+		RichText = true
+	})
+	Destroy(CheckTextBox)
+	return CheckTextBox.ContentText
+end
 --- @diagnostic enable undefined-global
 local function UpdateSuggestions()
 	if Services.UserInputService:GetFocusedTextBox() == Gui.CommandBar then
@@ -751,7 +755,10 @@ local function UpdateSuggestions()
 				end
 			end
 		end
-		table.sort(CommandDisplays,function(Value1,Value2)
+		table.sort(CommandDisplays,function(String1,String2)
+			return Services.TextService:GetTextSize(GetContentText(String1),14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X < Services.TextService:GetTextSize(GetContentText(String2),14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X and true or false
+		end)
+		--[[table.sort(CommandDisplays,function(Value1,Value2)
 			if #Value1 < #Value2 then
 				return true
 			elseif #Value2 < #Value1 then
@@ -766,7 +773,7 @@ local function UpdateSuggestions()
 				end
 			end
 			return false
-		end)
+		end)]]
 		for _,Text in pairs(CommandDisplays) do
 			NewInstance("TextLabel",Gui.SuggestionsScroll,{
 				TextSize = 14,
@@ -789,7 +796,7 @@ local function UpdateSuggestions()
 				Position = CheckAxis"Y" and Gui.Main.Position+UDim2.new(0,0,0,Gui.Main.AbsoluteSize.Y-Size.Y.Offset) or Gui.Main.Position
 			}
 		})
-end
+	end
 end
 local Connections = {
 	not GlobalEnvironment.UltimatumDebug and isfile and Services.RunService.Heartbeat:Connect(function()
@@ -837,10 +844,12 @@ local Connections = {
 		end
 	end),
 	Gui.CommandBar.Focused:Connect(function()
-		Gui.CommandBar.PlaceholderText = "Enter a command..."
-		ExpandGui(true)
-		task.delay(.25,UpdateSuggestions)
-		Debounce = true
+		if not Debounce then
+			Gui.CommandBar.PlaceholderText = "Enter a command..."
+			ExpandGui(true)
+			task.delay(.25,UpdateSuggestions)
+			Debounce = true
+		end
 	end),
 	Gui.CommandBar.FocusLost:Connect(function(Sent)
 		task.wait()
@@ -861,7 +870,7 @@ local Connections = {
 								if ArgumentProperties.Required and not Arguments[ArgumentNumber] then
 									Notify{
 										CalculateDuration = true,
-										Text = ("<b>Missing Argument</b>\nThe command <i><b>%s</b></i> requires you to enter the argument <i><b>%s</b></i> of type <i><b>%s</b></i>"):format(CommandNames[1],ArgumentProperties.Name,ArgumentProperties.Type)
+										Text = ('<b>Missing Argument</b>\nThe command "%s" requires you to enter the argument "%s"'):format(CommandNames[1],ArgumentProperties.Name)
 									}
 									break
 								end
@@ -902,7 +911,7 @@ local Connections = {
 		end)
 	end),
 	Services.UserInputService.InputBegan:Connect(function(Input,Ignore)
-		if not Ignore and Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode.Name == OwnerSettings.Keybind then
+		if not Ignore and Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode.Name == OwnerSettings.Keybind and not Debounce then
 			task.defer(Gui.CommandBar.CaptureFocus,Gui.CommandBar)
 		end
 	end),
@@ -932,10 +941,13 @@ local function EnableDrag(Frame,Expand)
 				ExpandGui(false)
 			end
 			Debounce = true
+			-- Hooks.MouseIconEnabled:SetActive(true)
+			-- Hooks.TankInputs:SetActive(true)
 			DragConnection = Services.RunService.RenderStepped:Connect(function()
+				Services.UserInputService.MouseIconEnabled = false
 				local MousePosition = Services.UserInputService:GetMouseLocation()
 				local ScreenSize,CardSize = workspace.CurrentCamera.ViewportSize,Frame.AbsoluteSize
-				local NewPosition = OwnerSettings.EdgeDetect ~= "None" and Vector2.new(math.clamp(MousePosition.X,CardSize.X/2,ScreenSize.X-CardSize.X/2),math.clamp(MousePosition.Y,CardSize.Y/2,ScreenSize.Y-CardSize.Y/2)) or MousePosition
+				local NewPosition = OwnerSettings.EdgeDetect ~= "None" and Vector2.new(math.clamp(MousePosition.X,math.floor(CardSize.X/2),math.ceil(ScreenSize.X-CardSize.X/2)),math.clamp(MousePosition.Y,math.floor(CardSize.Y/2),math.ceil(ScreenSize.Y-CardSize.Y/2))) or MousePosition
 				if NewPosition ~= MousePosition then
 					if OwnerSettings.EdgeDetect == "GuiAndMouse" and mousemoverel and Focused then
 						mousemoverel(NewPosition.X-MousePosition.X,NewPosition.Y-MousePosition.Y)
@@ -944,7 +956,7 @@ local function EnableDrag(Frame,Expand)
 				end
 				FinalPosition = UDim2.new(math.round(MousePosition.X-CardSize.X/2)/ScreenSize.X,0,math.round(MousePosition.Y-CardSize.Y/2)/ScreenSize.Y,0)
 				Animate(Frame,{
-					Time = OwnerSettings.FancyDragging and .1 or 0,
+					Time = 0,
 					Properties = {
 						Position = FinalPosition
 					}
@@ -955,18 +967,12 @@ local function EnableDrag(Frame,Expand)
 			}
 		end
 	end),Services.UserInputService.InputEnded:Connect(function(Input)
+		Services.UserInputService.MouseIconEnabled = true -- Hooks.MouseIconEnabled:SetActive(false)
 		if DragConnection and Input.UserInputType == Enum.UserInputType.MouseButton1 then
 			RemoveConnections{
 				DragConnection
 			}
 			DragConnection = nil
-			Animate(Frame,{
-				Time = .5,
-				Properties = {
-					Position = FinalPosition
-				},
-				EasingDirection = Enum.EasingDirection.InOut
-			})
 			Debounce = false
 			if Expand then
 				ExpandGui(true)
@@ -989,108 +995,10 @@ local function EnableDrag(Frame,Expand)
 		InputEnded
 	}
 end
---[[```lua
-local function GetHumanoid(Target)
-	Target = ValidInstance(Target,"Model") or ValidInstance(Target,"Player") and (Target.Character or Target.CharacterAdded:Wait())
-	if Target then
-		return Target:FindFirstChildOfClass"Humanoid"
-	end
-end
-local Commands
-Commands = {
-	["SpoofWalkSpeed/SpoofWS/HookWalkSpeed/HookWS"] = function()
-		local Humanoid = Owner.Character.Humanoid
-		local FakeWalkSpeed = Humanoid.WalkSpeed
-		local OldIndex,OldNewIndex
-		OldIndex = hookmetamethod(game,"__index",newcclosure(function(...)
-			if not checkcaller() and ... == Humanoid and select(2,...) == "WalkSpeed" then
-				return FakeWalkSpeed
-			end
-			return OldIndex(...)
-		end))
-		Humanoid.WalkSpeed = 100
-		OldNewIndex = hookmetamethod(game,"__newindex",newcclosure(function(...)
-			if not checkcaller() and ... == Humanoid and select(2,...) == "WalkSpeed" then
-				FakeWalkSpeed = tonumber(select(3,...)) or 0
-				return
-			end
-			return OldNewIndex(...)
-		end))
-	end
-}
-------------------------------------------------------------------------------------------------------------------------------------------------
-local Spoofed = {}
-local Humanoid
-local function Check(Character)
-	local Humanoid_ = Character:FindFirstChildOfClass"Humanoid"
-	while not Humanoid_ do
-		Character.ChildAdded:Wait()
-		Humanoid_ = Character:FindFirstChildOfClass"Humanoid"
-	end
-	Spoofed.WalkSpeed = Humanoid_.WalkSpeed
-end
-if Owner.Character then
-	Check(Owner.Character)
-end
-Owner.CharacterAdded:Connect(Check)
-local OldIndex
-local function CheckProperties(Properties,Property)
-	if type(Property) == "string" then
-		for _,PropertyNames in pairs(Properties) do
-			PropertyNames = PropertyNames:split()
-			for _,PropertyName in pairs(PropertyNames) do
-				if Property == PropertyName then
-					return true,Spoofed[PropertyNames[1] ]
-				end
-			end
-		end
-	end
-	return false
-end
-OldIndex = hookmetamethod(game,"__index",function(...)
-	local Object,Property = ...
-	if not checkcaller() and typeof(Object) == "Instance" then
-		for Properties,Instance_ in pairs{
-			[{
-				"WalkSpeed,walkSpeed",
-				"FloorMaterial",
-				"MoveDirection"
-			}] = Humanoid,
-			[{
-				"Velocity,AssemblyLinearVelocity",
-				"RotVelocity,AssemblyAngularVelocity",
-				"CFrame"
-			}] = RootPart
-		} do
-			if Instance_ == Object then
-				local Passed,Spoof = CheckProperties(Properties,Property)
-				if Passed then
-					return Spoof
-				end
-				break
-			end
-		end
-	end
-	return OldIndex(...)
-end)
-local OldNewIndex
-OldNewIndex = hookmetamethod(game,"__newindex",function(...)
-	if not checkcaller() and typeof((...)) == "Instance" then
-		if Humanoid and ... == Humanoid and (select(2,...) == "WalkSpeed" or select(2,...) == "walkSpeed") then
-			Spoofed.WalkSpeed = tonumber((select(3,...))) or 0
-		end
-	end
-	return OldIndex(...)
-end)
-```]]
 GlobalEnvironment.Ultimatum = function()
-	Destroy(Connections)
-	GlobalEnvironment.Ultimatum = nil
-	Gui:Destroy()
 	--- @diagnostic disable-next-line undefined-global
-	if protect_gui then
-		Destroy(gethui())
-	end
+	Destroy(Connections,Gui,protect_gui and gethui())
+	GlobalEnvironment.Ultimatum = nil
 end
 EnableDrag(Gui.Main,true)
 task.defer(function()
