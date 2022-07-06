@@ -972,7 +972,7 @@ Commands = {
 				Owner:Kick()
 				RunCommand"CloseRobloxMessage"
 				Notify{
-					Text = "<b>Rejoining</b>You will be rejoined shortly..."
+					Text = "<b>Rejoining</b>\nYou will be rejoined shortly..."
 				}
 				task.delay(3,pcall,Services.TeleportService.Teleport,Services.TeleportService,game.PlaceId)
 			end
@@ -1079,7 +1079,7 @@ Commands = {
 			end
 			local Server = Servers[math.random(#Servers)]
 			Notify{
-				Text = ("<b>Joining Server</b>Took %s to search %d servers. Server <i>%s</i> has %d/%d players"):format(ConvertTime(os.clock()-Start),ServerCount,Server.id,Server.playing,Server.maxPlayers)
+				Text = ("<b>Joining Server</b>\nTook %s to search %d servers. Server <i>%s</i> has %d/%d players"):format(ConvertTime(os.clock()-Start),ServerCount,Server.id,Server.playing,Server.maxPlayers)
 			}
 			task.delay(2,Services.TeleportService.TeleportToPlaceInstance,Services.TeleportService,game.PlaceId,Server.id)
 		end,
