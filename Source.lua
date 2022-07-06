@@ -1159,7 +1159,7 @@ Connections = {
 				}
 				local Ultimatum = loadstring(Result,"Ultimatum")
 				local Environment = getfenv(Ultimatum)
-				Environment.UltimatumStart = LastCheck
+				Environment.UltimatumStart = os.clock()
 				setfenv(Ultimatum,Environment)()
 			elseif not Success and not isfile"Source.Ultimatum" then
 				Notify{
