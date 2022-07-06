@@ -1,45 +1,154 @@
-   --[[]    [|] [|]    [|||||||||] [|||||||||] [||]    [||]      [|] [|||||||||] [|]    [|] [||]    [||]
-    [|]    [|] [|]        [|]         [|]     [||||] [||||]   [|] [|]   [|]     [|]    [|] [||||] [||||]
-   [|]    [|] [|]        [|]         [|]     [|] [|||] [|]  [|]   [|]  [|]     [|]    [|] [|] [|||] [|]
-  [|]    [|] [|]        [|]         [|]     [|]  [|]  [|] [|||||||||] [|]     [|]    [|] [|]  [|]  [|]
- [|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]
+  --[[]    [|] [|]    [|||||||||] [|||||||||] [||]    [||]      [|] [|||||||||] [|]    [|] [||]    [||]
+   [|]    [|] [|]        [|]         [|]     [||||] [||||]   [|] [|]   [|]     [|]    [|] [||||] [||||]
+  [|]    [|] [|]        [|]         [|]     [|] [|||] [|]  [|]   [|]  [|]     [|]    [|] [|] [|||] [|]
+ [|]    [|] [|]        [|]         [|]     [|]  [|]  [|] [|||||||||] [|]     [|]    [|] [|]  [|]  [|]
 [|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]
-[||||||]  [||||||||] [|]     [|||||||||] [|]       [|] [|]     [|] [|]      [||||||]  [|]       []]
-local ScriptEnvironment = getfenv()
-for _,Table in pairs{
-	[3] = "http",
-	[4] = "crypt",
-	[5] = {
-		"cache",
-		"cache_%s"
-	},
-	[6] = {
-		"base64",
-		"base64%s"
-	},
-	[7] = {
-		"custom",
-		"custom_%s"
-	},
-	[2] = "\x73\x79\x6E",
-	[1] = "\x66\x6C\x75\x78\x75\x73"
-} do
-	local LibraryName,Interpret = unpack(type(Table) == "table" and Table or {Table})
-	for FunctionName,Function in pairs(ScriptEnvironment[LibraryName] or {}) do
-		ScriptEnvironment[(Interpret or "%s"):format(FunctionName)] = Function
+[|]  [|]  [|]        [|]         [|]     [|]       [|] [|]     [|] [|]      [|]  [|]  [|]       [|]
+[||||]   [||||||||] [|]     [|||||||||] [|]       [|] [|]     [|] [|]       [||||]   [|]       []]
+local UltimatumStart = getfenv().UltimatumStart or os.clock()
+do
+	local Environment = getfenv()
+	local function CheckCompatibility(Paths,Replacement)
+		Paths = Paths:split()
+		local Function
+		for Count,Path in pairs(Paths) do
+			Path = Path:split"."
+			Function = Environment[Path[1]]
+			for Depth = 2,#Path do
+				if Function then
+					Function = Function[Path[Depth]]
+				end
+			end
+			if Function or Replacement and Count == #Paths then
+				for _,NewPathName in pairs(Paths) do
+					NewPathName = NewPathName:split"."
+					local NewPath = Environment
+					for Depth = 1,#NewPathName-1 do
+						if not NewPath[NewPathName[Depth]] then
+							NewPath[NewPathName[Depth]] = {}
+						end
+						NewPath = NewPath[NewPathName[Depth]]
+					end
+					if not NewPath[NewPathName[#NewPathName]] then
+						NewPath[NewPathName[#NewPathName]] = Function or Replacement
+					end
+				end
+				break
+			end
+		end
 	end
-end
-for FunctionName,Function in pairs(debug) do
-	if not table.find({
-		"info",
-		"traceback",
-		"profileend",
-		"profilebegin",
-		"setmemorycategory",
-		"resetmemorycategory"
-	},FunctionName) then
-		ScriptEnvironment[ScriptEnvironment[FunctionName] and ("debug_%s"):format(FunctionName) or FunctionName] = Function
+	for _,FunctionNames in pairs{
+		"getsenv,getmenv",
+		"getreg,getregistry",
+		"getgc,get_gc_objects",
+		"getinfo,debug.getinfo",
+		"isreadonly,is_readonly",
+		"getproto,debug.getproto",
+		"getstack,debug.getstack",
+		"setstack,debug.setstack",
+		"getprotos,debug.getprotos",
+		"consoleclear,rconsoleclear",
+		"consoleinput,rconsoleinput",
+		"getcustomasset,getsynasset",
+		"isrbxactive,iswindowactive",
+		"dumpstring,getscriptbytecode",
+		"hookfunction,detour_function",
+		"getconnections,get_signal_cons",
+		"request,http.request,syn.request",
+		"getrawmetatable,debug_getmetatable",
+		"getcallingscript,get_calling_script",
+		"getloadedmodules,get_loaded_modules",
+		"getscriptclosure,get_script_function",
+		"getupvalue,getupval,debug.getupvalue",
+		"setupvalue,setupval,debug.setupvalue",
+		"getnamecallmethod,get_namecall_method",
+		"getconstant,getconst,debug.getconstant",
+		"is_cached,cache.iscached,syn.is_cached",
+		"protectgui,protect_gui,syn.protect_gui",
+		"setconstant,setconst,debug.setconstant",
+		"consoleprint,writeconsole,rconsoleprint",
+		"getupvalues,getupvals,debug.getupvalues",
+		"queue_on_teleport,syn.queue_on_teleport",
+		"WebSocket.connect,syn.websocket.connect",
+		"crypt.hash,syn.crypt.hash,syn.crypto.hash",
+		"getconstants,getconsts,debug.getconstants",
+		"consolecreate,createconsole,rconsolecreate",
+		"closeconsole,consoledestroy,rconsoledestroy",
+		"unprotectgui,unprotect_gui,syn.unprotect_gui",
+		"cache_replace,cache.replace,syn.cache_replace",
+		"rconsolename,consolesettitle,rconsolesettitle",
+		"cache_invalidate,cache.invalidate,syn.cache_invalidate",
+		"crypt.generatebytes,syn.crypt.random,syn.crypto.random",
+		"crypt.hash,syn.crypt.custom.hash,syn.crypto.custom.cash",
+		"decrypt,crypt.decrypt,syn.crypt.decrypt,syn.crypto.decrypt",
+		"encrypt,crypt.encrypt,syn.crypt.encrypt,syn.crypto.encrypt",
+		"crypt.custom_encrypt,syn.crypt.custom.encrypt,syn.crypto.custom.encrypt",
+		"crypt.custom_decrypt,syn.crypt.custom.decrypt,syn.crypto.custom.decrypt",
+		"base64encode,crypt.base64encode,syn.crypt.base64.encode,syn.crypto.base64.encode",
+		"base64decode,crypt.base64decode,syn.crypt.base64.decode,syn.crypto.base64.decode",
+		"getidentity,getthreadcontext,getthreadidentity,get_thread_identity,syn.get_thread_identity",
+		"setidentity,setthreadcontext,setthreadidentity,set_thread_identity,syn.set_thread_identity",
+		"setclipboard,writeclipboard,write_clipboard,toclipboard,set_clipboard,Clipboard.set,syn.write_clipboard",
+		"checkclosure,istempleclosure,issentinelclosure,iselectronfunction,is_synapse_function,is_protosmasher_closure"
+	} do
+		CheckCompatibility(FunctionNames)
 	end
+	--- @diagnostic disable undefined-global
+	for Paths,Replacement in pairs{
+		setreadonly = (make_writeable or makewriteable) and function(Table,ReadOnly)
+			(ReadOnly and (make_readonly or makereadonly) or (make_writeable or makewriteable))(Table)
+		end or 0,
+		hootmetamethod = hookfunction and getrawmetatable and function(Object,Method,Hook)
+			return hookfunction(getrawmetatable(Object)[Method],Hook)
+		end or 0,
+		setparentinternal = protectgui and function(Object,Parent)
+			protectgui(Object)
+			Object.Parent = Parent
+		end or 0,
+		["gethui,get_hidden_gui"] = protectgui and (function()
+			local HiddenUI = Instance.new"Folder"
+			protectgui(HiddenUI)
+			HiddenUI.Parent = cloneref and cloneref(game:GetService"CoreGui") or game:GetService"CoreGui"
+			return function()
+				return HiddenUI
+			end
+		end)() or function()
+			return cloneref and cloneref(game:GetService"CoreGui") or game:GetService"CoreGui"
+		end,
+		["islclosure,is_l_closure"] = (iscclosure or is_c_closure) and function(Closure)
+			return not (iscclosure or is_c_closure)(Closure)
+		end or 0,
+		cloneref = getreg and (function()
+			local TestPart = Instance.new"Part"
+			local InstanceList
+			for _,InstanceTable in pairs(getreg()) do
+				if type(InstanceTable) == "table" and #InstanceTable then
+					if rawget(InstanceTable,"__mode") == "kvs" then
+						for _,PartCheck in pairs(InstanceTable) do
+							if PartCheck == TestPart then
+								InstanceList = InstanceTable
+								pcall(game.Destroy,TestPart)
+								break
+							end
+						end
+					end
+				end
+			end
+			if InstanceList then
+				return function(Object)
+					for Index,Value in pairs(InstanceList) do
+						if Value == Object then
+							InstanceList[Index] = nil
+							return Object
+						end
+					end
+				end
+			end
+		end)() or 0
+	} do
+		CheckCompatibility(Paths,type(Replacement) == "function" and Replacement or nil)
+	end
+	--- @diagnostic enable undefined-global
 end
 local GlobalEnvironment = getgenv and getgenv() or shared
 local Nil = {}
@@ -47,7 +156,9 @@ local Destroy
 do
 	local DestroyInstance = game.Destroy
 	Destroy = function(...)
-		for _,Object in pairs{...} do
+		for _,Object in pairs{
+			...
+		} do
 			for Type,Function in pairs{
 				Instance = function()
 					pcall(DestroyInstance,Object)
@@ -71,119 +182,11 @@ do
 			end
 		end
 	end
-	local function CheckCompatibility(FunctionNames)
-		FunctionNames = FunctionNames:split()
-		local Function
-		for _,FunctionName in pairs(FunctionNames) do
-			Function = ScriptEnvironment[FunctionName]
-			if Function then
-				for _,FunctionName_ in pairs(FunctionNames) do
-					ScriptEnvironment[FunctionName_] = Function
-				end
-				break
-			end
-		end
-		return Function
-	end
-	for _,FunctionNames in pairs{
-		"getsenv,getmenv",
-		"getupval,getupvalue",
-		"setupvalue,setupval",
-		"getconst,getconstant",
-		"getgc,get_gc_objects",
-		"setconstant,setconst",
-		"getupvals,getupvalues",
-		"getconsts,getconstants",
-		"isreadonly,is_readonly",
-		"consoleclear,rconsoleclear",
-		"consoleinput,rconsoleinput",
-		"isrbxactive,iswindowactive",
-		"dumpstring,getscriptbytecode",
-		"hookfunction,detour_function",
-		"getconnections,get_signal_cons",
-		"getrawmetatable,debug_getmetatable",
-		"getcallingscript,get_calling_script",
-		"getcustomasset,get\x73\x79\x6Easset",
-		"getloadedmodules,get_loaded_modules",
-		"getscriptclosure,get_script_function",
-		"getnamecallmethod,get_namecall_method",
-		"consoleprint,writeconsole,rconsoleprint",
-		"consolecreate,createconsole,rconsolecreate",
-		"closeconsole,consoledestroy,rconsoledestroy",
-		"rconsolename,consolesettitle,rconsolesettitle",
-		"getidentity,getthreadcontext,getthreadidentity,get_thread_identity",
-		"setidentity,setthreadcontext,setthreadidentity,set_thread_identity",
-		"checkclosure,is\x74\x65\x6D\x70\x6C\x65closure,is\x73\x65\x6E\x74\x69\x6E\x65\x6Cclosure,is\x65\x6C\x65\99\x74\x72\x6F\x6Efunction,is_\x73\x79\x6E\97\x70\x73\x65_function,is_\x70\x72\x6F\x74\x6F\x73\x6D\97\x73\x68\x65\x72_closure"
-	} do
-		CheckCompatibility(FunctionNames)
-	end
-	--- @diagnostic disable undefined-global
-	for FunctionNames,Replacement in pairs{
-		setreadonly = (make_writeable or makewriteable) and function(Table,ReadOnly)
-			(ReadOnly and (make_readonly or makereadonly) or (make_writeable or makewriteable))(Table)
-		end or 0,
-		hootmetamethod = hookfunction and getrawmetatable and function(Object,Method,Hook)
-			return hookfunction(getrawmetatable(Object)[Method],Hook)
-		end or 0,
-		setparentinternal = protect_gui and function(Object,Parent)
-			protect_gui(Object)
-			Object.Parent = Parent
-		end or 0,
-		["gethui,get_hidden_gui"] = protect_gui and (function()
-			local HiddenUI = Instance.new"Folder"
-			protect_gui(HiddenUI)
-			HiddenUI.Parent = cloneref and cloneref(game:GetService"CoreGui") or game:GetService"CoreGui"
-			return function()
-				return HiddenUI
-			end
-		end)() or function()
-			return cloneref and cloneref(game:GetService"CoreGui") or game:GetService"CoreGui"
-		end,
-		["islclosure,is_l_closure"] = (iscclosure or is_c_closure) and function(Closure)
-			return not (iscclosure or is_c_closure)(Closure)
-		end or 0,
-		cloneref = getreg and (function()
-			local TestPart = Instance.new"Part"
-			local InstanceList
-			for _,InstanceTable in pairs(getreg()) do
-				if type(InstanceTable) == "table" and #InstanceTable then
-					if rawget(InstanceTable,"__mode") == "kvs" then
-						for _,PartCheck in pairs(InstanceTable) do
-							if PartCheck == TestPart then
-								InstanceList = InstanceTable
-								Destroy(TestPart)
-								break
-							end
-						end
-					end
-				end
-			end
-			if InstanceList then
-				return function(Object)
-					for Index,Value in pairs(InstanceList) do
-						if Value == Object then
-							InstanceList[Index] = nil
-							return Object
-						end
-					end
-				end
-			end
-		end)() or 0,
-		["setclipboard,writeclipboard,toclipboard,set_clipboard"] = Clipboard and Clipboard.set or 0
-	} do
-		local Function = CheckCompatibility(FunctionNames)
-		if not Function and type(Replacement) == "function" then
-			for _,FunctionName in pairs(FunctionNames:split()) do
-				ScriptEnvironment[FunctionName] = Replacement
-			end
-		end
-	end
-	--- @diagnostic enable undefined-global
 end
 local Services = setmetatable({},{
 	__index = function(Services,ServiceName)
 		(GlobalEnvironment.UltimatumDebug and assert or function() end)(pcall(game.GetService,game,ServiceName),("Ultimatum | Invalid ServiceName (%s '%s')"):format(typeof(ServiceName),tostring(ServiceName)))
-		if not rawget(Services,ServiceName) or rawget(Services,ServiceName) ~= game:GetService(ServiceName) then
+		if not rawget(Services,ServiceName) then
 			rawset(Services,ServiceName,game:GetService(ServiceName))
 		end
 		return cloneref and rawget(Services,ServiceName) and cloneref(rawget(Services,ServiceName)) or rawget(Services,ServiceName)
@@ -205,7 +208,11 @@ if not GlobalEnvironment.UltimatumLoaded then
 	end)))
 end
 pcall(GlobalEnvironment.Ultimatum)
-local Owner = Services.Players.LocalPlayer or Services.Players.PlayerAdded:Wait()
+local Owner = Services.Players.LocalPlayer
+while not Owner do
+	Services.Players.PlayerAdded:Wait()
+	Owner = Services.Players.LocalPlayer
+end
 local function NilConvert(Value)
 	if Value == nil then
 		return Nil
@@ -224,13 +231,14 @@ Valid = {
 		return Table
 	end,
 	Number = function(Number,Substitute)
-		return tonumber(Number) == tonumber(Number) and tonumber(Number) or tonumber(Substitute) == tonumber(Substitute) and tonumber(Substitute) or 0
+		Number,Substitute = tonumber(Number),tonumber(Substitute)
+		return Number == Number and Number or Substitute == Substitute and Substitute or nil
 	end,
 	String = function(String,Substitute)
-		return type(String) == "string" and String or type(Substitute) == "string" and Substitute or ""
+		return type(String) == "string" and String or type(Substitute) == "string" and Substitute or nil
 	end,
-	Instance = function(Instance_,ClassName)
-		return typeof(Instance_) == "Instance" and select(2,pcall(game.IsA,Instance_,Valid.String(ClassName,"Instance"))) == true and Instance_ or nil
+	Instance = function(Object,ClassName)
+		return typeof(Object) == "Instance" and select(2,pcall(game.IsA,Object,Valid.String(ClassName,"Instance"))) == true and Object or nil
 	end,
 	Boolean = function(Boolean,Substitute)
 		Boolean = tostring(Boolean):lower()
@@ -266,28 +274,28 @@ local Randomized = {
 			end
 		end
 		return Settings.Format:format(("A"):rep(Settings.Length):gsub(".",function()
-			return AvailableCharacters[math.random(1,#AvailableCharacters)]
+			return AvailableCharacters[math.random(#AvailableCharacters)]
 		end))
 	end,
 	Bool = function(Chance)
-		return math.random(1,1/Valid.Number(Chance,.5)) == 1
+		return math.random(math.round(1/math.min(Valid.Number(Chance,.5),1))) == 1
 	end
 }
 table.freeze(Randomized)
 local function NewInstance(ClassName,Parent,Properties)
-	local NewInstance_ = select(2,pcall(Instance.new,ClassName))
-	if typeof(NewInstance_) == "Instance" then
+	local NewObject = select(2,pcall(Instance.new,ClassName))
+	if typeof(NewObject) == "Instance" then
 		Properties = Valid.Table(Properties,{
 			Name = Randomized.String(),
 			Archivable = Randomized.Bool()
 		})
 		for Property,Value in pairs(Properties) do
 			pcall(function()
-				NewInstance_[Property] = NilConvert(Value)
+				NewObject[Property] = NilConvert(Value)
 			end)
 		end
-		NewInstance_.Parent = typeof(Parent) == "Instance" and Parent or nil
-		return NewInstance_
+		NewObject.Parent = typeof(Parent) == "Instance" and Parent or nil
+		return NewObject
 	end
 end
 local function Create(Data)
@@ -299,7 +307,7 @@ local function Create(Data)
 end
 local OwnerSettings
 do
-	local Success,Output = pcall(Services.HttpService.JSONDecode,Services.HttpService,isfile and isfile"Settings.Ultimatum" and readfile"Settings.Ultimatum" or "[]")
+	local Success,Output = pcall(Services.HttpService.JSONDecode,Services.HttpService,isfile and isfile"Settings.Ultimatum" and readfile"Settings.Ultimatum":gsub("^%bA{","{") or "[]")
 	local Settings = Valid.Table(Success and Output or {},{
 		Scale = 1,
 		Blur = true,
@@ -321,23 +329,81 @@ do
 		__newindex = function(_,Index,Value)
 			Settings[Index] = Value
 			if writefile then
-				writefile("Settings.Ultimatum",Services.HttpService:JSONEncode(Settings))
+				local FormattedSettings = {}
+				for SettingName,SettingValue in pairs(Settings) do
+					table.insert(FormattedSettings,("\t%s : %s,"):format(("%q"):format(SettingName),type(SettingValue) == "string" and ("%q"):format(SettingValue) or tostring(SettingValue)))
+				end
+				table.sort(FormattedSettings,function(String1,String2)
+					if #String1 < #String2 then
+						return true
+					elseif #String2 < #String1 then
+						return false
+					end
+					String1,String2 = {
+						String1:byte(1,-2)
+					},{
+						String2:byte(1,-2)
+					}
+					for Integer = 1,math.max(#String1,#String2) do
+						if (String1[Integer] or -1) < (String2[Integer] or -1) then
+							return true
+						elseif (String2[Integer] or -1) < (String1[Integer] or -1) then
+							return false
+						end
+					end
+					return false
+				end)
+				FormattedSettings[#FormattedSettings] = FormattedSettings[#FormattedSettings]:sub(1,-2)
+				writefile("Settings.Ultimatum",('All settings for Ultimatum.\nDo not edit this file unless you know what you\'re doing.\nEvery setting can be changed in-game using the "Settings" command.\n{\n%s\n}'):format(table.concat(FormattedSettings,"\n")))
 			end
 		end,
 		__metatable = "nil"
 	})
 end
 OwnerSettings._ = nil
-if Services.CoreGui:FindFirstChild"RobloxLoadingGui" and Services.CoreGui.RobloxLoadingGui:FindFirstChild"BlackFrame" then
-	local LoadStart,Connection = os.clock()
-	Connection = Services.CoreGui.RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency":Connect(function()
-		Destroy(Connection)
-		LoadStart = 0
-	end)
-	repeat
-		task.wait()
-	until 3 < os.clock()-LoadStart
+local function WaitForSignal(Signal,MaxYield)
+	local Return = NewInstance"BindableEvent"
+	Destroy(Return)
+	if Valid.Number(MaxYield) then
+		task.delay(MaxYield,Return.Fire,Return)
+	end
+	local SignalStart,Ready = os.clock()
+	for Type,Functionality in pairs{
+		RBXScriptSignal = function()
+			Return:Fire(Signal:Wait())
+		end,
+		["function"] = function()
+			local Continue
+			repeat
+				(function(Success,...)
+					if Success and ... then
+						Continue = true
+						if not Ready then
+							task.wait()
+						end
+						Return:Fire(...)
+					end
+				end)(pcall(Signal))
+			until Continue or Valid.Number(MaxYield) and MaxYield < os.clock()-SignalStart
+		end
+	} do
+		if typeof(Signal) == Type then
+			task.spawn(Functionality)
+			break
+		end
+	end
+	Ready = true
+	return Return.Event:Wait()
 end
+if Services.CoreGui:FindFirstChild"RobloxLoadingGui" and Services.CoreGui.RobloxLoadingGui:FindFirstChild"BlackFrame" and Services.Coregui.RobloxLoadingGui.BackgroundTransparency <= 0 then
+	WaitForSignal(Services.CoreGui.RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency",3)
+end
+local LogoId = writefile and getcustomasset and (isfile"UltimatumLogo.png" or (function()
+	local Success,Output = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Logo.png")
+	if Success then
+		writefile("UltimatumLogo.png",Output)
+	end
+end)()) and getcustomasset"UltimatumLogo.png" or "rbxassetid://9666094136"
 local Gui = Create{
 	{
 		Name = "Holder",
@@ -427,7 +493,7 @@ local Gui = Create{
 			ImageTransparency = 1,
 			BackgroundTransparency = 1,
 			Size = UDim2.new(.8,0,.8,0),
-			Image = "rbxassetid://9666094136"
+			Image = LogoId
 		}
 	},
 	{
@@ -449,15 +515,15 @@ local Gui = Create{
 		ClassName = "TextBox",
 		Properties = {
 			Text = "",
+			TextSize = 14,
 			Font = Enum.Font.Arial,
 			ClearTextOnFocus = false,
 			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-10,1,0),
 			Position = UDim2.new(0,10,0,0),
 			TextColor3 = Color3.new(1,1,1),
 			TextXAlignment = Enum.TextXAlignment.Left,
 			PlaceholderColor3 = Color3.fromHex"A0A0A0",
-			TextSize = 14,
-			Size = UDim2.new(1,-10,1,0),
 			PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Services.UserInputService:GetStringForKeyCode(Enum.KeyCode[OwnerSettings.Keybind]))
 		}
 	},
@@ -497,48 +563,84 @@ local Gui = Create{
 			CellPadding = UDim2.new(),
 			CellSize = UDim2.new(1,0,0,20)
 		}
+	},
+	{
+		Name = "NotificationHolder",
+		Parent = "Holder",
+		ClassName = "Frame",
+		Properties = {
+			AnchorPoint = Vector2.one,
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1/3,0,1,-20),
+			Position = UDim2.new(1,-10,1,-10)
+		}
+	},
+	{
+		Name = "NotificationlistLayout",
+		Parent = "NotificationHolder",
+		ClassName = "UIListLayout",
+		Properties = {
+			Padding = UDim.new(0,10),
+			VerticalAlignment = Enum.VerticalAlignment.Bottom,
+			HorizontalAlignment = Enum.HorizontalAlignment.Right
+		}
 	}
 }
-local function Animate(Instance_,Data)
-	if Valid.Instance(Instance_) then
-		Data = Valid.Table(Data,{
-			Time = 1,
-			Delay = 0,
-			Yields = false,
-			Properties = {},
-			RepeatCount = 0,
-			Reverses = false,
-			EasingStyle = Enum.EasingStyle.Quad,
-			EasingDirection = Enum.EasingDirection.Out
-		})
-		Services.TweenService:Create(Instance_,TweenInfo.new(Data.Time,Data.EasingStyle,Data.EasingDirection,Data.RepeatCount,Data.Reverses,Data.Delay),Data.Properties):Play()
-		if Data.Yields then
-			task.wait((Data.Time+Data.Delay)*(1+Data.RepeatCount))
+local function Animate(...)
+	for Index = 1,select("#",...),2 do
+		local Object,Data = select(Index,...)
+		if Valid.Instance(Object) then
+			Data = Valid.Table(Data,{
+				Time = .5,
+				DelayTime = 0,
+				Yields = false,
+				FinishDelay = 0,
+				Properties = {},
+				RepeatCount = 0,
+				Reverses = false,
+				EasingStyle = Enum.EasingStyle.Quad,
+				EasingDirection = Enum.EasingDirection.Out
+			})
+			Services.TweenService:Create(Object,TweenInfo.new(Data.Time,Data.EasingStyle,Data.EasingDirection,Data.RepeatCount,Data.Reverses,Data.DelayTime),Data.Properties):Play()
+			if Data.Yields then
+				task.wait((Data.Time+Data.DelayTime)*(1+Data.RepeatCount))
+			end
+			if 0 < Data.FinishDelay then
+				task.wait(Data.FinishDelay)
+			end
 		end
 	end
 end
+local NotificationIDs = {}
 local function Notify(Settings)
 	Settings = Valid.Table(Settings,{
 		Buttons = {},
 		Duration = 5,
 		Urgent = false,
 		Yields = false,
-		CalculateDuration = false,
+		CalculateDuration = true,
 		Text = "<b>Ultimatum</b>\n(no text)"
 	})
 	if OwnerSettings.Notifications == "Off" or OwnerSettings.Notifications == "Urgent" and not Settings.Urgent then
 		return
 	end
+	local ID
+	repeat
+		ID = Randomized.String{
+			Format = "%s",
+			Length = 5
+		}
+	until not table.find(NotificationIDs,ID)
+	table.insert(NotificationIDs,ID)
 	local Notification = Create{
 		{
 			Name = "Main",
-			Parent = Gui.Holder,
+			Parent = Gui.NotificationHolder,
 			ClassName = "Frame",
 			Properties = {
 				ClipsDescendants = true,
 				AnchorPoint = Vector2.one,
 				BackgroundTransparency = 1,
-				Position = UDim2.new(1,-10,1,0),
 				BackgroundColor3 = Color3.fromHex"505064"
 			}
 		},
@@ -579,89 +681,253 @@ local function Notify(Settings)
 		}
 	}
 	if Settings.CalculateDuration then
-		local Length = 0
 		for _ in utf8.graphemes(Notification.Content.ContentText) do
-			Length += 1
+			Settings.Duration += .06
 		end
-		Settings.Duration += Length*.06
 	end
 	Settings.Duration += .25
-	local Size = Services.TextService:GetTextSize(Notification.Content.ContentText,13,Enum.Font.Arial,Vector2.new(workspace.CurrentCamera.ViewportSize.X/3,workspace.CurrentCamera.ViewportSize.Y-40))
-	Notification.Main.Size = UDim2.new(0,Size.X,0,Size.Y+20)
-	repeat
-		Notification.Main.Size -= UDim2.new(0,1,0,0)
-	until not Notification.Content.TextFits
-	Notification.Main.Size += UDim2.new(0,1,0,0)
+	local Size = Services.TextService:GetTextSize(Notification.Content.ContentText,13,Enum.Font.Arial,Vector2.new(Gui.NotificationHolder.AbsoluteSize.X,Gui.NotificationHolder.AbsoluteSize.Y))
+	Notification.Main.Size = UDim2.new(0,Size.X+22,0,Size.Y+20)
+	Size = Notification.Main.Size
+	Notification.Main.Size = UDim2.new(Size.X.Scale,Size.X.Offset,0,0)
 	Animate(Notification.Main,{
 		Time = .25,
 		Properties = {
-			Position = UDim2.new(1,-10,1,-10),
+			Size = Size,
 			BackgroundTransparency = 0
 		}
-	})
-	Animate(Notification.Content,{
+	},Notification.Content,{
 		Time = .25,
 		Properties = {
 			TextTransparency = 0
 		},
 		EasingStyle = Enum.EasingStyle.Linear
 	})
+	task.delay(Settings.Duration,Animate,Notification.Main,{
+		Time = 1,
+		Properties = {
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,0)
+		}
+	},Notification.Content,{
+		Time = 1,
+		Properties = {
+			TextTransparency = 1
+		},
+		EasingStyle = Enum.EasingStyle.Linear
+	})
+	Settings.Duration += 1
 	task.spawn(function()
-		task.wait(Settings.Duration)
-		Animate(Notification.Main,{
-			Time = 1,
-			Properties = {
-				BackgroundTransparency = 1
-			}
-		})
-		Animate(Notification.Content,{
-			Time = 1,
-			Properties = {
-				TextTransparency = 1
-			},
-			EasingStyle = Enum.EasingStyle.Linear
-		})
+		local Start = os.clock()
+		repeat
+			Notification.Main.LayoutOrder = table.find(NotificationIDs,ID)
+			task.wait()
+		until Settings.Duration < os.clock()-Start
+		table.remove(NotificationIDs,table.find(NotificationIDs,ID))
 	end)
 	if Settings.Yields then
-		task.wait(Settings.Duration+1)
+		task.wait(Settings.Duration)
 		Destroy(Notification)
 	else
-		task.delay(Settings.Duration+1,Destroy,Notification)
+		task.delay(Settings.Duration,Destroy,Notification)
 	end
 end
 local function CheckAxis(Axis)
 	return workspace.CurrentCamera.ViewportSize[Axis]/2 < Gui.Logo.AbsolutePosition[Axis]+Gui.Logo.AbsoluteSize[Axis]/2
 end
-local LastCheck,Focused,Debounce,LastLeft = 0,isrbxactive and isrbxactive() or true,true,0
-local ExpandGui
-do
-	local Expanded
-	ExpandGui = function(Expand,Ignore)
-		if Expanded ~= Expand and not Debounce and (Ignore or not OwnerSettings.StayOpen) then
-			Expanded = Expand
-			if Expand then
-				Gui.CommandBarBackground.LayoutOrder = CheckAxis"X" and -1 or 1
-				Gui.CommandBarSection.LayoutOrder = CheckAxis"Y" and 1 or -1
-			end
-			local Size = UDim2.new(0,Expand and 400 or 40,0,40)
-			Animate(Gui.Main,{
-				Time = Expand and .25 or .5,
-				Properties = {
-					Size = Size,
-					Position = CheckAxis"X" and Gui.Main.Position+UDim2.new(0,Gui.Main.AbsoluteSize.X-math.round(Size.X.Offset*OwnerSettings.Scale),0,0) or Gui.Main.Position
-				}
-			})
-			Animate(Gui.CommandBarBackground,{
-				Time = Expand and .25 or .48,
-				Properties = {
-					Visible = Expand
-				}
-			})
+local LastCheck,Focused,Debounce,LastLeft = 0,not isrbxactive and true or isrbxactive(),true,0
+local function ResizeMain(X,Y)
+	X = OwnerSettings.StayOpen and 400 or Valid.Number(X,400)
+	Y = Valid.Number(Y,40)
+	Gui.CommandBarBackground.LayoutOrder = CheckAxis"X" and -1 or 1
+	Gui.CommandBarSection.LayoutOrder = CheckAxis"Y" and 1 or -1
+	Animate(Gui.Main,{
+		Time = .25,
+		Properties = {
+			Size = UDim2.new(0,X,0,Y),
+			Position = Gui.Main.Position+UDim2.new(0,CheckAxis"X" and Gui.Main.AbsoluteSize.X-X or 0,0,CheckAxis"Y" and Gui.Main.AbsoluteSize.Y-Y or 0)
+		}
+	},Gui.CommandBarBackground,{
+		Time = .25,
+		Properties = {
+			Visible = 40 < X
+		}
+	})
+end
+local function Assert(...)
+	for Index = 1,select("#",...),2 do
+		local Assertion,FailureMessage = select(Index,...)
+		if not Assertion then
+			Notify{
+				Text = ("<b>Command Failed</b>\n%s"):format(Valid.String(FailureMessage,"The command failed to run. No further information provided"))
+			}
+			return false
+		end
+	end
+	return true
+end
+local function GetCharacter(Player,MaxYield)
+	Player = Valid.Instance(Player,"Player")
+	if not Assert(Player,"Specified player does not exist or left") then
+		return
+	end
+	if Valid.Instance(Player.Character,"Model") then
+		return Player.Character
+	end
+	local Character = WaitForSignal(Player.CharacterAdded,MaxYield)
+	if Assert(Character,"The player's character took too long to load") then
+		return Character
+	end
+end
+local function GetHumanoid(Character,MaxYield)
+	MaxYield = Valid.Number(MaxYield)
+	if Valid.Instance(Character,"Player") then
+		local Duration = os.clock()
+		local NewCharacter = GetCharacter(Character,MaxYield)
+		if NewCharacter then
+			Character = NewCharacter
+			MaxYield -= os.clock()-Duration
+		else
+			return
+		end
+	elseif not Assert(Valid.Instance(Character,"Model"),"The player's character isn't valid") then
+		return
+	end
+	local Humanoid = WaitForSignal(function()
+		local Humanoid = Character:FindFirstChildOfClass"Humanoid" or Character.ChildAdded:Wait()
+		if Valid.Instance(Humanoid,"Humanoid") then
+			return Humanoid
+		end
+	end,MaxYield)
+	if Assert(Humanoid,"The player's humanoid took too long to load") then
+		return Humanoid
+	end
+end
+local function ConvertTime(Time)
+	for _,Values in pairs{
+		{
+			31536000000,
+			"millennium"
+		},
+		{
+			3153600000,
+			"century"
+		},
+		{
+			315360000,
+			"decade"
+		},
+		{
+			31536000,
+			"year"
+		},
+		{
+			2628003,
+			"month"
+		},
+		{
+			604800,
+			"week"
+		},
+		{
+			86400,
+			"day"
+		},
+		{
+			3600,
+			"hour"
+		},
+		{
+			60,
+			"minute"
+		},
+		{
+			1,
+			"second"
+		},
+		{
+			.001,
+			"millisecond"
+		},
+		{
+			.000001,
+			"microsecond"
+		},
+		{
+			.000000001,
+			"nanosecond"
+		}
+	} do
+		if Values[1] <= Time then
+			Time = math.round(Time/Values[1]*10)/10
+			return ("%s %s%s"):format(tostring(Time),Values[2],Time ~= 1 and "s" or "")
 		end
 	end
 end
---- @diagnostic disable undefined-global
-local Commands = { -- Currently only safe commands are included until I write a system for metamethod hooks
+local Commands,Connections
+local function RunCommand(Text)
+	for _,Input in pairs(Text:split(OwnerSettings.CommandSeperator)) do
+		local Arguments = Input:split(OwnerSettings.ArgumentSeperator)
+		local Command = Arguments[1]
+		table.remove(Arguments,1)
+		local RanCommand
+		for CommandNames,CommandInfo in pairs(Commands) do
+			CommandNames = CommandNames:split"_"
+			local Continue
+			for _,CommandName in pairs(CommandNames) do
+				if CommandName:lower() == Command:lower() then
+					CommandInfo.Arguments = Valid.Table(CommandInfo.Arguments)
+					for ArgumentNumber,ArgumentProperties in pairs(CommandInfo.Arguments) do
+						if ArgumentProperties.Required and not Arguments[ArgumentNumber] then
+							Notify{
+								Text = ('<b>Missing Argument</b>\nThe command "%s" requires you to enter the argument "%s"'):format(CommandNames[1],ArgumentProperties.Name)
+							}
+							break
+						end
+						if ArgumentProperties.Concatenate then
+							Arguments[ArgumentNumber] = table.concat(Arguments,OwnerSettings.ArgumentSeperator,ArgumentNumber)
+							for Index = ArgumentNumber+1,#Arguments do
+								Arguments[Index] = nil
+							end
+						end
+						Arguments[ArgumentNumber] = Valid[ArgumentProperties.Type](Arguments[ArgumentNumber],ArgumentProperties.Substitute)
+					end
+					if CommandInfo.Variables then
+						table.insert(Arguments,1,CommandInfo.Variables)
+					end
+					CommandInfo.Function(unpack(Arguments))
+					Continue,RanCommand = true,true
+					break
+				end
+			end
+			if Continue then
+				break
+			end
+		end
+		if not RanCommand then
+			Notify{
+				Text = ('<b>Not a Command</b>\nThere are not any commands named "%s"'):format(Command)
+			}
+		end
+	end
+end
+local function AddConnections(GivenConnections)
+	for Name,Connection in pairs(Valid.Table(GivenConnections)) do
+		if typeof(Connection) == "RBXScriptConnection" and Connection.Connected then
+			Connections[type(Name) ~= "number" and Name or #Connections+1] = Connection
+			table.insert(Connections,Connection)
+		end
+	end
+end
+local function RemoveConnections(GivenConnections)
+	for _,Connection in pairs(Valid.Table(GivenConnections)) do
+		if typeof(Connection) == "RBXScriptConnection" then
+			Destroy(Connection)
+			pcall(table.remove,Connections,table.find(Connections,Connection))
+		end
+	end
+end
+Commands = {
 	Exit_close_leave_shutdown = {
 		Function = function()
 			game:Shutdown()
@@ -674,12 +940,10 @@ local Commands = { -- Currently only safe commands are included until I write a 
 			if setclipboard then
 				setclipboard(JoinScript)
 				Notify{
-					CalculateDuration = true,
 					Text = "<b>Successfully Copied</b>\nPaste the copied script into your brower's URL bar and press Enter"
 				}
 			else
 				Notify{
-					CalculateDuration = true,
 					Text = ("<b>Copy to Clipboard</b>\n%s\nPaste the above script into your brower's URL bar and press Enter"):format(JoinScript)
 				}
 			end
@@ -694,16 +958,23 @@ local Commands = { -- Currently only safe commands are included until I write a 
 			{
 				Name = "Disabled",
 				Type = "Boolean",
-				Substitute = true,
-				Required = false
+				Substitute = true
 			}
 		},
 		Description = "Disables 3D rendering (everything except for GUIs are invisible), boosting FPS. Usually used with auto-farms to improve their efficiency"
 	},
 	Rejoin_rejoinserver_rejoingame_rej_rj = {
 		Function = function()
-			pcall(Services.TeleportService.TeleportToPlaceInstance,Services.TeleportService,game.PlaceId,game.JobId)
-			task.delay(3,pcall,Services.TeleportService.Teleport,Services.TeleportService,game.PlaceId)
+			if 1 < #Services.Players:GetPlayers() then
+				pcall(Services.TeleportService.TeleportToPlaceInstance,Services.TeleportService,game.PlaceId,game.JobId)
+			else
+				Owner:Kick()
+				RunCommand"CloseRobloxMessage"
+				Notify{
+					Text = "<b>Rejoining</b>You will be rejoined shortly..."
+				}
+				task.delay(3,pcall,Services.TeleportService.Teleport,Services.TeleportService,game.PlaceId)
+			end
 		end,
 		Description = "Rejoins the current server you're in"
 	},
@@ -713,6 +984,77 @@ local Commands = { -- Currently only safe commands are included until I write a 
 		end,
 		Description = "Closes any messages/errors (the grey containers with the blurred background) displayed by Roblox"
 	},
+	WalkSpeed_speed_wspeed_walks_runspeed_rspeed_runs_spoofwalkspeed_spoofspeed_spoofwspeed_spoofwalks_spoofrunspeed_spoofrspeed_spoofruns_swalkspeed_sspeed_swspeed_swalks_srunspeed_srspeed_sruns_fakewalkspeed_fakespeed_fakewspeed_fakewalks_fakerunspeed_fakerspeed_fakeruns_ws_frs_srs = {
+		Function = function(Variables,Speed)
+			Variables.Speed = Speed
+			if not Variables.Enabled then
+				local Character = GetCharacter(Owner,5)
+				if not Character then
+					return
+				end
+				local Humanoid = GetHumanoid(Character,5)
+				if not Humanoid then
+					return
+				end
+				Variables.Connection = Services.RunService.Heartbeat:Connect(function(Delta)
+					if not Character:IsDescendantOf(workspace) or Humanoid:GetState().Name == "Dead" then
+						RemoveConnections{
+							Variables.Connection
+						}
+						Variables.Enabled,Variables.Connection = false,nil
+					end
+					if 0 < Humanoid.MoveDirection.Magnitude and table.find({
+						"Landed",
+						"Jumping",
+						"Running",
+						"Freefall",
+						"Swimming"
+					},Humanoid:GetState().Name) then
+						Character:TranslateBy(Humanoid.MoveDirection*Delta*(Variables.Speed-Humanoid.WalkSpeed))
+					end
+				end)
+				Variables.Enabled = true
+			end
+		end,
+		Arguments = {
+			{
+				Name = "Speed",
+				Type = "Number",
+				Substitute = 16
+			}
+		},
+		Variables = {},
+		Description = "Changes the speed you walk at. Allows negative numbers, but you walk backwards. Your walking animation speed doesn't change"
+	},
+	Magic8Ball_8ball_magicball_magic8_8b_m8b_m8_8_magiceightball_eightball_meb_mb_eightballpu_eightballpr = {
+		Function = function()
+			Notify{
+				Text = ("<b>Magic 8 Ball</b>\n%s."):format(({
+					"Yes",
+					"Most likely",
+					"Outlook good",
+					"It is certain",
+					"Very doubtful",
+					"My reply is no",
+					"Yes definitely",
+					"Ask again later",
+					"Without a doubt",
+					"As I see it, yes",
+					"Don't count on it",
+					"My sources say no",
+					"Cannot predict now",
+					"It is decidedly so",
+					"Signs point to yes",
+					"You may rely on it",
+					"Outlook not so good",
+					"Reply hazy, try again",
+					"Better not tell you now",
+					"Concentrate and ask again",
+				})[math.random(1,20)])
+			}
+		end,
+		Description = "Notifies the Magic 8 Ball's response to your yes-or-no question"
+	}
 }
 for Replace,Settings in pairs(({})[tostring(game.PlaceId)] or {}) do
 	Commands[Replace] = nil
@@ -726,7 +1068,6 @@ local function GetContentText(String)
 	Destroy(CheckTextBox)
 	return CheckTextBox.ContentText
 end
---- @diagnostic enable undefined-global
 local function UpdateSuggestions()
 	if Services.UserInputService:GetFocusedTextBox() == Gui.CommandBar then
 		local Command = Gui.CommandBar.Text:split(OwnerSettings.CommandSeperator)
@@ -758,22 +1099,6 @@ local function UpdateSuggestions()
 		table.sort(CommandDisplays,function(String1,String2)
 			return Services.TextService:GetTextSize(GetContentText(String1),14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X < Services.TextService:GetTextSize(GetContentText(String2),14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X and true or false
 		end)
-		--[[table.sort(CommandDisplays,function(Value1,Value2)
-			if #Value1 < #Value2 then
-				return true
-			elseif #Value2 < #Value1 then
-				return false
-			end
-			Value1,Value2 = table.pack(Value1:byte(1,-1)),table.pack(Value2:byte(1,-1))
-			for Integer = 1,math.max(#Value1,#Value2) do
-				if (Value1[Integer] or -1) < (Value2[Integer] or -1) then
-					return true
-				elseif (Value2[Integer] or -1) < (Value1[Integer] or -1) then
-					return false
-				end
-			end
-			return false
-		end)]]
 		for _,Text in pairs(CommandDisplays) do
 			NewInstance("TextLabel",Gui.SuggestionsScroll,{
 				TextSize = 14,
@@ -788,17 +1113,10 @@ local function UpdateSuggestions()
 		end
 		local CommandNumber = #Gui.SuggestionsScroll:GetChildren()-1
 		Gui.SuggestionsScroll.CanvasSize = UDim2.new(0,0,0,20*CommandNumber)
-		local Size = UDim2.new(0,400,0,0 < CommandNumber and 48+20*CommandNumber or 40)
-		Animate(Gui.Main,{
-			Time = .25,
-			Properties = {
-				Size = Size,
-				Position = CheckAxis"Y" and Gui.Main.Position+UDim2.new(0,0,0,Gui.Main.AbsoluteSize.Y-Size.Y.Offset) or Gui.Main.Position
-			}
-		})
+		ResizeMain(nil,0 < CommandNumber and 48+20*CommandNumber or 40)
 	end
 end
-local Connections = {
+Connections = {
 	not GlobalEnvironment.UltimatumDebug and isfile and Services.RunService.Heartbeat:Connect(function()
 		if OwnerSettings.AutoUpdate and 60 < os.clock()-LastCheck then
 			LastCheck = os.clock()
@@ -808,24 +1126,28 @@ local Connections = {
 				Notify{
 					Yields = true,
 					Duration = .75,
+					CalculateDuration = false,
 					Text = "<b>Update Detected</b>\nUltimatum will now update..."
 				}
 				loadstring(Result,"Ultimatum")()
 			elseif not Success and not isfile"Source.Ultimatum" then
 				Notify{
 					Urgent = true,
-					CalculateDuration = true,
 					Text = ("<b>Error</b>\n%s"):format(Result)
 				}
 			end
 		end
 	end),
-	not GlobalEnvironment.UltimatumDebug and queue_on_teleport and isfile and Services.Players.LocalPlayer.OnTeleport:Connect(function(TeleportState)
-		if OwnerSettings.LoadOnRejoin and TeleportState == Enum.TeleportState.Started then
-			queue_on_teleport(isfile"Source.Ultimatum" and readfile"Source.Ultimatum" or "error('Source.Ultimatum missing from workspace folder',0)")
-			pcall(GlobalEnvironment.Ultimatum)
+	not GlobalEnvironment.UltimatumDebug and queue_on_teleport and (isfile and Owner.OnTeleport:Connect(function(TeleportState)
+		if OwnerSettings.LoadOnRejoin and TeleportState.Name == "Started" then
+			queue_on_teleport(isfile"Source.Ultimatum" and readfile"Source.Ultimatum" or "warn'Source.Ultimatum missing from workspace folder (Ultimatum cannot run)'")
 		end
-	end),
+	end) or Owner.OnTeleport:Connect(function(TeleportState)
+		if OwnerSettings.LoadOnRejoin and TeleportState.Name == "Started" then
+			local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua",true)
+			queue_on_teleport(Success and Result or ("warn'HttpGet failed: %s (Ultimatum cannot run)'"):format(Result))
+		end
+	end)),
 	Services.UserInputService.WindowFocused:Connect(function()
 		Focused = true
 	end),
@@ -833,116 +1155,62 @@ local Connections = {
 		Focused = false
 	end),
 	Gui.Main.MouseEnter:Connect(function()
-		LastLeft = os.clock()
-		ExpandGui(true)
+		if not Debounce then
+			LastLeft = os.clock()
+			ResizeMain()
+		end
 	end),
 	Gui.Main.MouseLeave:Connect(function()
-		LastLeft = os.clock()
-		task.wait(1)
-		if 1 < os.clock()-LastLeft then
-			ExpandGui(false)
+		if not Debounce then
+			LastLeft = os.clock()
+			task.wait(1)
+			if 1 < os.clock()-LastLeft and not Debounce then
+				ResizeMain(40)
+			end
 		end
 	end),
 	Gui.CommandBar.Focused:Connect(function()
 		if not Debounce then
-			Gui.CommandBar.PlaceholderText = "Enter a command..."
-			ExpandGui(true)
-			task.delay(.25,UpdateSuggestions)
 			Debounce = true
+			Gui.CommandBar.PlaceholderText = "Enter a command..."
+			ResizeMain()
+			task.delay(.25,UpdateSuggestions)
 		end
 	end),
 	Gui.CommandBar.FocusLost:Connect(function(Sent)
 		task.wait()
 		Gui.CommandBar.PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Services.UserInputService:GetStringForKeyCode(Enum.KeyCode[OwnerSettings.Keybind]))
 		if Sent and 0 < #Gui.CommandBar.Text then
-			for _,Input in pairs(Gui.CommandBar.Text:split(OwnerSettings.CommandSeperator)) do
-				local Arguments = Input:split(OwnerSettings.ArgumentSeperator)
-				local Command = Arguments[1]
-				table.remove(Arguments,1)
-				local RanCommand
-				for CommandNames,CommandInfo in pairs(Commands) do
-					CommandNames = CommandNames:split"_"
-					local Continue
-					for _,CommandName in pairs(CommandNames) do
-						if CommandName:lower() == Command:lower() then
-							CommandInfo.Arguments = Valid.Table(CommandInfo.Arguments)
-							for ArgumentNumber,ArgumentProperties in pairs(CommandInfo.Arguments) do
-								if ArgumentProperties.Required and not Arguments[ArgumentNumber] then
-									Notify{
-										CalculateDuration = true,
-										Text = ('<b>Missing Argument</b>\nThe command "%s" requires you to enter the argument "%s"'):format(CommandNames[1],ArgumentProperties.Name)
-									}
-									break
-								end
-								Arguments[ArgumentNumber] = Valid[ArgumentProperties.Type](Arguments[ArgumentNumber],ArgumentProperties.Substitute)
-							end
-							CommandInfo.Function(unpack(Arguments))
-							Continue,RanCommand = true,true
-							break
-						end
-					end
-					if Continue then
-						break
-					end
-				end
-				if not RanCommand then
-					Notify{
-						CalculateDuration = true,
-						Text = ('<b>Not a Command</b>\nThere are not any commands named "%s"'):format(Command)
-					}
-				end
-			end
+			RunCommand(Gui.CommandBar.Text)
 			Gui.CommandBar.Text = ""
 		elseif Services.UserInputService:IsKeyDown(Enum.KeyCode.Escape) then
 			Gui.CommandBar.Text = ""
 		end
-		Debounce = false
-		Animate(Gui.Main,{
-			Time = .25,
-			Properties = {
-				Size = UDim2.new(0,400,0,40),
-				Position = CheckAxis"Y" and Gui.Main.Position+UDim2.new(0,0,0,Gui.Main.AbsoluteSize.Y-math.round(40*OwnerSettings.Scale)) or Gui.Main.Position
-			}
-		})
+		ResizeMain()
 		task.delay(.25,function()
 			if Services.UserInputService:GetFocusedTextBox() ~= Gui.CommandBar then
-				ExpandGui(false)
+				ResizeMain(40)
 			end
 		end)
+		Debounce = false
 	end),
 	Services.UserInputService.InputBegan:Connect(function(Input,Ignore)
-		if not Ignore and Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode.Name == OwnerSettings.Keybind and not Debounce then
+		if not Ignore and Input.UserInputType.Name == "Keyboard" and Input.KeyCode.Name == OwnerSettings.Keybind and not Debounce then
 			task.defer(Gui.CommandBar.CaptureFocus,Gui.CommandBar)
 		end
 	end),
 	Gui.CommandBar:GetPropertyChangedSignal"Text":Connect(UpdateSuggestions)
 }
-local function AddConnections(Connections_)
-	for _,Connection in pairs(Valid.Table(Connections_)) do
-		if typeof(Connection) == "RBXScriptConnection" and Connection.Connected then
-			table.insert(Connections,Connection)
-		end
-	end
-end
-local function RemoveConnections(Connections_)
-	for _,Connection in pairs(Valid.Table(Connections_)) do
-		if typeof(Connection) == "RBXScriptConnection" then
-			Destroy(Connection)
-			pcall(table.remove,Connections,table.find(Connections,Connection))
-		end
-	end
-end
-local function EnableDrag(Frame,Expand)
+local function EnableDrag(Frame,IsMain)
 	local DragConnection
-	local FinalPosition = UDim2.new()
+	local FinalPosition,OldEnabled = UDim2.new()
 	local InputBegan,InputEnded,Removed = Frame.InputBegan:Connect(function(Input,Ignore)
-		if not Ignore and not Debounce and Input.UserInputType == Enum.UserInputType.MouseButton1 then
-			if Expand then
-				ExpandGui(false)
+		if not Ignore and not Debounce and Input.UserInputType.Name == "MouseButton1" then
+			if IsMain then
+				ResizeMain(40)
 			end
 			Debounce = true
-			-- Hooks.MouseIconEnabled:SetActive(true)
-			-- Hooks.TankInputs:SetActive(true)
+			OldEnabled = Services.UserInputService.MouseIconEnabled
 			DragConnection = Services.RunService.RenderStepped:Connect(function()
 				Services.UserInputService.MouseIconEnabled = false
 				local MousePosition = Services.UserInputService:GetMouseLocation()
@@ -967,15 +1235,15 @@ local function EnableDrag(Frame,Expand)
 			}
 		end
 	end),Services.UserInputService.InputEnded:Connect(function(Input)
-		Services.UserInputService.MouseIconEnabled = true -- Hooks.MouseIconEnabled:SetActive(false)
-		if DragConnection and Input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if DragConnection and Input.UserInputType.Name == "MouseButton1" then
+			Services.UserInputService.MouseIconEnabled = OldEnabled
 			RemoveConnections{
 				DragConnection
 			}
 			DragConnection = nil
 			Debounce = false
-			if Expand then
-				ExpandGui(true)
+			if IsMain then
+				ResizeMain()
 			end
 		end
 	end)
@@ -1004,51 +1272,41 @@ EnableDrag(Gui.Main,true)
 task.defer(function()
 	GlobalEnvironment.UltimatumLoaded = true
 end)
+UltimatumStart = os.clock()-UltimatumStart
 if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
 	if OwnerSettings.Blur then
 		Services.RunService:SetRobloxGuiFocused(true)
 		task.delay(1.5,Services.RunService.SetRobloxGuiFocused,Services.RunService,false)
 	end
 	Animate(Gui.Main,{
-		Time = .5,
 		Yields = true,
 		Properties = {
 			Position = UDim2.new(.5,0,.5,0),
 			BackgroundTransparency = 0
 		}
-	})
-	Animate(Gui.Logo,{
-		Time = .5,
+	},Gui.Logo,{
 		Properties = {
 			ImageTransparency = 0,
 			Rotation = 0
 		}
-	})
-	Animate(Gui.MainCorner,{
-		Time = .5,
+	},Gui.MainCorner,{
 		Yields = true,
 		Properties = {
 			CornerRadius = UDim.new(0,4)
-		}
-	})
-	task.wait(.5)
-	Animate(Gui.Main,{
-		Time = .5,
+		},
+		FinishDelay = .5
+	},Gui.Main,{
 		Properties = {
 			Rotation = 180,
 			Size = UDim2.new()
 		},
 		EasingStyle = Enum.EasingStyle.Back,
 		EasingDirection = Enum.EasingDirection.In
-	})
-	Animate(Gui.MainCorner,{
-		Time = .5,
+	},Gui.MainCorner,{
 		Properties = {
 			CornerRadius = UDim.new(.5,0)
 		}
-	})
-	Animate(Gui.Logo,{
-		Time = .5,
+	},Gui.Logo,{
 		Yields = true,
 		Properties = {
 			ImageTransparency = 1
@@ -1090,14 +1348,14 @@ for Name,Properties in pairs{
 		Gui[Name][Property] = Value
 	end
 end
+ResizeMain(40)
 Animate(Gui.Main,{
-	Time = .5,
 	Yields = true,
 	Properties = {
-		Position = UDim2.new(0,0,1,-40*OwnerSettings.Scale)
+		Position = UDim2.new(0,0,1,-40)
 	}
 })
+Notify{
+	Text = ("<b>Loaded</b>\nUltimatum took %s to load"):format(ConvertTime(UltimatumStart))
+}
 Debounce = false
-if OwnerSettings.StayOpen then
-	ExpandGui(true,true)
-end
