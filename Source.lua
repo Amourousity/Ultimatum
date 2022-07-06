@@ -1058,7 +1058,7 @@ Commands = {
 		Function = function()
 			local Page,UnfilteredServers,Servers,Start,ServerCount = "",{},{},os.clock(),0
 			while #Servers <= 0 do
-				local Success,Result = pcall(game.HttpGet,game,("https://games.roblox.com/v1/games/%s/servers/Public?limit=100&sortOrder=Asc%s%s"):format(game.PlaceId,0 < #Page and "&cursor=" or "",Page),true)
+				local Success,Result = pcall(game.HttpGet,game,("https://games.roblox.com/v1/games/%s/servers/Public?limit=100%s%s"):format(game.PlaceId,0 < #Page and "&cursor=" or "",Page),true)
 				if not Assert(Success,("<b>Error</b>%s"):format(Valid.String(Result,"An unknown error has occurred"))) then
 					return
 				end
@@ -1157,7 +1157,10 @@ Connections = {
 					CalculateDuration = false,
 					Text = "<b>Update Detected</b>\nUltimatum will now update..."
 				}
-				loadstring(Result,"Ultimatum")()
+				local Ultimatum = loadstring(Result,"Ultimatum")
+				local Environment = getfenv(Ultimatum)
+				Environment.UltimatumStart = LastCheck
+				setfenv(Ultimatum,Environment)()
 			elseif not Success and not isfile"Source.Ultimatum" then
 				Notify{
 					Urgent = true,
