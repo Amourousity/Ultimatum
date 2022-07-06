@@ -395,7 +395,7 @@ local function WaitForSignal(Signal,MaxYield)
 	Ready = true
 	return Return.Event:Wait()
 end
-if Services.CoreGui:FindFirstChild"RobloxLoadingGui" and Services.CoreGui.RobloxLoadingGui:FindFirstChild"BlackFrame" and Services.CoreGui.RobloxLoadingGui.BackgroundTransparency <= 0 then
+if Services.CoreGui:FindFirstChild"RobloxLoadingGui" and Services.CoreGui.RobloxLoadingGui:FindFirstChild"BlackFrame" and Services.CoreGui.RobloxLoadingGui.BlackFrame.BackgroundTransparency <= 0 then
 	WaitForSignal(Services.CoreGui.RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency",3)
 end
 local LogoId = writefile and getcustomasset and (isfile"UltimatumLogo.png" or (function()
