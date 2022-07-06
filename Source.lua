@@ -396,7 +396,9 @@ local function WaitForSignal(Signal,MaxYield)
 	return Return.Event:Wait()
 end
 if Services.CoreGui:FindFirstChild"RobloxLoadingGui" and Services.CoreGui.RobloxLoadingGui:FindFirstChild"BlackFrame" and Services.CoreGui.RobloxLoadingGui.BlackFrame.BackgroundTransparency <= 0 then
+	local Start = os.clock()
 	WaitForSignal(Services.CoreGui.RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency",3)
+	UltimatumStart += os.clock()-Start
 end
 local LogoId = writefile and getcustomasset and (isfile"UltimatumLogo.png" or (function()
 	local Success,Output = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Logo.png")
