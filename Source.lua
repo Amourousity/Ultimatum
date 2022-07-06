@@ -706,8 +706,7 @@ local function Notify(Settings)
 	task.delay(Settings.Duration,Animate,Notification.Main,{
 		Time = 1,
 		Properties = {
-			BackgroundTransparency = 1,
-			Size = UDim2.new(1,0,0,0)
+			BackgroundTransparency = 1
 		}
 	},Notification.Content,{
 		Time = 1,
@@ -936,7 +935,7 @@ Commands = {
 	},
 	CopyJoinScript_copyjoincode_copyjoin_copyjcode_copyjscript_copyj_cjoin_copyjs_cj_cjs_cjc = {
 		Function = function()
-			local JoinScript = ('javascript:Roblox.GameLauncher.joinGameInstance(%.0f,"%s")'):format(game.PlaceId,game.JobId)
+			local JoinScript = ('javascript:Roblox.GameLauncher.joinGameInstance(%d,"%s")'):format(game.PlaceId,game.JobId)
 			if setclipboard then
 				setclipboard(JoinScript)
 				Notify{
@@ -1054,6 +1053,35 @@ Commands = {
 			}
 		end,
 		Description = "Notifies the Magic 8 Ball's response to your yes-or-no question"
+	},
+	ServerHop_serverh_sh_hopserver_hops_hserver_newserver_nserver_ns_news = {
+		Function = function()
+			local Page,UnfilteredServers,Servers,Start,ServerCount = "",{},{},os.clock(),0
+			while #Servers <= 0 do
+				local Success,Result = pcall(game.HttpGet,game,("https://games.roblox.com/v1/games/%s/servers/Public?limit=100&sortOrder=Asc%s%s"):format(game.PlaceId,0 < #Page and "&cursor=" or "",Page),true)
+				if not Assert(Success,("<b>Error</b>%s"):format(Valid.String(Result,"An unknown error has occurred"))) then
+					return
+				end
+				Result = Services.HttpService:JSONDecode(Result)
+				Page,UnfilteredServers = Result.nextPageCursor,Result.data
+				if not Assert(0 < #UnfilteredServers,"No servers found") then
+					return
+				end
+				Servers = {}
+				for _,ServerInfo in pairs(UnfilteredServers) do
+					ServerCount += 1
+					if ServerInfo.playing < ServerInfo.maxPlayers and 0 < ServerInfo.playing and ServerInfo.id ~= game.JobId then
+						table.insert(Servers,ServerInfo)
+					end
+				end
+			end
+			local Server = Servers[math.random(#Servers)]
+			Notify{
+				Text = ("<b>Joining Server</b>Took %s to search %d servers. Server <i>%s</i> has %d/%d players"):format(ConvertTime(os.clock()-Start),ServerCount,Server.id,Server.playing,Server.maxPlayers)
+			}
+			task.delay(2,Services.TeleportService.TeleportToPlaceInstance,Services.TeleportService,game.PlaceId,Server.id)
+		end,
+		Description = "Joins a random server that you weren't previously in"
 	}
 }
 for Replace,Settings in pairs(({})[tostring(game.PlaceId)] or {}) do
