@@ -620,9 +620,11 @@ local function Notify(Settings)
 		Duration = 5,
 		Urgent = false,
 		Yields = false,
+		Title = "Ultimatum",
 		CalculateDuration = true,
-		Text = "<b>Ultimatum</b>\n(no text)"
+		Text = "(no text)"
 	})
+	Settings.Text = ("<b>%s</b>\n%s"):format(Settings.Title,Settings.Text)
 	if OwnerSettings.Notifications == "Off" or OwnerSettings.Notifications == "Urgent" and not Settings.Urgent then
 		return
 	end
@@ -760,7 +762,8 @@ local function Assert(...)
 		local Assertion,FailureMessage = select(Index,...)
 		if not Assertion then
 			Notify{
-				Text = ("<b>Command Failed</b>\n%s"):format(Valid.String(FailureMessage,"The command failed to run. No further information provided"))
+				Title = "Command Failed",
+				Text = Valid.String(FailureMessage,"The command failed to run. No further information provided")
 			}
 			return false
 		end
@@ -881,7 +884,8 @@ local function RunCommand(Text)
 					for ArgumentNumber,ArgumentProperties in pairs(CommandInfo.Arguments) do
 						if ArgumentProperties.Required and not Arguments[ArgumentNumber] then
 							Notify{
-								Text = ('<b>Missing Argument</b>\nThe command "%s" requires you to enter the argument "%s"'):format(CommandNames[1],ArgumentProperties.Name)
+								Title = "Missing Argument",
+								Text = ('The command "%s" requires you to enter the argument "%s"'):format(CommandNames[1],ArgumentProperties.Name)
 							}
 							break
 						end
@@ -907,7 +911,8 @@ local function RunCommand(Text)
 		end
 		if not RanCommand then
 			Notify{
-				Text = ('<b>Not a Command</b>\nThere are not any commands named "%s"'):format(Command)
+				Title = "Not a Command",
+				Text = ('There are not any commands named "%s"'):format(Command)
 			}
 		end
 	end
@@ -941,11 +946,13 @@ Commands = {
 			if setclipboard then
 				setclipboard(JoinScript)
 				Notify{
-					Text = "<b>Successfully Copied</b>\nPaste the copied script into your brower's URL bar and press Enter"
+					Title = "Successfully Copied",
+					Text = "Paste the copied script into your brower's URL bar and press Enter"
 				}
 			else
 				Notify{
-					Text = ("<b>Copy to Clipboard</b>\n%s\nPaste the above script into your brower's URL bar and press Enter"):format(JoinScript)
+					Title = "Copy to Clipboard",
+					Text = ("%s\nPaste the above script into your brower's URL bar and press Enter"):format(JoinScript)
 				}
 			end
 		end,
@@ -972,7 +979,8 @@ Commands = {
 				Owner:Kick()
 				RunCommand"CloseRobloxMessage"
 				Notify{
-					Text = "<b>Rejoining</b>\nYou will be rejoined shortly..."
+					Title = "Rejoining",
+					Text = "You will be rejoined shortly..."
 				}
 				task.delay(3,pcall,Services.TeleportService.Teleport,Services.TeleportService,game.PlaceId)
 			end
@@ -1011,7 +1019,7 @@ Commands = {
 						"Freefall",
 						"Swimming"
 					},Humanoid:GetState().Name) then
-						Character:TranslateBy(Humanoid.MoveDirection*Delta*(Variables.Speed-Humanoid.WalkSpeed))
+						Character:TranslateBy(Humanoid.MoveDirection*math.min(Delta,1/15)*(Variables.Speed-Humanoid.WalkSpeed))
 					end
 				end)
 				Variables.Enabled = true
@@ -1030,28 +1038,29 @@ Commands = {
 	Magic8Ball_8ball_magicball_magic8_8b_m8b_m8_8_magiceightball_eightball_meb_mb_eightballpu_eightballpr = {
 		Function = function()
 			Notify{
-				Text = ("<b>Magic 8 Ball</b>\n%s."):format(({
-					"Yes",
-					"Most likely",
-					"Outlook good",
-					"It is certain",
-					"Very doubtful",
-					"My reply is no",
-					"Yes definitely",
-					"Ask again later",
-					"Without a doubt",
-					"As I see it, yes",
-					"Don't count on it",
-					"My sources say no",
-					"Cannot predict now",
-					"It is decidedly so",
-					"Signs point to yes",
-					"You may rely on it",
-					"Outlook not so good",
-					"Reply hazy, try again",
-					"Better not tell you now",
-					"Concentrate and ask again",
-				})[math.random(1,20)])
+				Title = "Magic 8 Ball",
+				Text = ({
+					"Yes.",
+					"Most likely.",
+					"Outlook good.",
+					"It is certain.",
+					"Very doubtful.",
+					"My reply is no.",
+					"Yes definitely.",
+					"Ask again later.",
+					"Without a doubt.",
+					"As I see it, yes.",
+					"Don't count on it.",
+					"My sources say no.",
+					"Cannot predict now.",
+					"It is decidedly so.",
+					"Signs point to yes.",
+					"You may rely on it.",
+					"Outlook not so good.",
+					"Reply hazy, try again.",
+					"Better not tell you now.",
+					"Concentrate and ask again.",
+				})[math.random(20)]
 			}
 		end,
 		Description = "Notifies the Magic 8 Ball's response to your yes-or-no question"
@@ -1079,7 +1088,8 @@ Commands = {
 			end
 			local Server = Servers[math.random(#Servers)]
 			Notify{
-				Text = ("<b>Joining Server</b>\nTook %s to search %d servers. Server <i>%s</i> has %d/%d players"):format(ConvertTime(os.clock()-Start),ServerCount,Server.id,Server.playing,Server.maxPlayers)
+				Title = "Joining Server",
+				Text = ("Took %s to search %d servers. Server <i>%s</i> has %d/%d players"):format(ConvertTime(os.clock()-Start),ServerCount,Server.id,Server.playing,Server.maxPlayers)
 			}
 			task.delay(2,Services.TeleportService.TeleportToPlaceInstance,Services.TeleportService,game.PlaceId,Server.id)
 		end,
@@ -1146,6 +1156,14 @@ local function UpdateSuggestions()
 		ResizeMain(nil,0 < CommandNumber and 48+20*CommandNumber or 40)
 	end
 end
+local function CreateWindow(Settings)
+	Settings = Valid.Table(Settings,{
+		Title = "Ultimatum",
+		Content = {
+			"(no content)"
+		}
+	})
+end
 Connections = {
 	not GlobalEnvironment.UltimatumDebug and isfile and Services.RunService.Heartbeat:Connect(function()
 		if OwnerSettings.AutoUpdate and 60 < os.clock()-LastCheck then
@@ -1157,7 +1175,8 @@ Connections = {
 					Yields = true,
 					Duration = .75,
 					CalculateDuration = false,
-					Text = "<b>Update Detected</b>\nUltimatum will now update..."
+					Title = "Update Detected",
+					Text = "Ultimatum will now update..."
 				}
 				local Ultimatum = loadstring(Result,"Ultimatum")
 				local Environment = getfenv(Ultimatum)
@@ -1165,8 +1184,9 @@ Connections = {
 				setfenv(Ultimatum,Environment)()
 			elseif not Success and not isfile"Source.Ultimatum" then
 				Notify{
+					Text = Result,
 					Urgent = true,
-					Text = ("<b>Error</b>\n%s"):format(Result)
+					Title = "Error",
 				}
 			end
 		end
@@ -1389,6 +1409,7 @@ Animate(Gui.Main,{
 	}
 })
 Notify{
-	Text = ("<b>Loaded</b>\nUltimatum took %s to load"):format(ConvertTime(UltimatumStart))
+	Title = "Loaded",
+	Text = ("Ultimatum took %s to load"):format(ConvertTime(UltimatumStart))
 }
 Debounce = false
