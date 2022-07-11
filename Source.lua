@@ -151,9 +151,6 @@ do
 	--- @diagnostic enable undefined-global
 end
 local GlobalEnvironment = getgenv and getgenv() or shared
-if GlobalEnvironment.Ultimatum and not GlobalEnvironment.UtimatumDebug then
-	return
-end
 local Nil = {}
 local Destroy
 do
@@ -1517,11 +1514,9 @@ GlobalEnvironment.Ultimatum = function()
 	GlobalEnvironment.Ultimatum = nil
 end
 EnableDrag(Gui.Main,true)
-task.defer(function()
-	GlobalEnvironment.UltimatumLoaded = true
-end)
 UltimatumStart = os.clock()-UltimatumStart
 if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
+	GlobalEnvironment.UltimatumLoaded = true
 	if OwnerSettings.Blur then
 		Services.RunService:SetRobloxGuiFocused(true)
 		task.delay(1.5,Services.RunService.SetRobloxGuiFocused,Services.RunService,false)
@@ -1560,6 +1555,8 @@ if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and 
 			ImageTransparency = 1
 		}
 	})
+else
+	GlobalEnvironment.UltimatumLoaded = true
 end
 for Name,Properties in pairs{
 	Logo = {
