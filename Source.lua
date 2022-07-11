@@ -5,7 +5,6 @@
 [|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]
 [|]  [|]  [|]        [|]         [|]     [|]       [|] [|]     [|] [|]      [|]  [|]  [|]       [|]
 [||||]   [||||||||] [|]     [|||||||||] [|]       [|] [|]     [|] [|]       [||||]   [|]       []]
-task.wait(math.random())
 local UltimatumStart = getfenv().UltimatumStart or os.clock()
 do
 	local Environment = getfenv()
@@ -152,6 +151,9 @@ do
 	--- @diagnostic enable undefined-global
 end
 local GlobalEnvironment = getgenv and getgenv() or shared
+if GlobalEnvironment.Ultimatum and not GlobalEnvironment.UtimatumDebug then
+	return
+end
 local Nil = {}
 local Destroy
 do
