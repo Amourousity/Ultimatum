@@ -5,6 +5,7 @@
 [|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]
 [|]  [|]  [|]        [|]         [|]     [|]       [|] [|]     [|] [|]      [|]  [|]  [|]       [|]
 [||||]   [||||||||] [|]     [|||||||||] [|]       [|] [|]     [|] [|]       [||||]   [|]       []]
+task.wait(math.random())
 local UltimatumStart = getfenv().UltimatumStart or os.clock()
 do
 	local Environment = getfenv()
@@ -670,7 +671,7 @@ local function Notify(Settings)
 			Parent = "Main",
 			ClassName = "TextLabel",
 			Properties = {
-				TextSize = 13,
+				TextSize = 14,
 				RichText = true,
 				TextWrapped = true,
 				Text = Settings.Text,
@@ -690,7 +691,7 @@ local function Notify(Settings)
 		end
 	end
 	Settings.Duration += .25
-	local Size = Services.TextService:GetTextSize(Notification.Content.ContentText,13,Enum.Font.Arial,Vector2.new(Gui.NotificationHolder.AbsoluteSize.X,Gui.NotificationHolder.AbsoluteSize.Y))
+	local Size = Services.TextService:GetTextSize(Notification.Content.ContentText,14,Enum.Font.Arial,Vector2.new(Gui.NotificationHolder.AbsoluteSize.X,Gui.NotificationHolder.AbsoluteSize.Y))
 	Notification.Main.Size = UDim2.new(0,Size.X+22,0,Size.Y+20)
 	Size = Notification.Main.Size
 	Notification.Main.Size = UDim2.new(Size.X.Scale,Size.X.Offset,0,0)
@@ -993,7 +994,7 @@ Commands = {
 		end,
 		Description = "Closes any messages/errors (the grey containers with the blurred background) displayed by Roblox"
 	},
-	WalkSpeed_speed_wspeed_walks_runspeed_rspeed_runs_spoofwalkspeed_spoofspeed_spoofwspeed_spoofwalks_spoofrunspeed_spoofrspeed_spoofruns_swalkspeed_sspeed_swspeed_swalks_srunspeed_srspeed_sruns_fakewalkspeed_fakespeed_fakewspeed_fakewalks_fakerunspeed_fakerspeed_fakeruns_ws_frs_srs = {
+	WalkSpeed_speed_wspeed_walks_runspeed_rspeed_runs_spoofwalkspeed_spoofspeed_spoofwspeed_spoofwalks_spoofrunspeed_spoofrspeed_spoofruns_swalkspeed_sspeed_swspeed_swalks_srunspeed_srspeed_sruns_fakewalkspeed_fakewspeed_fakewalks_fakerunspeed_fakerspeed_fakeruns_ws_frs_srs = {
 		Function = function(Variables,Speed)
 			Variables.Speed = Speed
 			if not Variables.Enabled then
@@ -1065,12 +1066,12 @@ Commands = {
 		end,
 		Description = "Notifies the Magic 8 Ball's response to your yes-or-no question"
 	},
-	ServerHop_serverh_sh_hopserver_hops_hserver_newserver_nserver_ns_news = {
+	ServerHop_serverh_sh_hopserver_hops_hserver_newserver_nserver_ns_news_shop = {
 		Function = function()
-			local Page,UnfilteredServers,Servers,Start,ServerCount = "",{},{},os.clock(),0
+			local Page,UnfilteredServers,Servers,Start,ServerCount,ViableServerCount = "",{},{},os.clock(),0,0
 			while #Servers <= 0 do
 				local Success,Result = pcall(game.HttpGet,game,("https://games.roblox.com/v1/games/%s/servers/Public?limit=100%s%s"):format(game.PlaceId,0 < #Page and "&cursor=" or "",Page),true)
-				if not Assert(Success,("<b>Error</b>%s"):format(Valid.String(Result,"An unknown error has occurred"))) then
+				if not Assert(Success,Valid.String(Result,"An unknown error has occurred")) then
 					return
 				end
 				Result = Services.HttpService:JSONDecode(Result)
@@ -1083,22 +1084,125 @@ Commands = {
 					ServerCount += 1
 					if ServerInfo.playing < ServerInfo.maxPlayers and 0 < ServerInfo.playing and ServerInfo.id ~= game.JobId then
 						table.insert(Servers,ServerInfo)
+						ViableServerCount += 1
 					end
 				end
 			end
 			local Server = Servers[math.random(#Servers)]
 			Notify{
 				Title = "Joining Server",
-				Text = ("Took %s to search %d servers. Server <i>%s</i> has %d/%d players"):format(ConvertTime(os.clock()-Start),ServerCount,Server.id,Server.playing,Server.maxPlayers)
+				Text = ("Took %s to search %d servers (%d viable). Server <i>%s</i> has %d/%d players"):format(ConvertTime(os.clock()-Start),ServerCount,ViableServerCount,Server.id,Server.playing,Server.maxPlayers)
 			}
 			task.delay(2,Services.TeleportService.TeleportToPlaceInstance,Services.TeleportService,game.PlaceId,Server.id)
 		end,
 		Description = "Joins a random server that you weren't previously in"
 	}
 }
-for Replace,Settings in pairs(({})[tostring(game.PlaceId)] or {}) do
-	Commands[Replace] = nil
-	Commands[Settings.Names] = Settings.Info
+for Replace,Info in pairs(({
+	_142823291 = {
+		ExtrasensoryPerception_extrasensoryp_esensoryperception_esperception_extrasp_esp = {
+			Function = function(Variables,Enabled)
+				if not Assert(not (Variables.Enabled and Enabled),"Extrasensory perception is already enabled",not (not Variables.Enabled and not Enabled),"Extrasensory perception is already disabled") then
+					return
+				end
+				if Enabled then
+					Variables.Time,Variables.Connection = os.clock(),Services.RunService.Heartbeat:Connect(function()
+						if not Variables.Calculating or 5 < os.clock()-Variables.Time then
+							Variables.Time,Variables.Calculating = os.clock(),true
+							local PlayerData = Variables.PlayerDataRemote:InvokeServer()
+							if not Variables.Enabled then
+								return
+							end
+							Destroy(Variables.ExtrasensoryPerceptions)
+							if workspace:FindFirstChild"GunDrop" then
+								Variables:CreateExtrasensoryPerception(workspace.GunDrop,"Gun")
+							end
+							for _,Player in pairs(Services.Players:GetPlayers()) do
+								local Data = PlayerData[Player.Name]
+								if Data and not Data.Dead and Player.Name ~= Owner.Name then
+									Variables:CreateExtrasensoryPerception(Player.Character:FindFirstChild"HumanoidRootPart" or Player.Character:FindFirstChildWhichIsA"BasePart",Data.Role)
+								end
+							end
+							Variables.Calculating = false
+						end
+					end)
+					AddConnections{
+						Variables.Connection
+					}
+					Variables.Enabled = true
+				else
+					RemoveConnections{
+						Variables.Connection
+					}
+					Destroy(Variables.ExtrasensoryPerceptions)
+					Variables.Enabled = false
+				end
+			end,
+			Arguments = {
+				{
+					Name = "Enabled",
+					Type = "Boolean",
+					Substitute = true
+				}
+			},
+			Variables = {
+				ExtrasensoryPerceptions = {},
+				PlayerDataRemote = game.PlaceId == 142823291 and Services.ReplicatedStorage:WaitForChild"Remotes":WaitForChild"Extras":WaitForChild"GetPlayerData",
+				CreateExtrasensoryPerception = function(Variables,Object,Role)
+					local LargestAxis = math.max(Object.Size.X,Object.Size.Y,Object.Size.Z)
+					table.insert(Variables.ExtrasensoryPerceptions,Create{
+						{
+							Name = "ExtrasensoryPerceptionHolder",
+							Parent = Gui.Holder,
+							ClassName = "BillboardGui",
+							Properties = {
+								Active = false,
+								Adornee = Object,
+								AlwaysOnTop = true,
+								LightInfluence = 0,
+								ResetOnSpawn = false,
+								Size = UDim2.new(LargestAxis,0,LargestAxis,0)
+							}
+						},
+						{
+							Name = "Main",
+							Parent = "ExtrasensoryPerceptionHolder",
+							ClassName = "Frame",
+							Properties = {
+								Size = UDim2.new(1,0,1,0),
+								BackgroundColor3 = ({
+									Gun = Color3.new(.5,0,1),
+									Hero = Color3.new(1,1,0),
+									Sheriff = Color3.new(0,0,1),
+									Innocent = Color3.new(0,1,0),
+									Murderer = Color3.new(1,0,0),
+								})[Role]
+							}
+						},
+						{
+							Name = "Gradient",
+							Parent = "Main",
+							ClassName = "UIGradient",
+							Properties = {
+								Rotation = 90,
+								Transparency = NumberSequence.new(0,1)
+							}
+						},
+						{
+							Name = "Corner",
+							Parent = "Main",
+							ClassName = "UICorner",
+							Properties = {
+								CornerRadius = UDim.new(.5,0)
+							}
+						}
+					})
+				end
+			}
+		}
+	}
+})[("_%d"):format(game.PlaceId)] or {}) do
+	Commands[Replace] = Info
 end
 local function GetContentText(String)
 	local CheckTextBox = NewInstance("TextBox",nil,{
@@ -1108,8 +1212,12 @@ local function GetContentText(String)
 	Destroy(CheckTextBox)
 	return CheckTextBox.ContentText
 end
+local IgnoreUpdate
 local function UpdateSuggestions()
-	if Services.UserInputService:GetFocusedTextBox() == Gui.CommandBar then
+	if Services.UserInputService:GetFocusedTextBox() == Gui.CommandBar and not IgnoreUpdate then
+		IgnoreUpdate = true
+		Gui.CommandBar.Text = Gui.CommandBar.Text:gsub("^%W+","")
+		IgnoreUpdate = false
 		local Command = Gui.CommandBar.Text:split(OwnerSettings.CommandSeperator)
 		Command = ((Command[#Command] or ""):split(OwnerSettings.ArgumentSeperator)[1] or ""):lower()
 		Gui.SuggestionsScroll.CanvasSize = UDim2.new()
@@ -1125,10 +1233,10 @@ local function UpdateSuggestions()
 				if CommandName:lower():find((Command:gsub("%p",function(Punctuation)
 					return ("%%%s"):format(Punctuation)
 				end))) then
-					table.insert(CommandDisplays,("<font color = '#FFFFFF'>%s</font><i>%s</i>"):format(CommandNames[1],CommandInfo.Arguments and (function()
+					table.insert(CommandDisplays,("%s<i>%s</i>"):format(CommandNames[1],CommandInfo.Arguments and (function()
 						local Arguments = {}
 						for _,ArgumentInfo in pairs(CommandInfo.Arguments) do
-							table.insert(Arguments,(ArgumentInfo.Required and "<font color = '#FFFFFF'>%s:%s</font>" or "%s:%s"):format(ArgumentInfo.Name,ArgumentInfo.Type))
+							table.insert(Arguments,(ArgumentInfo.Required and "%s:%s" or "<font color = '#A0A0A0'>%s:%s</font>"):format(ArgumentInfo.Name,ArgumentInfo.Type))
 						end
 						return ("%s%s"):format(OwnerSettings.ArgumentSeperator,table.concat(Arguments,OwnerSettings.ArgumentSeperator))
 					end)() or ""))
@@ -1141,14 +1249,14 @@ local function UpdateSuggestions()
 		end)
 		for _,Text in pairs(CommandDisplays) do
 			NewInstance("TextLabel",Gui.SuggestionsScroll,{
+				Text = Text,
 				TextSize = 14,
 				RichText = true,
 				Font = Enum.Font.Arial,
 				BackgroundTransparency = 1,
 				TextStrokeTransparency = .8,
-				TextColor3 = Color3.fromHex"A0A0A0",
-				TextXAlignment = Enum.TextXAlignment.Left,
-				Text = Text
+				TextColor3 = Color3.new(1,1,1),
+				TextXAlignment = Enum.TextXAlignment.Left
 			})
 		end
 		local CommandNumber = #Gui.SuggestionsScroll:GetChildren()-1
@@ -1163,6 +1271,91 @@ local function CreateWindow(Settings)
 			"(no content)"
 		}
 	})
+	Create{
+		{
+			Name = "Main",
+			Parent = Gui.Holder,
+			ClassName = "Frame",
+			Properties = {
+				Size = UDim2.new(0,500,0,250),
+				Position = UDim2.new(.5,0,1,125),
+				AnchorPoint = Vector2.new(.5,.5),
+				BackgroundColor3 = Color3.fromHex"505064"
+			}
+		},
+		{
+			Name = "MainCorner",
+			Parent = "Main",
+			ClassName = "UICorner",
+			Properties = {
+				CornerRadius = UDim.new(0,4)
+			}
+		},
+		{
+			Name = "MainGradient",
+			Parent = "Main",
+			ClassName = "UIGradient",
+			Properties = {
+				Rotation = 90,
+				Color = ColorSequence.new(Color3.new(1,1,1),Color3.new(.5,.5,.5))
+			}
+		},
+		{
+			Name = "Title",
+			Parent = "Main",
+			ClassName = "TextLabel",
+			Properties = {
+				TextSize = 14,
+				Text = Settings.Title,
+				BackgroundTransparency = 1,
+				Font = Enum.Font.ArialBold,
+				Size = UDim2.new(1,-45,0,20),
+				Position = UDim2.new(0,5,0,0),
+				TextColor3 = Color3.new(1,1,1),
+				TextXAlignment = Enum.TextXAlignment.Left
+			}
+		},
+		{
+			Name = "TitleGradient",
+			Parent = "Title",
+			ClassName = "UIGradient",
+			Properties = {
+				Transparency = NumberSequence.new(NumberSequenceKeypoint.new(0,0),NumberSequenceKeypoint.new(.95,0),NumberSequenceKeypoint.new(1,1))
+			}
+		},
+		{
+			Name = "Exit",
+			Parent = "Main",
+			ClassName = "TextButton",
+			Properties = {
+				Text = "x",
+				Modal = true,
+				TextSize = 40,
+				AutoButtonColor = false,
+				Font = Enum.Font.Nunito,
+				BackgroundTransparency = 1,
+				Size = UDim2.new(0,20,0,20),
+				TextColor3 = Color3.new(1,1,1),
+				Position = UDim2.new(1,-20,0,0)
+			}
+		},
+		{
+			Name = "Minimize",
+			Parent = "Main",
+			ClassName = "TextButton",
+			Properties = {
+				Text = "-",
+				Modal = true,
+				TextSize = 40,
+				Font = Enum.Font.Arial,
+				AutoButtonColor = false,
+				BackgroundTransparency = 1,
+				Size = UDim2.new(0,20,0,20),
+				TextColor3 = Color3.new(1,1,1),
+				Position = UDim2.new(1,-40,0,0)
+			}
+		}
+	}
 end
 Connections = {
 	not GlobalEnvironment.UltimatumDebug and isfile and Services.RunService.Heartbeat:Connect(function()
@@ -1234,7 +1427,7 @@ Connections = {
 		task.wait()
 		Gui.CommandBar.PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Services.UserInputService:GetStringForKeyCode(Enum.KeyCode[OwnerSettings.Keybind]))
 		if Sent and 0 < #Gui.CommandBar.Text then
-			RunCommand(Gui.CommandBar.Text)
+			task.spawn(RunCommand,Gui.CommandBar.Text)
 			Gui.CommandBar.Text = ""
 		elseif Services.UserInputService:IsKeyDown(Enum.KeyCode.Escape) then
 			Gui.CommandBar.Text = ""
