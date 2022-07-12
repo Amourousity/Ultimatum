@@ -151,6 +151,7 @@ do
 	--- @diagnostic enable undefined-global
 end
 local GlobalEnvironment = getgenv and getgenv() or shared
+pcall(GlobalEnvironment.Ultimatum)
 local Nil = {}
 local Destroy
 do
@@ -1508,6 +1509,7 @@ local function EnableDrag(Frame,IsMain)
 		InputEnded
 	}
 end
+pcall(GlobalEnvironment.Ultimatum)
 GlobalEnvironment.Ultimatum = function()
 	--- @diagnostic disable-next-line undefined-global
 	Destroy(Connections,Gui,protect_gui and gethui())
