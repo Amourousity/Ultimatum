@@ -195,19 +195,6 @@ local Services = setmetatable({},{
 	__newindex = function() end,
 	__metatable = "nil"
 })
-if not GlobalEnvironment.UltimatumLoaded then
-	print((("!!_5#_4#_#_4#9_#9_#2_4#2_6#_#9_#_4#_#2_4#2!_4#_4#_#_8#_9#_5#4_#4_3#_#_3#_5#_4#_#4_#4!_3#_4#_#_8#_9#_5#_#3_#_2#_3#_2#_5#_4#_#_#3_#!_2#_4#_#_8#_9#_5#_2#_2#_#9_#_5#_4#_#_2#_2#!_#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#6_2#8_#_5#9_#_7#_#_5#_#_6#6_2#_7#!"):gsub("%p%d?",function(Input)
-		for Character,Format in pairs{
-			["!"] = "\n",
-			_ = (" "):rep(1 < #Input and Input:sub(2,2) or 1),
-			["#"] = ("[%s]"):format(("|"):rep(1 < #Input and Input:sub(2,2) or 1))
-		} do
-			if Input:sub(1,1) == Character then
-				return Format
-			end
-		end
-	end)))
-end
 pcall(GlobalEnvironment.Ultimatum)
 local Owner = Services.Players.LocalPlayer
 while not Owner do
@@ -1520,6 +1507,19 @@ GlobalEnvironment.Ultimatum = function()
 end
 EnableDrag(Gui.Main,true)
 UltimatumStart = os.clock()-UltimatumStart
+if not GlobalEnvironment.UltimatumLoaded then
+	print((("!!_5#_4#_#_4#9_#9_#2_4#2_6#_#9_#_4#_#2_4#2!_4#_4#_#_8#_9#_5#4_#4_3#_#_3#_5#_4#_#4_#4!_3#_4#_#_8#_9#_5#_#3_#_2#_3#_2#_5#_4#_#_#3_#!_2#_4#_#_8#_9#_5#_2#_2#_#9_#_5#_4#_#_2#_2#!_#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#6_2#8_#_5#9_#_7#_#_5#_#_6#6_2#_7#!"):gsub("%p%d?",function(Input)
+		for Character,Format in pairs{
+			["!"] = "\n",
+			_ = (" "):rep(1 < #Input and Input:sub(2,2) or 1),
+			["#"] = ("[%s]"):format(("|"):rep(1 < #Input and Input:sub(2,2) or 1))
+		} do
+			if Input:sub(1,1) == Character then
+				return Format
+			end
+		end
+	end)))
+end
 if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
 	GlobalEnvironment.UltimatumLoaded = true
 	if OwnerSettings.Blur then
