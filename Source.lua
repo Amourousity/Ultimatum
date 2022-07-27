@@ -11,7 +11,7 @@ do
 	local function CheckCompatibility(Paths,Replacement)
 		Paths = Paths:split()
 		local Function
-		for Count,Path in pairs(Paths) do
+		for Count,Path in next,(Paths) do
 			Path = Path:split"."
 			Function = Environment[Path[1]]
 			for Depth = 2,#Path do
@@ -20,7 +20,7 @@ do
 				end
 			end
 			if Function or Replacement and Count == #Paths then
-				for _,NewPathName in pairs(Paths) do
+				for _,NewPathName in next,Paths do
 					NewPathName = NewPathName:split"."
 					local NewPath = Environment
 					for Depth = 1,#NewPathName-1 do
@@ -37,7 +37,7 @@ do
 			end
 		end
 	end
-	for _,FunctionNames in pairs{
+	for _,FunctionNames in next,{
 		"getsenv,getmenv",
 		"getreg,getregistry",
 		"getgc,get_gc_objects",
@@ -96,7 +96,7 @@ do
 		CheckCompatibility(FunctionNames)
 	end
 	--- @diagnostic disable undefined-global
-	for Paths,Replacement in pairs{
+	for Paths,Replacement in next,{
 		setreadonly = makewriteable and function(Table,ReadOnly)
 			(ReadOnly and makereadonly or makewriteable)(Table)
 		end or 0,
@@ -123,10 +123,10 @@ do
 		cloneref = getreg and (function()
 			local TestPart = Instance.new"Part"
 			local InstanceList
-			for _,InstanceTable in pairs(getreg()) do
+			for _,InstanceTable in next,getreg() do
 				if type(InstanceTable) == "table" and #InstanceTable then
 					if rawget(InstanceTable,"__mode") == "kvs" then
-						for _,PartCheck in pairs(InstanceTable) do
+						for _,PartCheck in next,InstanceTable do
 							if PartCheck == TestPart then
 								InstanceList = InstanceTable
 								pcall(game.Destroy,TestPart)
@@ -138,7 +138,7 @@ do
 			end
 			if InstanceList then
 				return function(Object)
-					for Index,Value in pairs(InstanceList) do
+					for Index,Value in next,InstanceList do
 						if Value == Object then
 							InstanceList[Index] = nil
 							return Object
@@ -169,10 +169,10 @@ do
 		DisconnectObject(Connection)
 	end
 	Destroy = function(...)
-		for _,Object in pairs{
+		for _,Object in next,{
 			...
 		} do
-			for Type,Function in pairs{
+			for Type,Function in next,{
 				Instance = function()
 					pcall(DestroyObject,Object)
 				end,
@@ -182,7 +182,7 @@ do
 					end
 				end,
 				table = function()
-					for Index,Value in pairs(Object) do
+					for Index,Value in next,Object do
 						Object[Index] = nil
 						Destroy(Index)
 						Destroy(Value)
@@ -200,7 +200,7 @@ pcall(GlobalEnvironment.Ultimatum)
 local Wait,Service
 do
 	local SignalWait,Services = game.Changed.Wait,{}
-	for _,Name in pairs{
+	for _,Name in next,{
 		"Gui",
 		"Run",
 		"Http",
@@ -241,7 +241,7 @@ local Valid
 Valid = {
 	Table = function(Table,Substitute)
 		Table = type(Table) == "table" and Table or {}
-		for Index,Value in pairs(type(Substitute) == "table" and Substitute or {}) do
+		for Index,Value in next,type(Substitute) == "table" and Substitute or {} do
 			Table[Index] = typeof(Table[Index]) == typeof(Value) and Table[Index] or Value
 		end
 		return Table
@@ -258,11 +258,11 @@ Valid = {
 	end,
 	Boolean = function(Boolean,Substitute)
 		Boolean = tostring(Boolean):lower()
-		for Names,Value in pairs{
+		for Names,Value in next,{
 			true_yes_on_positive_1_i = true,
 			false_no_off_negative_0_o = false
 		} do
-			for _,Name in pairs(Names:split"_") do
+			for _,Name in next,Names:split"_" do
 				if Boolean == Name then
 					return Value
 				end
@@ -284,7 +284,7 @@ local Randomized = {
 			}
 		})
 		local AvailableCharacters = {}
-		for _,Set in pairs(Settings.CharacterSet) do
+		for _,Set in next,Settings.CharacterSet do
 			for Character = Set.Min,Set.Max do
 				table.insert(AvailableCharacters,string.char(Character))
 			end
@@ -305,7 +305,7 @@ local function NewInstance(ClassName,Parent,Properties)
 			Name = Randomized.String(),
 			Archivable = Randomized.Bool()
 		})
-		for Property,Value in pairs(Properties) do
+		for Property,Value in next,Properties do
 			local Success,Error = pcall(function()
 				NewObject[Property] = NilConvert(Value)
 			end)
@@ -321,7 +321,7 @@ local function NewInstance(ClassName,Parent,Properties)
 end
 local function Create(Data)
 	local Instances = {}
-	for _,InstanceData in pairs(Valid.Table(Data)) do
+	for _,InstanceData in next,Valid.Table(Data) do
 		if not Valid.String(InstanceData.ClassName) then
 			error"Ultimatum | Missing ClassName in InstanceData for function Create"
 		elseif not Valid.String(InstanceData.Name) then
@@ -357,7 +357,7 @@ do
 			Settings[Index] = Value
 			if writefile then
 				local FormattedSettings = {}
-				for SettingName,SettingValue in pairs(Settings) do
+				for SettingName,SettingValue in next,Settings do
 					table.insert(FormattedSettings,("\t%s : %s,"):format(("%q"):format(SettingName),type(SettingValue) == "string" and ("%q"):format(SettingValue) or tostring(SettingValue)))
 				end
 				table.sort(FormattedSettings,function(String1,String2)
@@ -395,7 +395,7 @@ local function WaitForSignal(Signal,MaxYield)
 		task.delay(MaxYield,Return.Fire,Return)
 	end
 	local SignalStart,Ready = os.clock()
-	for Type,Functionality in pairs{
+	for Type,Functionality in next,{
 		RBXScriptSignal = function()
 			Return:Fire(Wait(Signal))
 		end,
@@ -839,7 +839,7 @@ local function GetHumanoid(Character,MaxYield)
 	end
 end
 local function ConvertTime(Time)
-	for _,Values in pairs{
+	for _,Values in next,{
 		{
 			31536000,
 			"year"
@@ -889,18 +889,18 @@ local function ConvertTime(Time)
 end
 local Commands,Connections
 local function RunCommand(Text)
-	for _,Input in pairs(Text:split(OwnerSettings.CommandSeperator)) do
+	for _,Input in next,Text:split(OwnerSettings.CommandSeperator) do
 		local Arguments = Input:split(OwnerSettings.ArgumentSeperator)
 		local Command = Arguments[1]
 		table.remove(Arguments,1)
 		local RanCommand
-		for CommandNames,CommandInfo in pairs(Commands) do
+		for CommandNames,CommandInfo in next,Commands do
 			CommandNames = CommandNames:split"_"
 			local Continue
-			for _,CommandName in pairs(CommandNames) do
+			for _,CommandName in next,CommandNames do
 				if CommandName:lower() == Command:lower() then
 					CommandInfo.Arguments = Valid.Table(CommandInfo.Arguments)
-					for ArgumentNumber,ArgumentProperties in pairs(CommandInfo.Arguments) do
+					for ArgumentNumber,ArgumentProperties in next,CommandInfo.Arguments do
 						if ArgumentProperties.Required and not Arguments[ArgumentNumber] then
 							Notify{
 								Title = "Missing Argument",
@@ -937,7 +937,7 @@ local function RunCommand(Text)
 	end
 end
 local function AddConnections(GivenConnections)
-	for Name,Connection in pairs(Valid.Table(GivenConnections)) do
+	for Name,Connection in next,Valid.Table(GivenConnections) do
 		if typeof(Connection) == "RBXScriptConnection" and Connection.Connected then
 			Connections[type(Name) ~= "number" and Name or #Connections+1] = Connection
 			table.insert(Connections,Connection)
@@ -945,7 +945,7 @@ local function AddConnections(GivenConnections)
 	end
 end
 local function RemoveConnections(GivenConnections)
-	for _,Connection in pairs(Valid.Table(GivenConnections)) do
+	for _,Connection in next,Valid.Table(GivenConnections) do
 		if typeof(Connection) == "RBXScriptConnection" then
 			Destroy(Connection)
 			pcall(table.remove,Connections,table.find(Connections,Connection))
@@ -1098,7 +1098,7 @@ Commands = {
 					return
 				end
 				Servers = {}
-				for _,ServerInfo in pairs(UnfilteredServers) do
+				for _,ServerInfo in next,UnfilteredServers do
 					ServerCount += 1
 					if ServerInfo.playing < ServerInfo.maxPlayers and 0 < ServerInfo.playing and ServerInfo.id ~= game.JobId then
 						table.insert(Servers,ServerInfo)
@@ -1116,7 +1116,7 @@ Commands = {
 		Description = "Joins a random server that you weren't previously in"
 	}
 }
-for Replace,Info in pairs(({
+for Replace,Info in next,({
 	_142823291 = {
 		ExtrasensoryPerception_extrasensoryp_esensoryperception_esperception_extrasp_esp = {
 			Function = function(Variables,Enabled)
@@ -1135,7 +1135,7 @@ for Replace,Info in pairs(({
 							if workspace:FindFirstChild"GunDrop" then
 								Variables:CreateExtrasensoryPerception(workspace.GunDrop,"Gun")
 							end
-							for _,Player in pairs(Service"Players":GetPlayers()) do
+							for _,Player in next,Service"Players":GetPlayers() do
 								local Data = PlayerData[Player.Name]
 								if Data and not Data.Dead and Player.Name ~= Owner.Name then
 									Variables:CreateExtrasensoryPerception(Player.Character:FindFirstChild"HumanoidRootPart" or Player.Character:FindFirstChildWhichIsA"BasePart",Data.Role)
@@ -1289,7 +1289,7 @@ for Replace,Info in pairs(({
 									keypress(69)
 									task.defer(keyrelease,69)
 								end
-								task.wait(3)
+								Wait(3)
 							end
 							if not Variables.Purchased:FindFirstChild"Auto Collector" then
 								for _,Drop in next,Variables.Drops:GetChildren() do
@@ -1300,7 +1300,7 @@ for Replace,Info in pairs(({
 							end
 							if Variables.PlayerGui:FindFirstChild"ObbyInfoBillBoard" and Variables.PlayerGui.ObbyInfoBillBoard:FindFirstChild"TopText" and Variables.PlayerGui.ObbyInfoBillBoard.TopText.Text == "Start Obby" then
 								Variables:WalkTo(Vector3.new(0,1,408))
-								task.wait(1.5)
+								Wait(1.5)
 							end
 							if Variables.Money.Value < 1e5 then
 								Variables:WalkTo(Variables.JuicePosition)
@@ -1310,7 +1310,7 @@ for Replace,Info in pairs(({
 									keypress(69)
 									task.defer(keyrelease,69)
 								end
-								task.wait(.25)
+								Wait(.25)
 							end
 							local LowestPrice,ChosenButton = math.huge,nil
 							for _,Button in next,Variables.Buttons:GetChildren() do
@@ -1323,7 +1323,7 @@ for Replace,Info in pairs(({
 							if ChosenButton then
 								ChosenButton.CanTouch = true
 								Variables:WalkTo(ChosenButton.Position)
-								task.wait(.5)
+								Wait(.5)
 							end
 							Variables.Debounce = false
 						end
@@ -1372,9 +1372,9 @@ for Replace,Info in pairs(({
 								if InflectionPoint.Action.Name == "Walk" then
 									repeat
 										Humanoid:MoveTo(InflectionPoint.Position)
-									until Humanoid.MoveToFinished:Wait() == true
+									until Wait(Humanoid.MoveToFinished) == true
 								else
-									Service"Run".RenderStepped:Wait()
+									Wait(Service"Run".RenderStepped)
 									Humanoid.Jump = true
 								end
 							end
@@ -1384,7 +1384,7 @@ for Replace,Info in pairs(({
 			}
 		}
 	}
-})[("_%d"):format(game.PlaceId)] or {}) do
+})[("_%d"):format(game.PlaceId)] or {} do
 	Commands[Replace] = Info
 end
 local function GetContentText(String)
@@ -1404,21 +1404,21 @@ local function UpdateSuggestions()
 		local Command = Gui.CommandBar.Text:split(OwnerSettings.CommandSeperator)
 		Command = ((Command[#Command] or ""):split(OwnerSettings.ArgumentSeperator)[1] or ""):lower()
 		Gui.SuggestionsScroll.CanvasSize = UDim2.new()
-		for _,TextLabel in pairs(Gui.SuggestionsScroll:GetChildren()) do
+		for _,TextLabel in next,Gui.SuggestionsScroll:GetChildren() do
 			if TextLabel:IsA"TextLabel" then
 				Destroy(TextLabel)
 			end
 		end
 		local CommandDisplays = {}
-		for CommandNames,CommandInfo in pairs(Commands) do
+		for CommandNames,CommandInfo in next,Commands do
 			CommandNames = CommandNames:split"_"
-			for _,CommandName in pairs(CommandNames) do
+			for _,CommandName in next,CommandNames do
 				if CommandName:lower():find((Command:gsub("%p",function(Punctuation)
 					return ("%%%s"):format(Punctuation)
 				end))) then
 					table.insert(CommandDisplays,("%s<i>%s</i>"):format(CommandNames[1],CommandInfo.Arguments and (function()
 						local Arguments = {}
-						for _,ArgumentInfo in pairs(CommandInfo.Arguments) do
+						for _,ArgumentInfo in next,CommandInfo.Arguments do
 							table.insert(Arguments,(ArgumentInfo.Required and "%s:%s" or "<font color = '#A0A0A0'>%s:%s</font>"):format(ArgumentInfo.Name,ArgumentInfo.Type))
 						end
 						return ("%s%s"):format(OwnerSettings.ArgumentSeperator,table.concat(Arguments,OwnerSettings.ArgumentSeperator))
@@ -1430,7 +1430,7 @@ local function UpdateSuggestions()
 		table.sort(CommandDisplays,function(String1,String2)
 			return Service"Text":GetTextSize(GetContentText(String1),14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X < Service"Text":GetTextSize(GetContentText(String2),14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X and true or false
 		end)
-		for _,Text in pairs(CommandDisplays) do
+		for _,Text in next,CommandDisplays do
 			NewInstance("TextLabel",Gui.SuggestionsScroll,{
 				Text = Text,
 				TextSize = 14,
@@ -1544,7 +1544,7 @@ local function CreateWindow(Settings)
 			}
 		}
 	}
-	--[[for _,Line in pairs(Settings.Content) do
+	--[[for _,Line in next,Settings.Content) do
 
 	end]]
 end
@@ -1711,7 +1711,7 @@ EnableDrag(Gui.Main,true)
 UltimatumStart = os.clock()-UltimatumStart
 if not GlobalEnvironment.UltimatumLoaded then
 	print((("!!_5#_4#_#_4#9_#9_#2_4#2_6#_#9_#_4#_#2_4#2!_4#_4#_#_8#_9#_5#4_#4_3#_#_3#_5#_4#_#4_#4!_3#_4#_#_8#_9#_5#_#3_#_2#_3#_2#_5#_4#_#_#3_#!_2#_4#_#_8#_9#_5#_2#_2#_#9_#_5#_4#_#_2#_2#!_#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#6_2#8_#_5#9_#_7#_#_5#_#_6#6_2#_7#!"):gsub("%p%d?",function(Input)
-		for Character,Format in pairs{
+		for Character,Format in next,{
 			["!"] = "\n",
 			_ = (" "):rep(1 < #Input and Input:sub(2,2) or 1),
 			["#"] = ("[%s]"):format(("|"):rep(1 < #Input and Input:sub(2,2) or 1))
@@ -1765,7 +1765,7 @@ if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and 
 else
 	GlobalEnvironment.UltimatumLoaded = true
 end
-for Name,Properties in pairs{
+for Name,Properties in next,{
 	Logo = {
 		Rotation = 0,
 		ImageTransparency = 0,
@@ -1796,7 +1796,7 @@ for Name,Properties in pairs{
 	if not Gui or not Gui[Name] then
 		return
 	end
-	for Property,Value in pairs(Properties) do
+	for Property,Value in next,Properties do
 		Gui[Name][Property] = Value
 	end
 end
