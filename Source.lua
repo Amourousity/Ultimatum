@@ -45,14 +45,16 @@ do
 		"isreadonly,is_readonly",
 		"getproto,debug.getproto",
 		"getstack,debug.getstack",
+		"iscclosure,is_c_closure",
 		"setstack,debug.setstack",
 		"getprotos,debug.getprotos",
-		"consoleclear,rconsoleclear",
 		"consoleinput,rconsoleinput",
 		"getcustomasset,getsynasset",
 		"isrbxactive,iswindowactive",
+		"makereadonly,make_readonly",
 		"dumpstring,getscriptbytecode",
 		"hookfunction,detour_function",
+		"makewriteable,make_writeable",
 		"getconnections,get_signal_cons",
 		"request,http.request,syn.request",
 		"getrawmetatable,debug_getmetatable",
@@ -95,8 +97,8 @@ do
 	end
 	--- @diagnostic disable undefined-global
 	for Paths,Replacement in pairs{
-		setreadonly = (make_writeable or makewriteable) and function(Table,ReadOnly)
-			(ReadOnly and (make_readonly or makereadonly) or (make_writeable or makewriteable))(Table)
+		setreadonly = makewriteable and function(Table,ReadOnly)
+			(ReadOnly and makereadonly or makewriteable)(Table)
 		end or 0,
 		hootmetamethod = hookfunction and getrawmetatable and function(Object,Method,Hook)
 			return hookfunction(getrawmetatable(Object)[Method],Hook)
@@ -115,8 +117,8 @@ do
 		end)() or function()
 			return cloneref and cloneref(game:GetService"CoreGui") or game:GetService"CoreGui"
 		end,
-		["islclosure,is_l_closure"] = (iscclosure or is_c_closure) and function(Closure)
-			return not (iscclosure or is_c_closure)(Closure)
+		["islclosure,is_l_closure"] = iscclosure and function(Closure)
+			return not iscclosure(Closure)
 		end or 0,
 		cloneref = getreg and (function()
 			local TestPart = Instance.new"Part"
@@ -144,7 +146,10 @@ do
 					end
 				end
 			end
-		end)() or 0
+		end)() or 0,
+		["consoleclear,rconsoleclear"] = consoleprint and function()
+			consoleprint(("\b"):rep(1e6))
+		end or 0
 	} do
 		CheckCompatibility(Paths,type(Replacement) == "function" and Replacement or nil)
 	end
@@ -153,20 +158,27 @@ end
 local GlobalEnvironment = getgenv and getgenv() or shared
 pcall(GlobalEnvironment.Ultimatum)
 local Nil = {}
+local Connect = game.Changed.Connect
 local Destroy
 do
-	local DestroyInstance = game.Destroy
+	local DestroyObject = game.Destroy
+	local DisconnectObject
+	do
+		local Connection = Connect(game.Changed,function() end)
+		DisconnectObject = Connection.Disconnect
+		DisconnectObject(Connection)
+	end
 	Destroy = function(...)
 		for _,Object in pairs{
 			...
 		} do
 			for Type,Function in pairs{
 				Instance = function()
-					pcall(DestroyInstance,Object)
+					pcall(DestroyObject,Object)
 				end,
 				RBXScriptConnection = function()
 					if Object.Connected then
-						Object:Disconnect()
+						pcall(DisconnectObject,Object)
 					end
 				end,
 				table = function()
@@ -184,22 +196,38 @@ do
 		end
 	end
 end
-local Services = setmetatable({},{
-	__index = function(Services,ServiceName)
-		(GlobalEnvironment.UltimatumDebug and assert or function() end)(pcall(game.GetService,game,ServiceName),("Ultimatum | Invalid ServiceName (%s '%s')"):format(typeof(ServiceName),tostring(ServiceName)))
-		if not rawget(Services,ServiceName) then
-			rawset(Services,ServiceName,game:GetService(ServiceName))
-		end
-		return cloneref and rawget(Services,ServiceName) and cloneref(rawget(Services,ServiceName)) or rawget(Services,ServiceName)
-	end,
-	__newindex = function() end,
-	__metatable = "nil"
-})
 pcall(GlobalEnvironment.Ultimatum)
-local Owner = Services.Players.LocalPlayer
+local Wait,Service
+do
+	local SignalWait,Services = game.Changed.Wait,{}
+	for _,Name in pairs{
+		"Gui",
+		"Run",
+		"Http",
+		"Text",
+		"Tween",
+		"CoreGui.",
+		"Players.",
+		"Teleport",
+		"UserInput",
+		"Pathfinding",
+		"ReplicatedStorage."
+	} do
+		Services[Name:gsub("%.$","")] = select(2,pcall(game.GetService,game,Name:sub(-1) == "." and Name:sub(1,-2) or ("%sService"):format(Name)))
+	end
+	Wait,Service = function(Value)
+		if typeof(Value) == "RBXScriptSignal" then
+			return SignalWait(Value)
+		end
+		return task.wait(Value)
+	end,function(Name)
+		return Services[Name] or error(('Ultimatum | Failed to get service "%s"'):format(Name),0)
+	end
+end
+local Owner = Service"Players".LocalPlayer
 while not Owner do
-	Services.Players.PlayerAdded:Wait()
-	Owner = Services.Players.LocalPlayer
+	Wait(Service"Players".PlayerAdded)
+	Owner = Service"Players".LocalPlayer
 end
 local function NilConvert(Value)
 	if Value == nil then
@@ -271,31 +299,42 @@ local Randomized = {
 }
 table.freeze(Randomized)
 local function NewInstance(ClassName,Parent,Properties)
-	local NewObject = select(2,pcall(Instance.new,ClassName))
+	local _,NewObject = pcall(Instance.new,ClassName)
 	if typeof(NewObject) == "Instance" then
 		Properties = Valid.Table(Properties,{
 			Name = Randomized.String(),
 			Archivable = Randomized.Bool()
 		})
 		for Property,Value in pairs(Properties) do
-			pcall(function()
+			local Success,Error = pcall(function()
 				NewObject[Property] = NilConvert(Value)
 			end)
+			if not Success then
+				error(("Ultimatum | %s"):format(Error))
+			end
 		end
 		NewObject.Parent = typeof(Parent) == "Instance" and Parent or nil
 		return NewObject
+	else
+		error(("Ultimatum | %s"):format(NewObject))
 	end
 end
 local function Create(Data)
 	local Instances = {}
 	for _,InstanceData in pairs(Valid.Table(Data)) do
-		Instances[InstanceData.Name] = NewInstance(InstanceData.ClassName,type(InstanceData.Parent) == "string" and Instances[InstanceData.Parent] or InstanceData.Parent,InstanceData.Properties)
+		if not Valid.String(InstanceData.ClassName) then
+			error"Ultimatum | Missing ClassName in InstanceData for function Create"
+		elseif not Valid.String(InstanceData.Name) then
+			warn"Ultimatum | Missing Name in InstanceData for function Create, substituting with ClassName"
+			InstanceData.Name = InstanceData.ClassName
+		end
+		Instances[InstanceData.Name] = NewInstance(InstanceData.ClassName,Valid.String(InstanceData.Parent) and Instances[InstanceData.Parent] or InstanceData.Parent,InstanceData.Properties)
 	end
 	return Instances
 end
 local OwnerSettings
 do
-	local Success,Output = pcall(Services.HttpService.JSONDecode,Services.HttpService,isfile and isfile"Settings.Ultimatum" and readfile"Settings.Ultimatum":gsub("^%bA{","{") or "[]")
+	local Success,Output = pcall(Service"Http".JSONDecode,Service"Http",isfile and isfile"Settings.Ultimatum" and readfile"Settings.Ultimatum":gsub("^%bA{","{") or "[]")
 	local Settings = Valid.Table(Success and Output or {},{
 		Scale = 1,
 		Blur = true,
@@ -358,7 +397,7 @@ local function WaitForSignal(Signal,MaxYield)
 	local SignalStart,Ready = os.clock()
 	for Type,Functionality in pairs{
 		RBXScriptSignal = function()
-			Return:Fire(Signal:Wait())
+			Return:Fire(Wait(Signal))
 		end,
 		["function"] = function()
 			local Continue
@@ -367,7 +406,7 @@ local function WaitForSignal(Signal,MaxYield)
 					if Success and ... then
 						Continue = true
 						if not Ready then
-							task.wait()
+							Wait()
 						end
 						Return:Fire(...)
 					end
@@ -381,13 +420,13 @@ local function WaitForSignal(Signal,MaxYield)
 		end
 	end
 	Ready = true
-	return Return.Event:Wait()
+	return Wait(Return.Event)
 end
 pcall(GlobalEnvironment.Ultimatum)
-if Services.CoreGui:FindFirstChild"RobloxLoadingGui" and Services.CoreGui.RobloxLoadingGui:FindFirstChild"BlackFrame" and Services.CoreGui.RobloxLoadingGui.BlackFrame.BackgroundTransparency <= 0 then
+if Service"CoreGui":FindFirstChild"RobloxLoadingGui" and Service"CoreGui".RobloxLoadingGui:FindFirstChild"BlackFrame" and Service"CoreGui".RobloxLoadingGui.BlackFrame.BackgroundTransparency <= 0 then
 	local Start = os.clock()
-	WaitForSignal(Services.CoreGui.RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency",3)
-	task.wait(math.random())
+	WaitForSignal(Service"CoreGui".RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency",3)
+	Wait(math.random())
 	UltimatumStart += os.clock()-Start
 end
 pcall(GlobalEnvironment.Ultimatum)
@@ -415,6 +454,7 @@ local Gui = Create{
 		Parent = "Holder",
 		ClassName = "Frame",
 		Properties = {
+			ClipsDescendants = true,
 			BackgroundTransparency = 1,
 			Size = UDim2.new(.25,0,.25,0),
 			Position = UDim2.new(.5,0,.4,0),
@@ -517,7 +557,7 @@ local Gui = Create{
 			TextColor3 = Color3.new(1,1,1),
 			TextXAlignment = Enum.TextXAlignment.Left,
 			PlaceholderColor3 = Color3.fromHex"A0A0A0",
-			PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Services.UserInputService:GetStringForKeyCode(Enum.KeyCode[OwnerSettings.Keybind]))
+			PlaceholderText = ("Enter a command (Keybind:\226\128\138%s\226\128\138)"):format(Service"UserInput":GetStringForKeyCode(Enum.KeyCode[OwnerSettings.Keybind]))
 		}
 	},
 	{
@@ -594,12 +634,12 @@ local function Animate(...)
 				EasingStyle = Enum.EasingStyle.Quad,
 				EasingDirection = Enum.EasingDirection.Out
 			})
-			Services.TweenService:Create(Object,TweenInfo.new(Data.Time,Data.EasingStyle,Data.EasingDirection,Data.RepeatCount,Data.Reverses,Data.DelayTime),Data.Properties):Play()
+			Service"Tween":Create(Object,TweenInfo.new(Data.Time,Data.EasingStyle,Data.EasingDirection,Data.RepeatCount,Data.Reverses,Data.DelayTime),Data.Properties):Play()
 			if Data.Yields then
-				task.wait((Data.Time+Data.DelayTime)*(1+Data.RepeatCount))
+				Wait((Data.Time+Data.DelayTime)*(1+Data.RepeatCount))
 			end
 			if 0 < Data.FinishDelay then
-				task.wait(Data.FinishDelay)
+				Wait(Data.FinishDelay)
 			end
 		end
 	end
@@ -681,7 +721,7 @@ local function Notify(Settings)
 		end
 	end
 	Settings.Duration += .25
-	local Size = Services.TextService:GetTextSize(Notification.Content.ContentText,14,Enum.Font.Arial,Vector2.new(Gui.NotificationHolder.AbsoluteSize.X,Gui.NotificationHolder.AbsoluteSize.Y))
+	local Size = Service"Text":GetTextSize(Notification.Content.ContentText,14,Enum.Font.Arial,Vector2.new(Gui.NotificationHolder.AbsoluteSize.X,Gui.NotificationHolder.AbsoluteSize.Y))
 	Notification.Main.Size = UDim2.new(0,Size.X+22,0,Size.Y+20)
 	Size = Notification.Main.Size
 	Notification.Main.Size = UDim2.new(Size.X.Scale,Size.X.Offset,0,0)
@@ -715,12 +755,12 @@ local function Notify(Settings)
 		local Start = os.clock()
 		repeat
 			Notification.Main.LayoutOrder = table.find(NotificationIDs,ID)
-			task.wait()
+			Wait()
 		until Settings.Duration < os.clock()-Start
 		table.remove(NotificationIDs,table.find(NotificationIDs,ID))
 	end)
 	if Settings.Yields then
-		task.wait(Settings.Duration)
+		Wait(Settings.Duration)
 		Destroy(Notification)
 	else
 		task.delay(Settings.Duration,Destroy,Notification)
@@ -775,7 +815,7 @@ local function GetCharacter(Player,MaxYield)
 	end
 end
 local function GetHumanoid(Character,MaxYield)
-	MaxYield = Valid.Number(MaxYield)
+	MaxYield = Valid.Number(MaxYield,10)
 	if Valid.Instance(Character,"Player") then
 		local Duration = os.clock()
 		local NewCharacter = GetCharacter(Character,MaxYield)
@@ -789,7 +829,7 @@ local function GetHumanoid(Character,MaxYield)
 		return
 	end
 	local Humanoid = WaitForSignal(function()
-		local Humanoid = Character:FindFirstChildOfClass"Humanoid" or Character.ChildAdded:Wait()
+		local Humanoid = Character:FindFirstChildOfClass"Humanoid" or Wait(Character.ChildAdded)
 		if Valid.Instance(Humanoid,"Humanoid") then
 			return Humanoid
 		end
@@ -800,18 +840,6 @@ local function GetHumanoid(Character,MaxYield)
 end
 local function ConvertTime(Time)
 	for _,Values in pairs{
-		{
-			31536000000,
-			"millennium"
-		},
-		{
-			3153600000,
-			"century"
-		},
-		{
-			315360000,
-			"decade"
-		},
 		{
 			31536000,
 			"year"
@@ -951,7 +979,7 @@ Commands = {
 	},
 	DisableRendering_disablerender_drendering_derender_drender_dr_norendering_norender = {
 		Function = function(Disabled)
-			Services.RunService:Set3dRenderingEnabled(not Disabled)
+			Service"Run":Set3dRenderingEnabled(not Disabled)
 		end,
 		Arguments = {
 			{
@@ -964,8 +992,8 @@ Commands = {
 	},
 	Rejoin_rejoinserver_rejoingame_rej_rj = {
 		Function = function()
-			if 1 < #Services.Players:GetPlayers() then
-				pcall(Services.TeleportService.TeleportToPlaceInstance,Services.TeleportService,game.PlaceId,game.JobId)
+			if 1 < #Service"Players":GetPlayers() then
+				pcall(Service"Teleport".TeleportToPlaceInstance,Service"Teleport",game.PlaceId,game.JobId)
 			else
 				Owner:Kick()
 				RunCommand"CloseRobloxMessage"
@@ -973,14 +1001,14 @@ Commands = {
 					Title = "Rejoining",
 					Text = "You will be rejoined shortly..."
 				}
-				task.delay(3,pcall,Services.TeleportService.Teleport,Services.TeleportService,game.PlaceId)
+				task.delay(3,pcall,Service"Teleport".Teleport,Service"Teleport",game.PlaceId)
 			end
 		end,
 		Description = "Rejoins the current server you're in"
 	},
 	CloseRobloxMessage_closerobloxerror_closemessage_closeerror_cmessage_cerror_closermessage_closererror_crobloxmessage_crobloxerror_clearrobloxmessage_clearrobloxerror_clearrerror_clearrmessage_clearmessage_clearerror_cm_crm_cre_ce_closekickmessage_clearkickmessage_clearkick_closekick_ckm_ck_closekickerror_clearkickerror_cke = {
 		Function = function()
-			Services.GuiService:ClearError()
+			Service"Gui":ClearError()
 		end,
 		Description = "Closes any messages/errors (the grey containers with the blurred background) displayed by Roblox"
 	},
@@ -996,7 +1024,7 @@ Commands = {
 				if not Humanoid then
 					return
 				end
-				Variables.Connection = Services.RunService.Heartbeat:Connect(function(Delta)
+				Variables.Connection = Connect(Service"Run".Heartbeat,function(Delta)
 					if not Character:IsDescendantOf(workspace) or Humanoid:GetState().Name == "Dead" then
 						RemoveConnections{
 							Variables.Connection
@@ -1064,7 +1092,7 @@ Commands = {
 				if not Assert(Success,Valid.String(Result,"An unknown error has occurred")) then
 					return
 				end
-				Result = Services.HttpService:JSONDecode(Result)
+				Result = Service"Http":JSONDecode(Result)
 				Page,UnfilteredServers = Result.nextPageCursor,Result.data
 				if not Assert(0 < #UnfilteredServers,"No servers found") then
 					return
@@ -1083,11 +1111,12 @@ Commands = {
 				Title = "Joining Server",
 				Text = ("Took %s to search %d servers (%d viable). Server <i>%s</i> has %d/%d players"):format(ConvertTime(os.clock()-Start),ServerCount,ViableServerCount,Server.id,Server.playing,Server.maxPlayers)
 			}
-			task.delay(2,Services.TeleportService.TeleportToPlaceInstance,Services.TeleportService,game.PlaceId,Server.id)
+			task.delay(2,Service"Teleport".TeleportToPlaceInstance,Service"Teleport",game.PlaceId,Server.id)
 		end,
 		Description = "Joins a random server that you weren't previously in"
 	}
 }
+local AlreadyWaited,AlreadyFinished = false,false
 for Replace,Info in pairs(({
 	_142823291 = {
 		ExtrasensoryPerception_extrasensoryp_esensoryperception_esperception_extrasp_esp = {
@@ -1096,7 +1125,7 @@ for Replace,Info in pairs(({
 					return
 				end
 				if Enabled then
-					Variables.Time,Variables.Connection = os.clock(),Services.RunService.Heartbeat:Connect(function()
+					Variables.Time,Variables.Connection = os.clock(),Connect(Service"Run".Heartbeat,function()
 						if not Variables.Calculating or 5 < os.clock()-Variables.Time then
 							Variables.Time,Variables.Calculating = os.clock(),true
 							local PlayerData = Variables.PlayerDataRemote:InvokeServer()
@@ -1107,7 +1136,7 @@ for Replace,Info in pairs(({
 							if workspace:FindFirstChild"GunDrop" then
 								Variables:CreateExtrasensoryPerception(workspace.GunDrop,"Gun")
 							end
-							for _,Player in pairs(Services.Players:GetPlayers()) do
+							for _,Player in pairs(Service"Players":GetPlayers()) do
 								local Data = PlayerData[Player.Name]
 								if Data and not Data.Dead and Player.Name ~= Owner.Name then
 									Variables:CreateExtrasensoryPerception(Player.Character:FindFirstChild"HumanoidRootPart" or Player.Character:FindFirstChildWhichIsA"BasePart",Data.Role)
@@ -1137,7 +1166,7 @@ for Replace,Info in pairs(({
 			},
 			Variables = {
 				ExtrasensoryPerceptions = {},
-				PlayerDataRemote = game.PlaceId == 142823291 and Services.ReplicatedStorage:WaitForChild"Remotes":WaitForChild"Extras":WaitForChild"GetPlayerData",
+				PlayerDataRemote = game.PlaceId == 142823291 and Service"ReplicatedStorage":WaitForChild"Remotes":WaitForChild"Extras":WaitForChild"GetPlayerData",
 				CreateExtrasensoryPerception = function(Variables,Object,Role)
 					local LargestAxis = math.max(Object.Size.X,Object.Size.Y,Object.Size.Z)
 					table.insert(Variables.ExtrasensoryPerceptions,Create{
@@ -1190,6 +1219,198 @@ for Replace,Info in pairs(({
 				end
 			}
 		}
+	},
+	_6755746130 = {
+		AutoFarm_autoplay_autop_autof_farm_af = {
+			Function = function(Variables,Enabled)
+				if not Assert(not (Variables.Enabled and Enabled),"Auto-farm is already enabled",not (not Variables.Enabled and not Enabled),"Auto-farm is already disabled") then
+					return
+				end
+				if Enabled then
+					Variables.AvoidZones = NewInstance("Folder",workspace)
+					for _,X in next,{
+						94.1,
+						-49.9,
+						238.1,
+						382.1,
+						-193.9,
+						-337.9,
+						-481.9,
+					} do
+						Create{
+							{
+								Name = "AvoidPart",
+								Parent = Variables.AvoidZones,
+								ClassName = "Part",
+								Properties = {
+									Anchored = true,
+									Transparency = 1,
+									CanCollide = false,
+									Size = Vector3.new(12.2,10,24),
+									Position = Vector3.new(X,5,-12)
+								}
+							},
+							{
+								Name = "AvoidPathfinding",
+								Parent = "AvoidPart",
+								ClassName = "PathfindingModifier"
+							}
+						}
+					end
+					for _,Killbrick in next,Variables.Killbricks:GetChildren() do
+						Killbrick.CanTouch = false
+					end
+					Variables.Debounce = false
+					Variables.Connection = Connect(Service"Run".Stepped,function()
+						if not Variables.Debounce then
+							Variables.Debounce = true
+							if not Valid.Instance(Variables.OwnedTycoon.Value,"Model") then
+								AlreadyFinished = false
+								print"Claiming tycoon..."
+								for _,Tycoon in next,Variables.Tycoons:GetChildren() do
+									if not Valid.Instance(Tycoon:WaitForChild"Owner".Value,"Player") then
+										Variables:WalkTo(Tycoon:WaitForChild"Essentials":WaitForChild"Entrance".Position)
+									end
+								end
+							end
+							if not Valid.Instance(Variables.Tycoon,"Model") then
+								AlreadyFinished = false
+								print"Setting up tycoon..."
+								Variables.Tycoon = Variables.OwnedTycoon.Value
+								Variables.Essentials = Variables.Tycoon:WaitForChild"Essentials"
+								Variables.HolderPosition = Variables.Essentials:WaitForChild"FruitHolder":WaitForChild"HolderBottom".Position
+								Variables.JuicePosition = Variables.Essentials:WaitForChild"JuiceMaker":WaitForChild"StartJuiceMakerButton".Position+Vector3.new(5,0,0)
+								Variables.JuicePrompt = Variables.Essentials.JuiceMaker.StartJuiceMakerButton:WaitForChild"PromptAttachment":WaitForChild"StartPrompt"
+								Variables.PlayerGui = Owner:WaitForChild"PlayerGui"
+								Variables.Drops = Variables.Tycoon:WaitForChild"Drops"
+								Variables.Buttons = Variables.Tycoon:WaitForChild"Buttons"
+								Variables.Purchased = Variables.Tycoon:WaitForChild"Purchased"
+							end
+							if Variables.Purchased:FindFirstChild"Golden Tree Statue" then
+								print"Collecting Prestige..."
+								Variables:WalkTo(Variables.Purchased["Golden Tree Statue"].StatueBottom.Position)
+								if fireproximityprompt then
+									fireproximityprompt(Variables.Purchased["Golden Tree Statue"].StatueBottom.PrestigePrompt)
+								elseif keypress then
+									keypress(69)
+									task.defer(keyrelease,69)
+								end
+								task.wait(3)
+							end
+							if not Variables.Purchased:FindFirstChild"Auto Collector" then
+								AlreadyFinished = false
+								print"Collecting fruit..."
+								for _,Drop in next,Variables.Drops:GetChildren() do
+									if (Drop.Position-Variables.HolderPosition).Magnitude < 5 then
+										Variables.CollectFruit:FireServer(Drop)
+									end
+								end
+							end
+							if Variables.PlayerGui:FindFirstChild"ObbyInfoBillBoard" and Variables.PlayerGui.ObbyInfoBillBoard:FindFirstChild"TopText" and Variables.PlayerGui.ObbyInfoBillBoard.TopText.Text == "Start Obby" then
+								AlreadyFinished = false
+								print"Doing obby..."
+								Variables:WalkTo(Vector3.new(0,1,408))
+								task.wait(1.5)
+							end
+							if Variables.Money.Value < 1e5 then
+								AlreadyFinished = false
+								print"Putting fruit in juice maker..."
+								Variables:WalkTo(Variables.JuicePosition)
+								if fireproximityprompt then
+									fireproximityprompt(Variables.JuicePrompt)
+								elseif keypress then
+									keypress(69)
+									task.defer(keyrelease,69)
+								end
+								task.wait(.25)
+							end
+							local LowestPrice,ChosenButton = math.huge,nil
+							for _,Button in next,Variables.Buttons:GetChildren() do
+								Button.CanTouch = false
+								local Price = tonumber((Button:WaitForChild"ButtonLabel":WaitForChild"CostLabel".Text:gsub("%D",""))) or 0
+								if Price <= Variables.Money.Value and Price < LowestPrice then
+									LowestPrice,ChosenButton = Price,Button
+								end
+							end
+							if ChosenButton then
+								AlreadyFinished = false
+								print"Buying product..."
+								ChosenButton.CanTouch = true
+								Variables:WalkTo(ChosenButton.Position)
+								task.wait(.5)
+							end
+							Variables.Debounce = false
+							AlreadyWaited = false
+							if not AlreadyFinished then
+								print"Done!"
+								AlreadyFinished = true
+							end
+						elseif not AlreadyWaited then
+							print("Waiting...")
+							AlreadyWaited = true
+						end
+					end)
+					AddConnections{
+						Variables.Connection
+					}
+					Variables.Enabled = true
+				else
+					Destroy(Variables.AvoidZones)
+					for _,Killbrick in next,Variables.Killbricks:GetChildren() do
+						Killbrick.CanTouch = true
+					end
+					RemoveConnections{
+						Variables.Connection
+					}
+					Variables.Enabled = false
+				end
+			end,
+			Arguments = {
+				{
+					Name = "Enable",
+					Type = "Boolean",
+					Substitute = true
+				}
+			},
+			Variables = game.PlaceId == 6755746130 and {
+				CollectFruit = Service"ReplicatedStorage":WaitForChild"CollectFruit",
+				Killbricks = workspace:WaitForChild"ObbyParts":WaitForChild"Killbricks",
+				Money = Owner:WaitForChild"leaderstats":WaitForChild"Money",
+				OwnedTycoon = Owner:WaitForChild"OwnedTycoon",
+				Tycoons = workspace:WaitForChild"Tycoons",
+				Path = Service"Pathfinding":CreatePath{
+					AgentRadius = 3,
+					WaypointSpacing = math.huge,
+					Costs = {
+						AvoidZones = math.huge
+					}
+				},
+				WalkTo = function(Variables,Position)
+					print"Walking..."
+					local Success,Error = pcall(Variables.Path.ComputeAsync,Variables.Path,workspace.CurrentCamera.Focus.Position,Position)
+					if Success and Variables.Path.Status.Name == "Success" then
+						local Humanoid = GetHumanoid(Owner)
+						if Humanoid then
+							for _,InflectionPoint in next,Variables.Path:GetWaypoints() do
+								if InflectionPoint.Action.Name == "Walk" then
+									repeat
+										Humanoid:MoveTo(InflectionPoint.Position)
+									until Humanoid.MoveToFinished:Wait() == true
+								else
+									Service"Run".RenderStepped:Wait()
+									Humanoid.Jump = true
+								end
+							end
+						end
+					elseif not Success then
+						print("Ultimatum | ",Error)
+					else
+						print(Variables.Path.Status.Name)
+					end
+					print"Done walking"
+				end
+			}
+		}
 	}
 })[("_%d"):format(game.PlaceId)] or {}) do
 	Commands[Replace] = Info
@@ -1204,7 +1425,7 @@ local function GetContentText(String)
 end
 local IgnoreUpdate
 local function UpdateSuggestions()
-	if Services.UserInputService:GetFocusedTextBox() == Gui.CommandBar and not IgnoreUpdate then
+	if Service"UserInput":GetFocusedTextBox() == Gui.CommandBar and not IgnoreUpdate then
 		IgnoreUpdate = true
 		Gui.CommandBar.Text = Gui.CommandBar.Text:gsub("^%W+","")
 		IgnoreUpdate = false
@@ -1235,7 +1456,7 @@ local function UpdateSuggestions()
 			end
 		end
 		table.sort(CommandDisplays,function(String1,String2)
-			return Services.TextService:GetTextSize(GetContentText(String1),14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X < Services.TextService:GetTextSize(GetContentText(String2),14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X and true or false
+			return Service"Text":GetTextSize(GetContentText(String1),14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X < Service"Text":GetTextSize(GetContentText(String2),14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X and true or false
 		end)
 		for _,Text in pairs(CommandDisplays) do
 			NewInstance("TextLabel",Gui.SuggestionsScroll,{
@@ -1251,9 +1472,10 @@ local function UpdateSuggestions()
 		end
 		local CommandNumber = #Gui.SuggestionsScroll:GetChildren()-1
 		Gui.SuggestionsScroll.CanvasSize = UDim2.new(0,0,0,20*CommandNumber)
-		ResizeMain(nil,0 < CommandNumber and 48+20*CommandNumber or 40)
+		ResizeMain(nil,0 < CommandNumber and 48+20*math.min(CommandNumber,5) or 40)
 	end
 end
+local EnableDrag
 local function CreateWindow(Settings)
 	Settings = Valid.Table(Settings,{
 		Title = "Ultimatum",
@@ -1261,7 +1483,7 @@ local function CreateWindow(Settings)
 			"(no content)"
 		}
 	})
-	Create{
+	local Window = Create{
 		{
 			Name = "Main",
 			Parent = Gui.Holder,
@@ -1310,7 +1532,11 @@ local function CreateWindow(Settings)
 			Parent = "Title",
 			ClassName = "UIGradient",
 			Properties = {
-				Transparency = NumberSequence.new(NumberSequenceKeypoint.new(0,0),NumberSequenceKeypoint.new(.95,0),NumberSequenceKeypoint.new(1,1))
+				Transparency = NumberSequence.new{
+					NumberSequenceKeypoint.new(0,0),
+					NumberSequenceKeypoint.new(.95,0),
+					NumberSequenceKeypoint.new(1,1)
+				}
 			}
 		},
 		{
@@ -1346,9 +1572,13 @@ local function CreateWindow(Settings)
 			}
 		}
 	}
+	--[[for _,Line in pairs(Settings.Content) do
+
+	end]]
 end
+CreateWindow()
 Connections = {
-	not GlobalEnvironment.UltimatumDebug and isfile and Services.RunService.Heartbeat:Connect(function()
+	not GlobalEnvironment.UltimatumDebug and isfile and Connect(Service"Run".Heartbeat,function()
 		if OwnerSettings.AutoUpdate and 60 < os.clock()-LastCheck then
 			LastCheck = os.clock()
 			local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua",true)
@@ -1374,38 +1604,38 @@ Connections = {
 			end
 		end
 	end),
-	not GlobalEnvironment.UltimatumDebug and queue_on_teleport and (isfile and Owner.OnTeleport:Connect(function(TeleportState)
+	not GlobalEnvironment.UltimatumDebug and queue_on_teleport and Connect(Owner.OnTeleport,isfile and function(TeleportState)
 		if OwnerSettings.LoadOnRejoin and TeleportState.Name == "Started" then
 			queue_on_teleport(isfile"Source.Ultimatum" and readfile"Source.Ultimatum" or "warn'Source.Ultimatum missing from workspace folder (Ultimatum cannot run)'")
 		end
-	end) or Owner.OnTeleport:Connect(function(TeleportState)
+	end or function(TeleportState)
 		if OwnerSettings.LoadOnRejoin and TeleportState.Name == "Started" then
 			local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua",true)
 			queue_on_teleport(Success and Result or ("warn'HttpGet failed: %s (Ultimatum cannot run)'"):format(Result))
 		end
-	end)),
-	Services.UserInputService.WindowFocused:Connect(function()
+	end),
+	Connect(Service"UserInput".WindowFocused,function()
 		Focused = true
 	end),
-	Services.UserInputService.WindowFocusReleased:Connect(function()
+	Connect(Service"UserInput".WindowFocusReleased,function()
 		Focused = false
 	end),
-	Gui.Main.MouseEnter:Connect(function()
+	Connect(Gui.Main.MouseEnter,function()
 		if not Debounce then
 			LastLeft = os.clock()
 			ResizeMain()
 		end
 	end),
-	Gui.Main.MouseLeave:Connect(function()
+	Connect(Gui.Main.MouseLeave,function()
 		if not Debounce then
 			LastLeft = os.clock()
-			task.wait(1)
+			Wait(1)
 			if 1 < os.clock()-LastLeft and not Debounce then
 				ResizeMain(40)
 			end
 		end
 	end),
-	Gui.CommandBar.Focused:Connect(function()
+	Connect(Gui.CommandBar.Focused,function()
 		if not Debounce then
 			Debounce = true
 			Gui.CommandBar.PlaceholderText = "Enter a command..."
@@ -1413,43 +1643,43 @@ Connections = {
 			task.delay(.25,UpdateSuggestions)
 		end
 	end),
-	Gui.CommandBar.FocusLost:Connect(function(Sent)
-		task.wait()
-		Gui.CommandBar.PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Services.UserInputService:GetStringForKeyCode(Enum.KeyCode[OwnerSettings.Keybind]))
+	Connect(Gui.CommandBar.FocusLost,function(Sent)
+		Wait()
+		Gui.CommandBar.PlaceholderText = ("Enter a command (Keybind:\226\128\138%s\226\128\138)"):format(Service"UserInput":GetStringForKeyCode(Enum.KeyCode[OwnerSettings.Keybind]))
 		if Sent and 0 < #Gui.CommandBar.Text then
 			task.spawn(RunCommand,Gui.CommandBar.Text)
 			Gui.CommandBar.Text = ""
-		elseif Services.UserInputService:IsKeyDown(Enum.KeyCode.Escape) then
+		elseif Service"UserInput":IsKeyDown(Enum.KeyCode.Escape) then
 			Gui.CommandBar.Text = ""
 		end
 		ResizeMain()
 		task.delay(.25,function()
-			if Services.UserInputService:GetFocusedTextBox() ~= Gui.CommandBar then
+			if Service"UserInput":GetFocusedTextBox() ~= Gui.CommandBar then
 				ResizeMain(40)
 			end
 		end)
 		Debounce = false
 	end),
-	Services.UserInputService.InputBegan:Connect(function(Input,Ignore)
+	Connect(Service"UserInput".InputBegan,function(Input,Ignore)
 		if not Ignore and Input.UserInputType.Name == "Keyboard" and Input.KeyCode.Name == OwnerSettings.Keybind and not Debounce then
 			task.defer(Gui.CommandBar.CaptureFocus,Gui.CommandBar)
 		end
 	end),
-	Gui.CommandBar:GetPropertyChangedSignal"Text":Connect(UpdateSuggestions)
+	Connect(Gui.CommandBar:GetPropertyChangedSignal"Text",UpdateSuggestions)
 }
-local function EnableDrag(Frame,IsMain)
+EnableDrag = function(Frame,IsMain)
 	local DragConnection
 	local FinalPosition,OldEnabled = UDim2.new()
-	local InputBegan,InputEnded,Removed = Frame.InputBegan:Connect(function(Input,Ignore)
+	local InputBegan,InputEnded,Removed = Connect(Frame.InputBegan,function(Input,Ignore)
 		if not Ignore and not Debounce and Input.UserInputType.Name == "MouseButton1" then
 			if IsMain then
 				ResizeMain(40)
 			end
 			Debounce = true
-			OldEnabled = Services.UserInputService.MouseIconEnabled
-			DragConnection = Services.RunService.RenderStepped:Connect(function()
-				Services.UserInputService.MouseIconEnabled = false
-				local MousePosition = Services.UserInputService:GetMouseLocation()
+			OldEnabled = Service"UserInput".MouseIconEnabled
+			DragConnection = Connect(Service"Run".RenderStepped,function()
+				Service"UserInput".MouseIconEnabled = false
+				local MousePosition = Service"UserInput":GetMouseLocation()
 				local ScreenSize,CardSize = workspace.CurrentCamera.ViewportSize,Frame.AbsoluteSize
 				local NewPosition = OwnerSettings.EdgeDetect ~= "None" and Vector2.new(math.clamp(MousePosition.X,math.floor(CardSize.X/2),math.ceil(ScreenSize.X-CardSize.X/2)),math.clamp(MousePosition.Y,math.floor(CardSize.Y/2),math.ceil(ScreenSize.Y-CardSize.Y/2))) or MousePosition
 				if NewPosition ~= MousePosition then
@@ -1470,9 +1700,9 @@ local function EnableDrag(Frame,IsMain)
 				DragConnection
 			}
 		end
-	end),Services.UserInputService.InputEnded:Connect(function(Input)
+	end),Connect(Service"UserInput".InputEnded,function(Input)
 		if DragConnection and Input.UserInputType.Name == "MouseButton1" then
-			Services.UserInputService.MouseIconEnabled = OldEnabled
+			Service"UserInput".MouseIconEnabled = OldEnabled
 			RemoveConnections{
 				DragConnection
 			}
@@ -1483,7 +1713,7 @@ local function EnableDrag(Frame,IsMain)
 			end
 		end
 	end)
-	Removed = Frame.AncestryChanged:Connect(function()
+	Removed = Connect(Frame.AncestryChanged,function()
 		if not Frame:IsDescendantOf(gethui()) then
 			RemoveConnections{
 				Removed,
@@ -1523,8 +1753,8 @@ end
 if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
 	GlobalEnvironment.UltimatumLoaded = true
 	if OwnerSettings.Blur then
-		Services.RunService:SetRobloxGuiFocused(true)
-		task.delay(1.5,Services.RunService.SetRobloxGuiFocused,Services.RunService,false)
+		Service"Run":SetRobloxGuiFocused(true)
+		task.delay(1.5,Service"Run".SetRobloxGuiFocused,Service"Run",false)
 	end
 	Animate(Gui.Main,{
 		Yields = true,
