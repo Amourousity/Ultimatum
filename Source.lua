@@ -1116,7 +1116,6 @@ Commands = {
 		Description = "Joins a random server that you weren't previously in"
 	}
 }
-local AlreadyWaited,AlreadyFinished = false,false
 for Replace,Info in pairs(({
 	_142823291 = {
 		ExtrasensoryPerception_extrasensoryp_esensoryperception_esperception_extrasp_esp = {
@@ -1265,8 +1264,6 @@ for Replace,Info in pairs(({
 						if not Variables.Debounce then
 							Variables.Debounce = true
 							if not Valid.Instance(Variables.OwnedTycoon.Value,"Model") then
-								AlreadyFinished = false
-								print"Claiming tycoon..."
 								for _,Tycoon in next,Variables.Tycoons:GetChildren() do
 									if not Valid.Instance(Tycoon:WaitForChild"Owner".Value,"Player") then
 										Variables:WalkTo(Tycoon:WaitForChild"Essentials":WaitForChild"Entrance".Position)
@@ -1274,8 +1271,6 @@ for Replace,Info in pairs(({
 								end
 							end
 							if not Valid.Instance(Variables.Tycoon,"Model") then
-								AlreadyFinished = false
-								print"Setting up tycoon..."
 								Variables.Tycoon = Variables.OwnedTycoon.Value
 								Variables.Essentials = Variables.Tycoon:WaitForChild"Essentials"
 								Variables.HolderPosition = Variables.Essentials:WaitForChild"FruitHolder":WaitForChild"HolderBottom".Position
@@ -1287,7 +1282,6 @@ for Replace,Info in pairs(({
 								Variables.Purchased = Variables.Tycoon:WaitForChild"Purchased"
 							end
 							if Variables.Purchased:FindFirstChild"Golden Tree Statue" then
-								print"Collecting Prestige..."
 								Variables:WalkTo(Variables.Purchased["Golden Tree Statue"].StatueBottom.Position)
 								if fireproximityprompt then
 									fireproximityprompt(Variables.Purchased["Golden Tree Statue"].StatueBottom.PrestigePrompt)
@@ -1298,8 +1292,6 @@ for Replace,Info in pairs(({
 								task.wait(3)
 							end
 							if not Variables.Purchased:FindFirstChild"Auto Collector" then
-								AlreadyFinished = false
-								print"Collecting fruit..."
 								for _,Drop in next,Variables.Drops:GetChildren() do
 									if (Drop.Position-Variables.HolderPosition).Magnitude < 5 then
 										Variables.CollectFruit:FireServer(Drop)
@@ -1307,14 +1299,10 @@ for Replace,Info in pairs(({
 								end
 							end
 							if Variables.PlayerGui:FindFirstChild"ObbyInfoBillBoard" and Variables.PlayerGui.ObbyInfoBillBoard:FindFirstChild"TopText" and Variables.PlayerGui.ObbyInfoBillBoard.TopText.Text == "Start Obby" then
-								AlreadyFinished = false
-								print"Doing obby..."
 								Variables:WalkTo(Vector3.new(0,1,408))
 								task.wait(1.5)
 							end
 							if Variables.Money.Value < 1e5 then
-								AlreadyFinished = false
-								print"Putting fruit in juice maker..."
 								Variables:WalkTo(Variables.JuicePosition)
 								if fireproximityprompt then
 									fireproximityprompt(Variables.JuicePrompt)
@@ -1333,21 +1321,11 @@ for Replace,Info in pairs(({
 								end
 							end
 							if ChosenButton then
-								AlreadyFinished = false
-								print"Buying product..."
 								ChosenButton.CanTouch = true
 								Variables:WalkTo(ChosenButton.Position)
 								task.wait(.5)
 							end
 							Variables.Debounce = false
-							AlreadyWaited = false
-							if not AlreadyFinished then
-								print"Done!"
-								AlreadyFinished = true
-							end
-						elseif not AlreadyWaited then
-							print("Waiting...")
-							AlreadyWaited = true
 						end
 					end)
 					AddConnections{
@@ -1386,7 +1364,6 @@ for Replace,Info in pairs(({
 					}
 				},
 				WalkTo = function(Variables,Position)
-					print"Walking..."
 					local Success,Error = pcall(Variables.Path.ComputeAsync,Variables.Path,workspace.CurrentCamera.Focus.Position,Position)
 					if Success and Variables.Path.Status.Name == "Success" then
 						local Humanoid = GetHumanoid(Owner)
@@ -1402,12 +1379,7 @@ for Replace,Info in pairs(({
 								end
 							end
 						end
-					elseif not Success then
-						print("Ultimatum | ",Error)
-					else
-						print(Variables.Path.Status.Name)
 					end
-					print"Done walking"
 				end
 			}
 		}
