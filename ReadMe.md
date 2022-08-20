@@ -20,12 +20,13 @@ In order for offline support to work, you ***MUST*** use the loader directly.
 
 Copy the [loader](/Loader.lua), paste it in your exploit's script editor, press Execute and enjoy!
 
-## Commands
+## Global Commands
 
 Command|Arguments|Description
--|-|-
+---|---|---
 Exit| |Closes the current Roblox window/proccess
 Rejoin| |Rejoins the current Roblox server you're in, or joins a different server if not possible
+Invisible| |Makes you invisible to other players
 ServerHop| |Joins a random server that you weren't previously in
 Magic8Ball| |Notifies the Magic 8 Ball's response to your yes-or-no question
 CopyJoinScript| |Copies JavaScript to your clipboard used to join the same server
