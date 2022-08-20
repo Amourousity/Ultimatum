@@ -1223,7 +1223,7 @@ Commands = {
 				end
 				local OldCFrame,NewRoot = HumanoidRootPart.CFrame,Root:Clone()
 				HumanoidRootPart.Parent,Character.PrimaryPart = workspace,HumanoidRootPart
-				Character:MoveTo(Vector3.new(OldCFrame.X,1e9,OldCFrame.Z))
+				Character:MoveTo(Vector3.new(OldCFrame.X,9e9,OldCFrame.Z))
 				HumanoidRootPart.Parent = Character
 				task.delay(.5,function()
 					NewRoot.Parent,HumanoidRootPart.CFrame = LowerTorso,OldCFrame
