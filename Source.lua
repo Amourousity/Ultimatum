@@ -201,17 +201,93 @@ local Wait,Service
 do
 	local SignalWait,Services = game.Changed.Wait,{}
 	for _,Name in next,{
+		"Ad",
+		"VR",
 		"Gui",
+		"Log",
 		"Run",
 		"Http",
+		"Test",
 		"Text",
+		"Asset",
+		"Badge",
+		"Chat.",
+		"Group",
+		"Mouse",
+		"Sound",
+		"Timer",
 		"Tween",
+		"Drafts",
+		"Friend",
+		"Haptic",
+		"Insert",
+		"Joints",
+		"LuaWeb",
+		"Points",
+		"Policy",
+		"Script",
+		"Stats.",
+		"Studio",
+		"Teams.",
+		"Visit.",
+		"Browser",
+		"Cookies",
+		"Debris.",
+		"Dragger",
+		"Gamepad",
+		"Package",
+		"Physics",
+		"Publish",
+		"Spawner",
+		"TextBox",
 		"CoreGui.",
+		"GamePass",
+		"Keyboard",
+		"Language",
+		"Material",
 		"Players.",
 		"Teleport",
+		"Analytics",
+		"DataStore",
+		"Geometry.",
+		"Lighting.",
+		"PluginGui",
 		"UserInput",
+		"Collection",
+		"Controller",
+		"HttpRbxApi",
+		"MemStorage",
+		"Selection.",
+		"TouchInput",
+		"Workspace.",
+		"Marketplace",
 		"Pathfinding",
-		"ReplicatedStorage."
+		"Permissions",
+		"PluginDebug",
+		"StarterGui.",
+		"Localization",
+		"Notification",
+		"ScriptEditor",
+		"ServerScript",
+		"StarterPack.",
+		"ChangeHistory",
+		"ContextAction",
+		"UGCValidation",
+		"ScriptContext.",
+		"ServerStorage.",
+		"StarterPlayer.",
+		"ProximityPrompt",
+		"ContentProvider.",
+		"DebuggerManager.",
+		"ReplicatedFirst.",
+		"ReplicatedStorage.",
+		"MeshContentProvider.",
+		"VirtualInputManager.",
+		"AnimationClipProvider.",
+		"ProcessInstancePhysics",
+		"HSRDataContentProvider.",
+		"KeyframeSequenceProvider.",
+		"SolidModelContentProvider."
 	} do
 		Services[Name:gsub("%.$","")] = select(2,pcall(game.GetService,game,Name:sub(-1) == "." and Name:sub(1,-2) or ("%sService"):format(Name)))
 	end
@@ -1041,6 +1117,9 @@ Commands = {
 						Character:TranslateBy(Humanoid.MoveDirection*math.min(Delta,1/15)*(Variables.Speed-Humanoid.WalkSpeed))
 					end
 				end)
+				AddConnections{
+					Variables.Connection
+				}
 				Variables.Enabled = true
 			end
 		end,
@@ -1114,6 +1193,87 @@ Commands = {
 			task.delay(2,Service"Teleport".TeleportToPlaceInstance,Service"Teleport",game.PlaceId,Server.id)
 		end,
 		Description = "Joins a random server that you weren't previously in"
+	},
+	Invisible_invis_iv = {
+		Function = function(Variables)
+			if not Variables.Enabled then
+				local Character = GetCharacter(Owner,5)
+				if not Character then
+					return
+				end
+				local Humanoid = GetHumanoid(Character,5)
+				if not Humanoid then
+					return
+				end
+				local HumanoidRootPart = Character:FindFirstChild"HumanoidRootPart"
+				if not Assert(HumanoidRootPart,"Player does not have a HumanoidRootPart") then
+					return
+				end
+				local R6 = Humanoid.RigType.Name == "R6"
+				if not Assert(not R6,"R6 invisibility is not supported yet") then
+					return
+				end
+				local LowerTorso = Character:FindFirstChild"LowerTorso"
+				if not Assert(LowerTorso,"Player does not have a LowerTorso") then
+					return
+				end
+				local Root = LowerTorso:FindFirstChild"Root"
+				if not Assert(Root,"Player does not have a Root") then
+					return
+				end
+				local OldCFrame,NewRoot = HumanoidRootPart.CFrame,Root:Clone()
+				HumanoidRootPart.Parent,Character.PrimaryPart = workspace,HumanoidRootPart
+				Character:MoveTo(Vector3.new(OldCFrame.X,1e9,OldCFrame.Z))
+				HumanoidRootPart.Parent = Character
+				task.delay(.5,function()
+					NewRoot.Parent,HumanoidRootPart.CFrame = LowerTorso,OldCFrame
+				end)
+				Variables.Connection = Connect(Service"Run".RenderStepped,function()
+					if not Character:IsDescendantOf(workspace) or Humanoid:GetState().Name == "Dead" then
+						RemoveConnections{
+							Variables.Connection
+						}
+						Variables.Enabled,Variables.Connection = false,nil
+						return
+					end
+					for _,Object in next,Character:GetDescendants() do
+						if not Object:IsDescendantOf(HumanoidRootPart) then
+							for Types,Properties in next,{
+								BasePart_Decal = {
+									LocalTransparencyModifier = 1
+								},
+								LayerCollector_Fire_Sparkles_ParticleEmitter = {
+									Enabled = false
+								},
+								Sound = {
+									RollOffMaxDistance = 0,
+									RollOffMinDistance = 0
+								},
+								Decal = {
+									Transparency = 1
+								}
+							} do
+								for _,Type in next,Types:split"_" do
+									if Object:IsA(Type) then
+										for Property,Value in next,Properties do
+											pcall(function()
+												Object[Property] = Value
+											end)
+										end
+									end
+								end
+							end
+						end
+					end
+				end)
+				AddConnections{
+					Variables.Connection
+				}
+				Variables.Enabled = true
+			end
+		end,
+		Variables = {},
+		Description = "Makes you invisible to other players"
 	}
 }
 for Replace,Info in next,({
