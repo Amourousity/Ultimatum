@@ -499,11 +499,10 @@ local function WaitForSignal(Signal,MaxYield)
 	return Wait(Return.Event)
 end
 pcall(GlobalEnvironment.Ultimatum)
+WaitForSignal(gethui)
 if Service"CoreGui":FindFirstChild"RobloxLoadingGui" and Service"CoreGui".RobloxLoadingGui:FindFirstChild"BlackFrame" and Service"CoreGui".RobloxLoadingGui.BlackFrame.BackgroundTransparency <= 0 then
-	local Start = os.clock()
 	WaitForSignal(Service"CoreGui".RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency",3)
 	Wait(math.random())
-	UltimatumStart += os.clock()-Start
 end
 pcall(GlobalEnvironment.Ultimatum)
 local LogoId = writefile and getcustomasset and (isfile"UltimatumLogo.png" or (function()
@@ -1068,7 +1067,7 @@ Commands = {
 	},
 	Rejoin_rejoinserver_rejoingame_rej_rj = {
 		Function = function()
-			if 1 < #Service"Players":GetPlayers() then
+			if 1 < #Service"Players":GetPlayers() and #game.PrivateServerId < 1 then
 				pcall(Service"Teleport".TeleportToPlaceInstance,Service"Teleport",game.PlaceId,game.JobId)
 			else
 				Owner:Kick()
