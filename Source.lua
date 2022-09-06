@@ -520,12 +520,12 @@ Commands = {
 	},
 	Rejoin_rejoinserver_rejoingame_rej_rj = {
 		Function = function()
-			if 1 < #Service"Players":GetPlayers() and #game.PrivateServerId < 1 then
+			if 1 < #Service"Players":GetPlayers() then
 				pcall(Service"Teleport".TeleportToPlaceInstance,Service"Teleport",game.PlaceId,game.JobId)
 			else
 				Owner:Kick()
 				RunCommand"CloseRobloxMessage"
-				task.delay(3,pcall,Service"Teleport".Teleport,Service"Teleport",game.PlaceId)
+				task.delay(2,pcall,Service"Teleport".Teleport,Service"Teleport",game.PlaceId)
 			end
 		end,
 		Description = "Rejoins the current server you're in"
