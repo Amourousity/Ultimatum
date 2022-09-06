@@ -5,413 +5,26 @@
 [|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]
 [|]  [|]  [|]        [|]         [|]     [|]       [|] [|]     [|] [|]      [|]  [|]  [|]       [|]
 [||||]   [||||||||] [|]     [|||||||||] [|]       [|] [|]     [|] [|]       [||||]   [|]       []]
-local UltimatumStart = getfenv().UltimatumStart or os.clock()
-do
-	local Environment = getfenv()
-	local function CheckCompatibility(Paths,Replacement)
-		Paths = Paths:split()
-		local Function
-		for Count,Path in next,(Paths) do
-			Path = Path:split"."
-			Function = Environment[Path[1]]
-			for Depth = 2,#Path do
-				if Function then
-					Function = Function[Path[Depth]]
-				end
-			end
-			if Function or Replacement and Count == #Paths then
-				for _,NewPathName in next,Paths do
-					NewPathName = NewPathName:split"."
-					local NewPath = Environment
-					for Depth = 1,#NewPathName-1 do
-						if not NewPath[NewPathName[Depth]] then
-							NewPath[NewPathName[Depth]] = {}
-						end
-						NewPath = NewPath[NewPathName[Depth]]
-					end
-					if not NewPath[NewPathName[#NewPathName]] then
-						NewPath[NewPathName[#NewPathName]] = Function or Replacement
-					end
-				end
-				break
-			end
+local function Load(Name)
+	local SourceName,Success,Result = ("Source.%s"):format(Name),pcall(game.HttpGet,game,("https://raw.githubusercontent.com/Amourousity/%s/main/Source.lua"):format(Name),true)
+	if Success then
+		if writefile then
+			writefile(SourceName,Result)
+		else
+			return loadstring(Result,Name)
 		end
 	end
-	for _,FunctionNames in next,{
-		"getsenv,getmenv",
-		"getreg,getregistry",
-		"getgc,get_gc_objects",
-		"getinfo,debug.getinfo",
-		"isreadonly,is_readonly",
-		"getproto,debug.getproto",
-		"getstack,debug.getstack",
-		"iscclosure,is_c_closure",
-		"setstack,debug.setstack",
-		"getprotos,debug.getprotos",
-		"consoleinput,rconsoleinput",
-		"getcustomasset,getsynasset",
-		"isrbxactive,iswindowactive",
-		"makereadonly,make_readonly",
-		"dumpstring,getscriptbytecode",
-		"hookfunction,detour_function",
-		"makewriteable,make_writeable",
-		"getconnections,get_signal_cons",
-		"request,http.request,syn.request",
-		"getrawmetatable,debug_getmetatable",
-		"getcallingscript,get_calling_script",
-		"getloadedmodules,get_loaded_modules",
-		"getscriptclosure,get_script_function",
-		"getupvalue,getupval,debug.getupvalue",
-		"setupvalue,setupval,debug.setupvalue",
-		"getnamecallmethod,get_namecall_method",
-		"getconstant,getconst,debug.getconstant",
-		"is_cached,cache.iscached,syn.is_cached",
-		"protectgui,protect_gui,syn.protect_gui",
-		"setconstant,setconst,debug.setconstant",
-		"consoleprint,writeconsole,rconsoleprint",
-		"getupvalues,getupvals,debug.getupvalues",
-		"queue_on_teleport,syn.queue_on_teleport",
-		"WebSocket.connect,syn.websocket.connect",
-		"crypt.hash,syn.crypt.hash,syn.crypto.hash",
-		"getconstants,getconsts,debug.getconstants",
-		"consolecreate,createconsole,rconsolecreate",
-		"closeconsole,consoledestroy,rconsoledestroy",
-		"unprotectgui,unprotect_gui,syn.unprotect_gui",
-		"cache_replace,cache.replace,syn.cache_replace",
-		"rconsolename,consolesettitle,rconsolesettitle",
-		"cache_invalidate,cache.invalidate,syn.cache_invalidate",
-		"crypt.generatebytes,syn.crypt.random,syn.crypto.random",
-		"crypt.hash,syn.crypt.custom.hash,syn.crypto.custom.cash",
-		"decrypt,crypt.decrypt,syn.crypt.decrypt,syn.crypto.decrypt",
-		"encrypt,crypt.encrypt,syn.crypt.encrypt,syn.crypto.encrypt",
-		"crypt.custom_encrypt,syn.crypt.custom.encrypt,syn.crypto.custom.encrypt",
-		"crypt.custom_decrypt,syn.crypt.custom.decrypt,syn.crypto.custom.decrypt",
-		"base64encode,crypt.base64encode,syn.crypt.base64.encode,syn.crypto.base64.encode",
-		"base64decode,crypt.base64decode,syn.crypt.base64.decode,syn.crypto.base64.decode",
-		"getidentity,getthreadcontext,getthreadidentity,get_thread_identity,syn.get_thread_identity",
-		"setidentity,setthreadcontext,setthreadidentity,set_thread_identity,syn.set_thread_identity",
-		"setclipboard,writeclipboard,write_clipboard,toclipboard,set_clipboard,Clipboard.set,syn.write_clipboard",
-		"checkclosure,istempleclosure,issentinelclosure,iselectronfunction,is_synapse_function,is_protosmasher_closure"
-	} do
-		CheckCompatibility(FunctionNames)
+	if isfile and isfile(SourceName) then
+		return loadstring(readfile(SourceName),Name)
 	end
-	--- @diagnostic disable undefined-global
-	for Paths,Replacement in next,{
-		setreadonly = makewriteable and function(Table,ReadOnly)
-			(ReadOnly and makereadonly or makewriteable)(Table)
-		end or 0,
-		hootmetamethod = hookfunction and getrawmetatable and function(Object,Method,Hook)
-			return hookfunction(getrawmetatable(Object)[Method],Hook)
-		end or 0,
-		setparentinternal = protectgui and function(Object,Parent)
-			protectgui(Object)
-			Object.Parent = Parent
-		end or 0,
-		["gethui,get_hidden_gui"] = protectgui and (function()
-			local HiddenUI = Instance.new"Folder"
-			protectgui(HiddenUI)
-			HiddenUI.Parent = cloneref and cloneref(game:GetService"CoreGui") or game:GetService"CoreGui"
-			return function()
-				return HiddenUI
-			end
-		end)() or function()
-			return cloneref and cloneref(game:GetService"CoreGui") or game:GetService"CoreGui"
-		end,
-		["islclosure,is_l_closure"] = iscclosure and function(Closure)
-			return not iscclosure(Closure)
-		end or 0,
-		cloneref = getreg and (function()
-			local TestPart = Instance.new"Part"
-			local InstanceList
-			for _,InstanceTable in next,getreg() do
-				if type(InstanceTable) == "table" and #InstanceTable then
-					if rawget(InstanceTable,"__mode") == "kvs" then
-						for _,PartCheck in next,InstanceTable do
-							if PartCheck == TestPart then
-								InstanceList = InstanceTable
-								pcall(game.Destroy,TestPart)
-								break
-							end
-						end
-					end
-				end
-			end
-			if InstanceList then
-				return function(Object)
-					for Index,Value in next,InstanceList do
-						if Value == Object then
-							InstanceList[Index] = nil
-							return Object
-						end
-					end
-				end
-			end
-		end)() or 0,
-		["consoleclear,rconsoleclear"] = consoleprint and function()
-			consoleprint(("\b"):rep(1e6))
-		end or 0
-	} do
-		CheckCompatibility(Paths,type(Replacement) == "function" and Replacement or nil)
-	end
-	--- @diagnostic enable undefined-global
 end
+Load"Conversio"()
+local Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,Owner = Load"Utilitas""All"
 local GlobalEnvironment = getgenv and getgenv() or shared
 pcall(GlobalEnvironment.Ultimatum)
-local Nil = {}
-local Connect = game.Changed.Connect
-local Destroy
-do
-	local DestroyObject = game.Destroy
-	local DisconnectObject
-	do
-		local Connection = Connect(game.Changed,function() end)
-		DisconnectObject = Connection.Disconnect
-		DisconnectObject(Connection)
-	end
-	Destroy = function(...)
-		for _,Object in next,{
-			...
-		} do
-			for Type,Function in next,{
-				Instance = function()
-					pcall(DestroyObject,Object)
-				end,
-				RBXScriptConnection = function()
-					if Object.Connected then
-						pcall(DisconnectObject,Object)
-					end
-				end,
-				table = function()
-					for Index,Value in next,Object do
-						Object[Index] = nil
-						Destroy(Index)
-						Destroy(Value)
-					end
-				end
-			} do
-				if typeof(Object) == Type then
-					Function()
-				end
-			end
-		end
-	end
-end
-pcall(GlobalEnvironment.Ultimatum)
-local Wait,Service
-do
-	local SignalWait,Services = game.Changed.Wait,{}
-	for _,Name in next,{
-		"Ad",
-		"VR",
-		"Gui",
-		"Log",
-		"Run",
-		"Http",
-		"Test",
-		"Text",
-		"Asset",
-		"Badge",
-		"Chat.",
-		"Group",
-		"Mouse",
-		"Sound",
-		"Timer",
-		"Tween",
-		"Drafts",
-		"Friend",
-		"Haptic",
-		"Insert",
-		"Joints",
-		"LuaWeb",
-		"Points",
-		"Policy",
-		"Script",
-		"Stats.",
-		"Studio",
-		"Teams.",
-		"Visit.",
-		"Browser",
-		"Cookies",
-		"Debris.",
-		"Dragger",
-		"Gamepad",
-		"Package",
-		"Physics",
-		"Publish",
-		"Spawner",
-		"TextBox",
-		"CoreGui.",
-		"GamePass",
-		"Keyboard",
-		"Language",
-		"Material",
-		"Players.",
-		"Teleport",
-		"Analytics",
-		"DataStore",
-		"Geometry.",
-		"Lighting.",
-		"PluginGui",
-		"UserInput",
-		"Collection",
-		"Controller",
-		"HttpRbxApi",
-		"MemStorage",
-		"Selection.",
-		"TouchInput",
-		"Workspace.",
-		"Marketplace",
-		"Pathfinding",
-		"Permissions",
-		"PluginDebug",
-		"StarterGui.",
-		"Localization",
-		"Notification",
-		"ScriptEditor",
-		"ServerScript",
-		"StarterPack.",
-		"ChangeHistory",
-		"ContextAction",
-		"UGCValidation",
-		"ScriptContext.",
-		"ServerStorage.",
-		"StarterPlayer.",
-		"ProximityPrompt",
-		"ContentProvider.",
-		"DebuggerManager.",
-		"ReplicatedFirst.",
-		"ReplicatedStorage.",
-		"MeshContentProvider.",
-		"VirtualInputManager.",
-		"AnimationClipProvider.",
-		"ProcessInstancePhysics",
-		"HSRDataContentProvider.",
-		"KeyframeSequenceProvider.",
-		"SolidModelContentProvider."
-	} do
-		Services[Name:gsub("%.$","")] = select(2,pcall(game.GetService,game,Name:sub(-1) == "." and Name:sub(1,-2) or ("%sService"):format(Name)))
-	end
-	Wait,Service = function(Value)
-		if typeof(Value) == "RBXScriptSignal" then
-			return SignalWait(Value)
-		end
-		return task.wait(Value)
-	end,function(Name)
-		return Services[Name] or error(('Ultimatum | Failed to get service "%s"'):format(Name),0)
-	end
-end
-local Owner = Service"Players".LocalPlayer
-while not Owner do
-	Wait(Service"Players".PlayerAdded)
-	Owner = Service"Players".LocalPlayer
-end
-local function NilConvert(Value)
-	if Value == nil then
-		return Nil
-	elseif Value == Nil then
-		return nil
-	end
-	return Value
-end
-local Valid
-Valid = {
-	Table = function(Table,Substitute)
-		Table = type(Table) == "table" and Table or {}
-		for Index,Value in next,type(Substitute) == "table" and Substitute or {} do
-			Table[Index] = typeof(Table[Index]) == typeof(Value) and Table[Index] or Value
-		end
-		return Table
-	end,
-	Number = function(Number,Substitute)
-		Number,Substitute = tonumber(Number),tonumber(Substitute)
-		return Number == Number and Number or Substitute == Substitute and Substitute or nil
-	end,
-	String = function(String,Substitute)
-		return type(String) == "string" and String or type(Substitute) == "string" and Substitute or nil
-	end,
-	Instance = function(Object,ClassName)
-		return typeof(Object) == "Instance" and select(2,pcall(game.IsA,Object,Valid.String(ClassName,"Instance"))) == true and Object or nil
-	end,
-	Boolean = function(Boolean,Substitute)
-		Boolean = tostring(Boolean):lower()
-		for Names,Value in next,{
-			true_yes_on_positive_1_i = true,
-			false_no_off_negative_0_o = false
-		} do
-			for _,Name in next,Names:split"_" do
-				if Boolean == Name then
-					return Value
-				end
-			end
-		end
-		return Substitute
-	end
-}
-table.freeze(Valid)
-local Randomized = {
-	String = function(Settings)
-		Settings = Valid.Table(Settings,{
-			Format = "\0%s",
-			Length = math.random(5,99),
-			CharacterSet = {
-				NumberRange.new(48,57),
-				NumberRange.new(65,90),
-				NumberRange.new(97,122)
-			}
-		})
-		local AvailableCharacters = {}
-		for _,Set in next,Settings.CharacterSet do
-			for Character = Set.Min,Set.Max do
-				table.insert(AvailableCharacters,string.char(Character))
-			end
-		end
-		return Settings.Format:format(("A"):rep(Settings.Length):gsub(".",function()
-			return AvailableCharacters[math.random(#AvailableCharacters)]
-		end))
-	end,
-	Bool = function(Chance)
-		return math.random(math.round(1/math.min(Valid.Number(Chance,.5),1))) == 1
-	end
-}
-table.freeze(Randomized)
-local function NewInstance(ClassName,Parent,Properties)
-	local _,NewObject = pcall(Instance.new,ClassName)
-	if typeof(NewObject) == "Instance" then
-		Properties = Valid.Table(Properties,{
-			Name = Randomized.String(),
-			Archivable = Randomized.Bool()
-		})
-		for Property,Value in next,Properties do
-			local Success,Error = pcall(function()
-				NewObject[Property] = NilConvert(Value)
-			end)
-			if not Success then
-				error(("Ultimatum | %s"):format(Error))
-			end
-		end
-		NewObject.Parent = typeof(Parent) == "Instance" and Parent or nil
-		return NewObject
-	else
-		error(("Ultimatum | %s"):format(NewObject))
-	end
-end
-local function Create(Data)
-	local Instances = {}
-	for _,InstanceData in next,Valid.Table(Data) do
-		if not Valid.String(InstanceData.ClassName) then
-			error"Ultimatum | Missing ClassName in InstanceData for function Create"
-		elseif not Valid.String(InstanceData.Name) then
-			warn"Ultimatum | Missing Name in InstanceData for function Create, substituting with ClassName"
-			InstanceData.Name = InstanceData.ClassName
-		end
-		Instances[InstanceData.Name] = NewInstance(InstanceData.ClassName,Valid.String(InstanceData.Parent) and Instances[InstanceData.Parent] or InstanceData.Parent,InstanceData.Properties)
-	end
-	return Instances
-end
 local OwnerSettings
 do
-	local Success,Output = pcall(Service"Http".JSONDecode,Service"Http",isfile and isfile"Settings.Ultimatum" and readfile"Settings.Ultimatum":gsub("^%bA{","{") or "[]")
-	local Settings = Valid.Table(Success and Output or {},{
+	local Settings = DecodeJSON(isfile and isfile"Settings.Ultimatum" and readfile"Settings.Ultimatum":gsub("^%bA{","{"),{
 		Scale = 1,
 		Blur = true,
 		StayOpen = false,
@@ -464,42 +77,6 @@ do
 	})
 end
 OwnerSettings._ = nil
-local function WaitForSignal(Signal,MaxYield)
-	local Return = NewInstance"BindableEvent"
-	Destroy(Return)
-	if Valid.Number(MaxYield) then
-		task.delay(MaxYield,Return.Fire,Return)
-	end
-	local SignalStart,Ready = os.clock()
-	for Type,Functionality in next,{
-		RBXScriptSignal = function()
-			Return:Fire(Wait(Signal))
-		end,
-		["function"] = function()
-			local Continue
-			repeat
-				(function(Success,...)
-					if Success and ... then
-						Continue = true
-						if not Ready then
-							Wait()
-						end
-						Return:Fire(...)
-					end
-				end)(pcall(Signal))
-			until Continue or Valid.Number(MaxYield) and MaxYield < os.clock()-SignalStart
-		end
-	} do
-		if typeof(Signal) == Type then
-			task.spawn(Functionality)
-			break
-		end
-	end
-	Ready = true
-	return Wait(Return.Event)
-end
-pcall(GlobalEnvironment.Ultimatum)
-WaitForSignal(gethui)
 if Service"CoreGui":FindFirstChild"RobloxLoadingGui" and Service"CoreGui".RobloxLoadingGui:FindFirstChild"BlackFrame" and Service"CoreGui".RobloxLoadingGui.BlackFrame.BackgroundTransparency <= 0 then
 	WaitForSignal(Service"CoreGui".RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency",3)
 	Wait(math.random())
@@ -694,31 +271,6 @@ local Gui = Create{
 		}
 	}
 }
-local function Animate(...)
-	for Index = 1,select("#",...),2 do
-		local Object,Data = select(Index,...)
-		if Valid.Instance(Object) then
-			Data = Valid.Table(Data,{
-				Time = .5,
-				DelayTime = 0,
-				Yields = false,
-				FinishDelay = 0,
-				Properties = {},
-				RepeatCount = 0,
-				Reverses = false,
-				EasingStyle = Enum.EasingStyle.Quad,
-				EasingDirection = Enum.EasingDirection.Out
-			})
-			Service"Tween":Create(Object,TweenInfo.new(Data.Time,Data.EasingStyle,Data.EasingDirection,Data.RepeatCount,Data.Reverses,Data.DelayTime),Data.Properties):Play()
-			if Data.Yields then
-				Wait((Data.Time+Data.DelayTime)*(1+Data.RepeatCount))
-			end
-			if 0 < Data.FinishDelay then
-				Wait(Data.FinishDelay)
-			end
-		end
-	end
-end
 local NotificationIDs = {}
 local function Notify(Settings)
 	Settings = Valid.Table(Settings,{
@@ -736,7 +288,7 @@ local function Notify(Settings)
 	end
 	local ID
 	repeat
-		ID = Randomized.String{
+		ID = RandomString{
 			Format = "%s",
 			Length = 5
 		}
@@ -863,105 +415,6 @@ local function ResizeMain(X,Y)
 		}
 	})
 end
-local function Assert(...)
-	for Index = 1,select("#",...),2 do
-		local Assertion,FailureMessage = select(Index,...)
-		if not Assertion then
-			Notify{
-				Title = "Command Failed",
-				Text = Valid.String(FailureMessage,"The command failed to run. No further information provided")
-			}
-			return false
-		end
-	end
-	return true
-end
-local function GetCharacter(Player,MaxYield)
-	Player = Valid.Instance(Player,"Player")
-	if not Assert(Player,"Specified player does not exist or left") then
-		return
-	end
-	if Valid.Instance(Player.Character,"Model") then
-		return Player.Character
-	end
-	local Character = WaitForSignal(Player.CharacterAdded,MaxYield)
-	if Assert(Character,"The player's character took too long to load") then
-		return Character
-	end
-end
-local function GetHumanoid(Character,MaxYield)
-	MaxYield = Valid.Number(MaxYield,10)
-	if Valid.Instance(Character,"Player") then
-		local Duration = os.clock()
-		local NewCharacter = GetCharacter(Character,MaxYield)
-		if NewCharacter then
-			Character = NewCharacter
-			MaxYield -= os.clock()-Duration
-		else
-			return
-		end
-	elseif not Assert(Valid.Instance(Character,"Model"),"The player's character isn't valid") then
-		return
-	end
-	local Humanoid = WaitForSignal(function()
-		local Humanoid = Character:FindFirstChildOfClass"Humanoid" or Wait(Character.ChildAdded)
-		if Valid.Instance(Humanoid,"Humanoid") then
-			return Humanoid
-		end
-	end,MaxYield)
-	if Assert(Humanoid,"The player's humanoid took too long to load") then
-		return Humanoid
-	end
-end
-local function ConvertTime(Time)
-	for _,Values in next,{
-		{
-			31536000,
-			"year"
-		},
-		{
-			2628003,
-			"month"
-		},
-		{
-			604800,
-			"week"
-		},
-		{
-			86400,
-			"day"
-		},
-		{
-			3600,
-			"hour"
-		},
-		{
-			60,
-			"minute"
-		},
-		{
-			1,
-			"second"
-		},
-		{
-			.001,
-			"millisecond"
-		},
-		{
-			.000001,
-			"microsecond"
-		},
-		{
-			.000000001,
-			"nanosecond"
-		}
-	} do
-		if Values[1] <= Time then
-			Time = math.round(Time/Values[1]*10)/10
-			return ("%s %s%s"):format(tostring(Time),Values[2],Time ~= 1 and "s" or "")
-		end
-	end
-end
 local Commands,Connections
 local function RunCommand(Text)
 	for _,Input in next,Text:split(OwnerSettings.CommandSeperator) do
@@ -1072,10 +525,6 @@ Commands = {
 			else
 				Owner:Kick()
 				RunCommand"CloseRobloxMessage"
-				Notify{
-					Title = "Rejoining",
-					Text = "You will be rejoined shortly..."
-				}
 				task.delay(3,pcall,Service"Teleport".Teleport,Service"Teleport",game.PlaceId)
 			end
 		end,
@@ -1164,17 +613,18 @@ Commands = {
 	},
 	ServerHop_serverh_sh_hopserver_hops_hserver_newserver_nserver_ns_news_shop = {
 		Function = function()
+			Notify{
+				Title = "Searching for Servers",
+				Text = "You will be teleported shortly..."
+			}
 			local Page,UnfilteredServers,Servers,Start,ServerCount,ViableServerCount = "",{},{},os.clock(),0,0
-			while #Servers <= 0 do
+			while #Servers < 1 do
 				local Success,Result = pcall(game.HttpGet,game,("https://games.roblox.com/v1/games/%s/servers/Public?limit=100%s%s"):format(game.PlaceId,0 < #Page and "&cursor=" or "",Page),true)
 				if not Assert(Success,Valid.String(Result,"An unknown error has occurred")) then
 					return
 				end
 				Result = Service"Http":JSONDecode(Result)
 				Page,UnfilteredServers = Result.nextPageCursor,Result.data
-				if not Assert(0 < #UnfilteredServers,"No servers found") then
-					return
-				end
 				Servers = {}
 				for _,ServerInfo in next,UnfilteredServers do
 					ServerCount += 1
@@ -1182,6 +632,13 @@ Commands = {
 						table.insert(Servers,ServerInfo)
 						ViableServerCount += 1
 					end
+				end
+				if #UnfilteredServers < 1 or #Servers < 1 and not Valid.String(Page) then
+					local Players = Service"Players":GetPlayers()
+					table.remove(Players,table.find(Players,Owner))
+					Destroy(Players)
+					RunCommand"Rejoin"
+					return
 				end
 			end
 			local Server = Servers[math.random(#Servers)]
@@ -1322,9 +779,9 @@ for Replace,Info in next,({
 					Substitute = true
 				}
 			},
-			Variables = {
+			Variables = game.PlaceId == 142823291 and {
 				ExtrasensoryPerceptions = {},
-				PlayerDataRemote = game.PlaceId == 142823291 and Service"ReplicatedStorage":WaitForChild"Remotes":WaitForChild"Extras":WaitForChild"GetPlayerData",
+				PlayerDataRemote = WaitForSequence(Service"ReplicatedStorage","Remotes","Extras","GetPlayerData"),
 				CreateExtrasensoryPerception = function(Variables,Object,Role)
 					local LargestAxis = math.max(Object.Size.X,Object.Size.Y,Object.Size.Z)
 					table.insert(Variables.ExtrasensoryPerceptions,Create{
@@ -1425,16 +882,16 @@ for Replace,Info in next,({
 							if not Valid.Instance(Variables.OwnedTycoon.Value,"Model") then
 								for _,Tycoon in next,Variables.Tycoons:GetChildren() do
 									if not Valid.Instance(Tycoon:WaitForChild"Owner".Value,"Player") then
-										Variables:WalkTo(Tycoon:WaitForChild"Essentials":WaitForChild"Entrance".Position)
+										Variables:WalkTo(WaitForSequence(Tycoon,"Essentials","Entrance").Position)
 									end
 								end
 							end
 							if not Valid.Instance(Variables.Tycoon,"Model") then
 								Variables.Tycoon = Variables.OwnedTycoon.Value
 								Variables.Essentials = Variables.Tycoon:WaitForChild"Essentials"
-								Variables.HolderPosition = Variables.Essentials:WaitForChild"FruitHolder":WaitForChild"HolderBottom".Position
-								Variables.JuicePosition = Variables.Essentials:WaitForChild"JuiceMaker":WaitForChild"StartJuiceMakerButton".Position+Vector3.new(5,0,0)
-								Variables.JuicePrompt = Variables.Essentials.JuiceMaker.StartJuiceMakerButton:WaitForChild"PromptAttachment":WaitForChild"StartPrompt"
+								Variables.HolderPosition = WaitForSequence(Variables.Essentials,"FruitHolder","HolderBottom").Position
+								Variables.JuicePosition = WaitForSequence(Variables.Essentials,"JuiceMaker","StartJuiceMakerButton").Position+Vector3.new(5,0,0)
+								Variables.JuicePrompt = WaitForSequence(Variables.Essentials.JuiceMaker.StartJuiceMakerButton,"PromptAttachment","StartPrompt")
 								Variables.PlayerGui = Owner:WaitForChild"PlayerGui"
 								Variables.Drops = Variables.Tycoon:WaitForChild"Drops"
 								Variables.Buttons = Variables.Tycoon:WaitForChild"Buttons"
@@ -1474,7 +931,7 @@ for Replace,Info in next,({
 							local LowestPrice,ChosenButton = math.huge,nil
 							for _,Button in next,Variables.Buttons:GetChildren() do
 								Button.CanTouch = false
-								local Price = tonumber((Button:WaitForChild"ButtonLabel":WaitForChild"CostLabel".Text:gsub("%D",""))) or 0
+								local Price = tonumber((WaitForSequence(Button,"ButtonLabel","CostLabel").Text:gsub("%D",""))) or 0
 								if Price <= Variables.Money.Value and Price < LowestPrice then
 									LowestPrice,ChosenButton = Price,Button
 								end
@@ -1511,8 +968,8 @@ for Replace,Info in next,({
 			},
 			Variables = game.PlaceId == 6755746130 and {
 				CollectFruit = Service"ReplicatedStorage":WaitForChild"CollectFruit",
-				Killbricks = workspace:WaitForChild"ObbyParts":WaitForChild"Killbricks",
-				Money = Owner:WaitForChild"leaderstats":WaitForChild"Money",
+				Killbricks = WaitForSequence(workspace,"ObbyParts","Killbricks"),
+				Money = WaitForSequence(Owner,"leaderstats","Money"),
 				OwnedTycoon = Owner:WaitForChild"OwnedTycoon",
 				Tycoons = workspace:WaitForChild"Tycoons",
 				Path = Service"Pathfinding":CreatePath{
@@ -1545,14 +1002,6 @@ for Replace,Info in next,({
 	}
 })[("_%d"):format(game.PlaceId)] or {} do
 	Commands[Replace] = Info
-end
-local function GetContentText(String)
-	local CheckTextBox = NewInstance("TextBox",nil,{
-		Text = String,
-		RichText = true
-	})
-	Destroy(CheckTextBox)
-	return CheckTextBox.ContentText
 end
 local IgnoreUpdate
 local function UpdateSuggestions()
@@ -1707,7 +1156,6 @@ local function CreateWindow(Settings)
 
 	end]]
 end
-CreateWindow()
 Connections = {
 	not GlobalEnvironment.UltimatumDebug and isfile and Connect(Service"Run".Heartbeat,function()
 		if OwnerSettings.AutoUpdate and 60 < os.clock()-LastCheck then
@@ -1722,10 +1170,7 @@ Connections = {
 					Title = "Update Detected",
 					Text = "Ultimatum will now update..."
 				}
-				local Ultimatum = loadstring(Result,"Ultimatum")
-				local Environment = getfenv(Ultimatum)
-				Environment.UltimatumStart = os.clock()
-				setfenv(Ultimatum,Environment)()
+				loadstring(Result,"Ultimatum")()
 			elseif not Success and not isfile"Source.Ultimatum" then
 				Notify{
 					Text = Result,
@@ -1862,25 +1307,10 @@ EnableDrag = function(Frame,IsMain)
 end
 pcall(GlobalEnvironment.Ultimatum)
 GlobalEnvironment.Ultimatum = function()
-	--- @diagnostic disable-next-line undefined-global
-	Destroy(Connections,Gui,protect_gui and gethui())
+	Destroy(Connections,Gui)
 	GlobalEnvironment.Ultimatum = nil
 end
 EnableDrag(Gui.Main,true)
-UltimatumStart = os.clock()-UltimatumStart
-if not GlobalEnvironment.UltimatumLoaded then
-	print((("!!_5#_4#_#_4#9_#9_#2_4#2_6#_#9_#_4#_#2_4#2!_4#_4#_#_8#_9#_5#4_#4_3#_#_3#_5#_4#_#4_#4!_3#_4#_#_8#_9#_5#_#3_#_2#_3#_2#_5#_4#_#_#3_#!_2#_4#_#_8#_9#_5#_2#_2#_#9_#_5#_4#_#_2#_2#!_#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#_4#_#_8#_9#_5#_7#_#_5#_#_5#_4#_#_7#!#6_2#8_#_5#9_#_7#_#_5#_#_6#6_2#_7#!"):gsub("%p%d?",function(Input)
-		for Character,Format in next,{
-			["!"] = "\n",
-			_ = (" "):rep(1 < #Input and Input:sub(2,2) or 1),
-			["#"] = ("[%s]"):format(("|"):rep(1 < #Input and Input:sub(2,2) or 1))
-		} do
-			if Input:sub(1,1) == Character then
-				return Format
-			end
-		end
-	end)))
-end
 if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
 	GlobalEnvironment.UltimatumLoaded = true
 	if OwnerSettings.Blur then
@@ -1966,8 +1396,4 @@ Animate(Gui.Main,{
 		Position = UDim2.new(0,0,1,-40)
 	}
 })
-Notify{
-	Title = "Loaded",
-	Text = ("Ultimatum took %s to load"):format(ConvertTime(UltimatumStart))
-}
 Debounce = false
