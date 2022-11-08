@@ -46,7 +46,7 @@ do
 			Settings[Index] = Value
 			if writefile then
 				local FormattedSettings = {}
-				for SettingName,SettingValue in next,Settings do
+				for SettingName,SettingValue in Settings do
 					table.insert(FormattedSettings,("\t%s : %s,"):format(("%q"):format(SettingName),type(SettingValue) == "string" and ("%q"):format(SettingValue) or tostring(SettingValue)))
 				end
 				table.sort(FormattedSettings,function(String1,String2)
@@ -417,18 +417,18 @@ local function ResizeMain(X,Y)
 end
 local Commands,Connections
 local function RunCommand(Text)
-	for _,Input in next,Text:split(OwnerSettings.CommandSeperator) do
+	for _,Input in Text:split(OwnerSettings.CommandSeperator) do
 		local Arguments = Input:split(OwnerSettings.ArgumentSeperator)
 		local Command = Arguments[1]
 		table.remove(Arguments,1)
 		local RanCommand
-		for CommandNames,CommandInfo in next,Commands do
+		for CommandNames,CommandInfo in Commands do
 			CommandNames = CommandNames:split"_"
 			local Continue
-			for _,CommandName in next,CommandNames do
+			for _,CommandName in CommandNames do
 				if CommandName:lower() == Command:lower() then
 					CommandInfo.Arguments = Valid.Table(CommandInfo.Arguments)
-					for ArgumentNumber,ArgumentProperties in next,CommandInfo.Arguments do
+					for ArgumentNumber,ArgumentProperties in CommandInfo.Arguments do
 						if ArgumentProperties.Required and not Arguments[ArgumentNumber] then
 							Notify{
 								Title = "Missing Argument",
@@ -465,7 +465,7 @@ local function RunCommand(Text)
 	end
 end
 local function AddConnections(GivenConnections)
-	for Name,Connection in next,Valid.Table(GivenConnections) do
+	for Name,Connection in Valid.Table(GivenConnections) do
 		if typeof(Connection) == "RBXScriptConnection" and Connection.Connected then
 			Connections[type(Name) ~= "number" and Name or #Connections+1] = Connection
 			table.insert(Connections,Connection)
@@ -473,7 +473,7 @@ local function AddConnections(GivenConnections)
 	end
 end
 local function RemoveConnections(GivenConnections)
-	for _,Connection in next,Valid.Table(GivenConnections) do
+	for _,Connection in Valid.Table(GivenConnections) do
 		if typeof(Connection) == "RBXScriptConnection" then
 			Destroy(Connection)
 			pcall(table.remove,Connections,table.find(Connections,Connection))
@@ -626,7 +626,7 @@ Commands = {
 				Result = Service"Http":JSONDecode(Result)
 				Page,UnfilteredServers = Result.nextPageCursor,Result.data
 				Servers = {}
-				for _,ServerInfo in next,UnfilteredServers do
+				for _,ServerInfo in UnfilteredServers do
 					ServerCount += 1
 					if ServerInfo.playing < ServerInfo.maxPlayers and 0 < ServerInfo.playing and ServerInfo.id ~= game.JobId then
 						table.insert(Servers,ServerInfo)
@@ -692,9 +692,9 @@ Commands = {
 						Variables.Enabled,Variables.Connection = false,nil
 						return
 					end
-					for _,Object in next,Character:GetDescendants() do
+					for _,Object in Character:GetDescendants() do
 						if not Object:IsDescendantOf(HumanoidRootPart) then
-							for Types,Properties in next,{
+							for Types,Properties in {
 								BasePart_Decal = {
 									LocalTransparencyModifier = 1
 								},
@@ -709,9 +709,9 @@ Commands = {
 									Transparency = 1
 								}
 							} do
-								for _,Type in next,Types:split"_" do
+								for _,Type in Types:split"_" do
 									if Object:IsA(Type) then
-										for Property,Value in next,Properties do
+										for Property,Value in Properties do
 											pcall(function()
 												Object[Property] = Value
 											end)
@@ -732,7 +732,7 @@ Commands = {
 		Description = "Makes you invisible to other players"
 	}
 }
-for Replace,Info in next,({
+for Replace,Info in ({
 	_142823291 = {
 		ExtrasensoryPerception_extrasensoryp_esensoryperception_esperception_extrasp_esp = {
 			Function = function(Variables,Enabled)
@@ -741,7 +741,7 @@ for Replace,Info in next,({
 				end
 				if Enabled then
 					Variables.Time,Variables.Connection = os.clock(),Connect(Service"Run".Heartbeat,function()
-						if not Variables.Calculating or 5 < os.clock()-Variables.Time then
+						if not Variables.Calculating and 1 < os.clock()-Variables.Time or 5 < os.clock()-Variables.Time then
 							Variables.Time,Variables.Calculating = os.clock(),true
 							local PlayerData = Variables.PlayerDataRemote:InvokeServer()
 							if not Variables.Enabled then
@@ -751,7 +751,7 @@ for Replace,Info in next,({
 							if workspace:FindFirstChild"GunDrop" then
 								Variables:CreateExtrasensoryPerception(workspace.GunDrop,"Gun")
 							end
-							for _,Player in next,Service"Players":GetPlayers() do
+							for _,Player in Service"Players":GetPlayers() do
 								local Data = PlayerData[Player.Name]
 								if Data and not Data.Dead and Player.Name ~= Owner.Name then
 									Variables:CreateExtrasensoryPerception(Player.Character:FindFirstChild"HumanoidRootPart" or Player.Character:FindFirstChildWhichIsA"BasePart",Data.Role)
@@ -843,7 +843,7 @@ for Replace,Info in next,({
 				end
 				if Enabled then
 					Variables.AvoidZones = NewInstance("Folder",workspace)
-					for _,X in next,{
+					for _,X in {
 						94.1,
 						-49.9,
 						238.1,
@@ -872,7 +872,7 @@ for Replace,Info in next,({
 							}
 						}
 					end
-					for _,Killbrick in next,Variables.Killbricks:GetChildren() do
+					for _,Killbrick in Variables.Killbricks:GetChildren() do
 						Killbrick.CanTouch = false
 					end
 					Variables.Debounce = false
@@ -880,7 +880,7 @@ for Replace,Info in next,({
 						if not Variables.Debounce then
 							Variables.Debounce = true
 							if not Valid.Instance(Variables.OwnedTycoon.Value,"Model") then
-								for _,Tycoon in next,Variables.Tycoons:GetChildren() do
+								for _,Tycoon in Variables.Tycoons:GetChildren() do
 									if not Valid.Instance(Tycoon:WaitForChild"Owner".Value,"Player") then
 										Variables:WalkTo(WaitForSequence(Tycoon,"Essentials","Entrance").Position)
 									end
@@ -890,8 +890,8 @@ for Replace,Info in next,({
 								Variables.Tycoon = Variables.OwnedTycoon.Value
 								Variables.Essentials = Variables.Tycoon:WaitForChild"Essentials"
 								Variables.HolderPosition = WaitForSequence(Variables.Essentials,"FruitHolder","HolderBottom").Position
-								Variables.JuicePosition = WaitForSequence(Variables.Essentials,"JuiceMaker","StartJuiceMakerButton").Position+Vector3.new(5,0,0)
-								Variables.JuicePrompt = WaitForSequence(Variables.Essentials.JuiceMaker.StartJuiceMakerButton,"PromptAttachment","StartPrompt")
+								Variables.JuicePosition = WaitForSequence(Variables.Essentials,"JuiceMaker","AddFruitButton").Position+Vector3.new(5,0,0)
+								Variables.JuicePrompt = WaitForSequence(Variables.Essentials.JuiceMaker.AddFruitButton,"PromptAttachment","AddPrompt")
 								Variables.PlayerGui = Owner:WaitForChild"PlayerGui"
 								Variables.Drops = Variables.Tycoon:WaitForChild"Drops"
 								Variables.Buttons = Variables.Tycoon:WaitForChild"Buttons"
@@ -908,7 +908,7 @@ for Replace,Info in next,({
 								Wait(3)
 							end
 							if not Variables.Purchased:FindFirstChild"Auto Collector" then
-								for _,Drop in next,Variables.Drops:GetChildren() do
+								for _,Drop in Variables.Drops:GetChildren() do
 									if (Drop.Position-Variables.HolderPosition).Magnitude < 5 then
 										Variables.CollectFruit:FireServer(Drop)
 									end
@@ -929,7 +929,7 @@ for Replace,Info in next,({
 								Wait(.25)
 							end
 							local LowestPrice,ChosenButton = math.huge,nil
-							for _,Button in next,Variables.Buttons:GetChildren() do
+							for _,Button in Variables.Buttons:GetChildren() do
 								Button.CanTouch = false
 								local Price = tonumber((WaitForSequence(Button,"ButtonLabel","CostLabel").Text:gsub("%D",""))) or 0
 								if Price <= Variables.Money.Value and Price < LowestPrice then
@@ -950,7 +950,7 @@ for Replace,Info in next,({
 					Variables.Enabled = true
 				else
 					Destroy(Variables.AvoidZones)
-					for _,Killbrick in next,Variables.Killbricks:GetChildren() do
+					for _,Killbrick in Variables.Killbricks:GetChildren() do
 						Killbrick.CanTouch = true
 					end
 					RemoveConnections{
@@ -961,7 +961,7 @@ for Replace,Info in next,({
 			end,
 			Arguments = {
 				{
-					Name = "Enable",
+					Name = "Enabled",
 					Type = "Boolean",
 					Substitute = true
 				}
@@ -984,7 +984,7 @@ for Replace,Info in next,({
 					if Success and Variables.Path.Status.Name == "Success" then
 						local Humanoid = GetHumanoid(Owner)
 						if Humanoid then
-							for _,InflectionPoint in next,Variables.Path:GetWaypoints() do
+							for _,InflectionPoint in Variables.Path:GetWaypoints() do
 								if InflectionPoint.Action.Name == "Walk" then
 									repeat
 										Humanoid:MoveTo(InflectionPoint.Position)
@@ -1012,21 +1012,21 @@ local function UpdateSuggestions()
 		local Command = Gui.CommandBar.Text:split(OwnerSettings.CommandSeperator)
 		Command = ((Command[#Command] or ""):split(OwnerSettings.ArgumentSeperator)[1] or ""):lower()
 		Gui.SuggestionsScroll.CanvasSize = UDim2.new()
-		for _,TextLabel in next,Gui.SuggestionsScroll:GetChildren() do
+		for _,TextLabel in Gui.SuggestionsScroll:GetChildren() do
 			if TextLabel:IsA"TextLabel" then
 				Destroy(TextLabel)
 			end
 		end
 		local CommandDisplays = {}
-		for CommandNames,CommandInfo in next,Commands do
+		for CommandNames,CommandInfo in Commands do
 			CommandNames = CommandNames:split"_"
-			for _,CommandName in next,CommandNames do
+			for _,CommandName in CommandNames do
 				if CommandName:lower():find((Command:gsub("%p",function(Punctuation)
 					return ("%%%s"):format(Punctuation)
 				end))) then
 					table.insert(CommandDisplays,("%s<i>%s</i>"):format(CommandNames[1],CommandInfo.Arguments and (function()
 						local Arguments = {}
-						for _,ArgumentInfo in next,CommandInfo.Arguments do
+						for _,ArgumentInfo in CommandInfo.Arguments do
 							table.insert(Arguments,(ArgumentInfo.Required and "%s:%s" or "<font color = '#A0A0A0'>%s:%s</font>"):format(ArgumentInfo.Name,ArgumentInfo.Type))
 						end
 						return ("%s%s"):format(OwnerSettings.ArgumentSeperator,table.concat(Arguments,OwnerSettings.ArgumentSeperator))
@@ -1038,7 +1038,7 @@ local function UpdateSuggestions()
 		table.sort(CommandDisplays,function(String1,String2)
 			return Service"Text":GetTextSize(GetContentText(String1),14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X < Service"Text":GetTextSize(GetContentText(String2),14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X and true or false
 		end)
-		for _,Text in next,CommandDisplays do
+		for _,Text in CommandDisplays do
 			NewInstance("TextLabel",Gui.SuggestionsScroll,{
 				Text = Text,
 				TextSize = 14,
@@ -1152,7 +1152,7 @@ local function CreateWindow(Settings)
 			}
 		}
 	}
-	--[[for _,Line in next,Settings.Content) do
+	--[[for _,Line in Settings.Content) do
 
 	end]]
 end
@@ -1354,7 +1354,7 @@ if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and 
 else
 	GlobalEnvironment.UltimatumLoaded = true
 end
-for Name,Properties in next,{
+for Name,Properties in {
 	Logo = {
 		Rotation = 0,
 		ImageTransparency = 0,
@@ -1385,7 +1385,7 @@ for Name,Properties in next,{
 	if not Gui or not Gui[Name] then
 		return
 	end
-	for Property,Value in next,Properties do
+	for Property,Value in Properties do
 		Gui[Name][Property] = Value
 	end
 end
