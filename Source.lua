@@ -729,6 +729,37 @@ Commands = {
 		end,
 		Variables = {},
 		Description = "Makes you invisible to other players"
+	},
+	AntiAFK_noafk_afk = {
+		Function = function(Variables,Enabled)
+			if not Assert(not (Variables.Enabled and Enabled),"Anti-AFK is already enabled",not (not Variables.Enabled and not Enabled),"Anti-AFK is already disabled") then
+				return
+			end
+			if Enabled then
+				Variables.Connection = Connect(Owner.Idled,function()
+					Service"VirtualUser":Button2Down(Vector2.zero,CFrame.new())
+					task.defer(Service"VirtualUser".Button2Up,Service"VirtualUser",Vector2.zero,CFrame.new())
+				end)
+				AddConnections{
+					Variables.Connection
+				}
+				Variables.Enabled = true
+			else
+				RemoveConnections{
+					Variables.Connection
+				}
+				Variables.Enabled = false
+			end
+		end,
+		Arguments = {
+			{
+				Name = "Enabled",
+				Type = "Boolean",
+				Substitute = true
+			}
+		},
+		Variables = {},
+		Description = "Stops Roblox from kicking you for being AFK"
 	}
 }
 for Replace,Info in ({
@@ -841,6 +872,7 @@ for Replace,Info in ({
 					return
 				end
 				if Enabled then
+					RunCommand"AntiAFK"
 					Variables.Delta,Variables.LastFrame,Variables.Coins,Variables.IgnoreCoins,Variables.Position = 0,os.clock(),{},{},workspace.CurrentCamera.Focus.Position
 					Variables.CoinAdded = Connect(workspace.DescendantAdded,function(Coin)
 						if Coin:IsA"BasePart" and Coin.Name == "Coin_Server" then
@@ -920,6 +952,7 @@ for Replace,Info in ({
 					}
 					Variables.Enabled = true
 				else
+					RunCommand"AntiAFK False"
 					RemoveConnections{
 						Variables.CharacterAdded,
 						Variables.Connection,
@@ -946,6 +979,7 @@ for Replace,Info in ({
 					return
 				end
 				if Enabled then
+					RunCommand"AntiAFK"
 					Variables.Debounce = false
 					Variables.Connection = Connect(Service"Run".Stepped,function()
 						if not Character then
@@ -974,6 +1008,7 @@ for Replace,Info in ({
 							end
 							if Variables.Purchased:FindFirstChild"Golden Tree Statue" then
 								Variables.RequestPrestige:FireServer()
+								Variables.Tycoon = nil
 								Wait(3)
 							end
 							if not Variables.Purchased:FindFirstChild"Auto Collector" then
@@ -988,7 +1023,7 @@ for Replace,Info in ({
 								Variables:MoveTo(Vector3.new(0,1,408))
 								Wait(1)
 							end
-							if Variables.Money.Value < 1e5 then
+							if Variables.Money.Value < 1e5 and Variables.Prestige.Value < 20 then
 								for _,Amount in Variables.HeldFruits:GetChildren() do
 									if 0 < Amount.Value then
 										Variables:MoveTo(Variables.JuicePosition)
@@ -1005,7 +1040,7 @@ for Replace,Info in ({
 							end
 							local LowestPrice,ChosenButton = math.huge,nil
 							for _,Button in Variables.Buttons:GetDescendants() do
-								if Valid.Instance(Button,"BasePart") and 0 < #Button:GetChildren() then
+								if Valid.Instance(Button,"BasePart") and 0 < #Button:GetChildren() and (not Variables.NoAutoCollect or Button.Name ~= "AutoCollect") then
 									local Price = tonumber((WaitForSequence(Button,"ButtonLabel","CostLabel").Text:gsub("%D",""))) or 0
 									if Price <= Variables.Money.Value and Price < LowestPrice then
 										LowestPrice,ChosenButton = Price,Button
@@ -1014,7 +1049,7 @@ for Replace,Info in ({
 							end
 							if ChosenButton then
 								Variables:MoveTo(ChosenButton.Position)
-								Wait()
+								Wait(.2)
 							end
 							Variables.Debounce = false
 						end
@@ -1024,6 +1059,7 @@ for Replace,Info in ({
 					}
 					Variables.Enabled = true
 				else
+					RunCommand"AntiAFK False"
 					RemoveConnections{
 						Variables.Connection
 					}
@@ -1038,12 +1074,14 @@ for Replace,Info in ({
 				}
 			},
 			Variables = game.PlaceId == 6755746130 and {
+				NoAutoCollect = WaitForSequence(Owner,"PlayerGui","MenusGui","AchievementsFrame","ScrollerHolder","ScrollingFrame","PrestigeNoAutoCollect","ProgressLabel").Text == "Locked",
 				RequestPrestige = Service"ReplicatedStorage":WaitForChild"RequestPrestige",
 				HeldFruits = Owner:WaitForChild"HeldFruits",
 				PlayerGui = Owner:WaitForChild"PlayerGui",
 				Backpack = Owner:WaitForChild"Backpack",
 				CollectFruit = Service"ReplicatedStorage":WaitForChild"CollectFruit",
 				Money = WaitForSequence(Owner,"leaderstats","Money"),
+				Prestige = WaitForSequence(Owner,"leaderstats","Prestige"),
 				OwnedTycoon = Owner:WaitForChild"OwnedTycoon",
 				Tycoons = workspace:WaitForChild"Tycoons",
 				MoveTo = function(_,Position)
