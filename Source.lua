@@ -480,6 +480,7 @@ local function RemoveConnections(GivenConnections)
 		end
 	end
 end
+local Character = GetCharacter(Owner,1)
 Commands = {
 	Exit_close_leave_shutdown = {
 		Function = function()
@@ -540,7 +541,6 @@ Commands = {
 		Function = function(Variables,Speed)
 			Variables.Speed = Speed
 			if not Variables.Enabled then
-				local Character = GetCharacter(Owner,5)
 				if not Character then
 					return
 				end
@@ -653,7 +653,6 @@ Commands = {
 	Invisible_invis_iv = {
 		Function = function(Variables)
 			if not Variables.Enabled then
-				local Character = GetCharacter(Owner,5)
 				if not Character then
 					return
 				end
@@ -842,47 +841,19 @@ for Replace,Info in ({
 					return
 				end
 				if Enabled then
-					Variables.AvoidZones = NewInstance("Folder",workspace)
-					for _,X in {
-						94.1,
-						-49.9,
-						238.1,
-						382.1,
-						-193.9,
-						-337.9,
-						-481.9,
-					} do
-						Create{
-							{
-								Name = "AvoidPart",
-								Parent = Variables.AvoidZones,
-								ClassName = "Part",
-								Properties = {
-									Anchored = true,
-									Transparency = 1,
-									CanCollide = false,
-									Size = Vector3.new(12.2,10,24),
-									Position = Vector3.new(X,5,-12)
-								}
-							},
-							{
-								Name = "AvoidPathfinding",
-								Parent = "AvoidPart",
-								ClassName = "PathfindingModifier"
-							}
-						}
-					end
-					for _,Killbrick in Variables.Killbricks:GetChildren() do
-						Killbrick.CanTouch = false
-					end
 					Variables.Debounce = false
 					Variables.Connection = Connect(Service"Run".Stepped,function()
+						if not Character then
+							return
+						end
 						if not Variables.Debounce then
 							Variables.Debounce = true
 							if not Valid.Instance(Variables.OwnedTycoon.Value,"Model") then
 								for _,Tycoon in Variables.Tycoons:GetChildren() do
 									if not Valid.Instance(Tycoon:WaitForChild"Owner".Value,"Player") then
-										Variables:WalkTo(WaitForSequence(Tycoon,"Essentials","Entrance").Position)
+										Variables:MoveTo(WaitForSequence(Tycoon,"Essentials","Entrance").Position)
+										Wait(1)
+										break
 									end
 								end
 							end
@@ -892,54 +863,53 @@ for Replace,Info in ({
 								Variables.HolderPosition = WaitForSequence(Variables.Essentials,"FruitHolder","HolderBottom").Position
 								Variables.JuicePosition = WaitForSequence(Variables.Essentials,"JuiceMaker","AddFruitButton").Position+Vector3.new(5,0,0)
 								Variables.JuicePrompt = WaitForSequence(Variables.Essentials.JuiceMaker.AddFruitButton,"PromptAttachment","AddPrompt")
-								Variables.PlayerGui = Owner:WaitForChild"PlayerGui"
 								Variables.Drops = Variables.Tycoon:WaitForChild"Drops"
 								Variables.Buttons = Variables.Tycoon:WaitForChild"Buttons"
 								Variables.Purchased = Variables.Tycoon:WaitForChild"Purchased"
 							end
 							if Variables.Purchased:FindFirstChild"Golden Tree Statue" then
-								Variables:WalkTo(Variables.Purchased["Golden Tree Statue"].StatueBottom.Position)
-								if fireproximityprompt then
-									fireproximityprompt(Variables.Purchased["Golden Tree Statue"].StatueBottom.PrestigePrompt)
-								elseif keypress then
-									keypress(69)
-									task.defer(keyrelease,69)
-								end
+								Variables.RequestPrestige:FireServer()
 								Wait(3)
 							end
 							if not Variables.Purchased:FindFirstChild"Auto Collector" then
+								for _,Tool in Variables.Backpack:GetChildren() do
+									Tool.Parent = Character
+								end
 								for _,Drop in Variables.Drops:GetChildren() do
-									if (Drop.Position-Variables.HolderPosition).Magnitude < 5 then
-										Variables.CollectFruit:FireServer(Drop)
-									end
+									Variables.CollectFruit:FireServer(Drop)
 								end
 							end
 							if Variables.PlayerGui:FindFirstChild"ObbyInfoBillBoard" and Variables.PlayerGui.ObbyInfoBillBoard:FindFirstChild"TopText" and Variables.PlayerGui.ObbyInfoBillBoard.TopText.Text == "Start Obby" then
-								Variables:WalkTo(Vector3.new(0,1,408))
-								Wait(1.5)
+								Variables:MoveTo(Vector3.new(0,1,408))
+								Wait(1)
 							end
 							if Variables.Money.Value < 1e5 then
-								Variables:WalkTo(Variables.JuicePosition)
-								if fireproximityprompt then
-									fireproximityprompt(Variables.JuicePrompt)
-								elseif keypress then
-									keypress(69)
-									task.defer(keyrelease,69)
+								for _,Amount in Variables.HeldFruits:GetChildren() do
+									if 0 < Amount.Value then
+										Variables:MoveTo(Variables.JuicePosition)
+										if fireproximityprompt then
+											fireproximityprompt(Variables.JuicePrompt)
+										elseif keypress then
+											keypress(69)
+											task.defer(keyrelease,69)
+										end
+										Wait(.2)
+										break
+									end
 								end
-								Wait(.25)
 							end
 							local LowestPrice,ChosenButton = math.huge,nil
-							for _,Button in Variables.Buttons:GetChildren() do
-								Button.CanTouch = false
-								local Price = tonumber((WaitForSequence(Button,"ButtonLabel","CostLabel").Text:gsub("%D",""))) or 0
-								if Price <= Variables.Money.Value and Price < LowestPrice then
-									LowestPrice,ChosenButton = Price,Button
+							for _,Button in Variables.Buttons:GetDescendants() do
+								if Valid.Instance(Button,"BasePart") and 0 < #Button:GetChildren() then
+									local Price = tonumber((WaitForSequence(Button,"ButtonLabel","CostLabel").Text:gsub("%D",""))) or 0
+									if Price <= Variables.Money.Value and Price < LowestPrice then
+										LowestPrice,ChosenButton = Price,Button
+									end
 								end
 							end
 							if ChosenButton then
-								ChosenButton.CanTouch = true
-								Variables:WalkTo(ChosenButton.Position)
-								Wait(.5)
+								Variables:MoveTo(ChosenButton.Position)
+								Wait()
 							end
 							Variables.Debounce = false
 						end
@@ -949,10 +919,6 @@ for Replace,Info in ({
 					}
 					Variables.Enabled = true
 				else
-					Destroy(Variables.AvoidZones)
-					for _,Killbrick in Variables.Killbricks:GetChildren() do
-						Killbrick.CanTouch = true
-					end
 					RemoveConnections{
 						Variables.Connection
 					}
@@ -967,35 +933,16 @@ for Replace,Info in ({
 				}
 			},
 			Variables = game.PlaceId == 6755746130 and {
+				RequestPrestige = Service"ReplicatedStorage":WaitForChild"RequestPrestige",
+				HeldFruits = Owner:WaitForChild"HeldFruits",
+				PlayerGui = Owner:WaitForChild"PlayerGui",
+				Backpack = Owner:WaitForChild"Backpack",
 				CollectFruit = Service"ReplicatedStorage":WaitForChild"CollectFruit",
-				Killbricks = WaitForSequence(workspace,"ObbyParts","Killbricks"),
 				Money = WaitForSequence(Owner,"leaderstats","Money"),
 				OwnedTycoon = Owner:WaitForChild"OwnedTycoon",
 				Tycoons = workspace:WaitForChild"Tycoons",
-				Path = Service"Pathfinding":CreatePath{
-					AgentRadius = 3,
-					WaypointSpacing = math.huge,
-					Costs = {
-						AvoidZones = math.huge
-					}
-				},
-				WalkTo = function(Variables,Position)
-					local Success,Error = pcall(Variables.Path.ComputeAsync,Variables.Path,workspace.CurrentCamera.Focus.Position,Position)
-					if Success and Variables.Path.Status.Name == "Success" then
-						local Humanoid = GetHumanoid(Owner)
-						if Humanoid then
-							for _,InflectionPoint in Variables.Path:GetWaypoints() do
-								if InflectionPoint.Action.Name == "Walk" then
-									repeat
-										Humanoid:MoveTo(InflectionPoint.Position)
-									until Wait(Humanoid.MoveToFinished) == true
-								else
-									Wait(Service"Run".RenderStepped)
-									Humanoid.Jump = true
-								end
-							end
-						end
-					end
+				MoveTo = function(_,Position)
+					Character:PivotTo(typeof(Position) == "Vector3" and CFrame.new(Position) or Position)
 				end
 			}
 		}
@@ -1157,6 +1104,9 @@ local function CreateWindow(Settings)
 	end]]
 end
 Connections = {
+	Connect(Owner.CharacterAdded,function(NewCharacter)
+		Character = NewCharacter
+	end),
 	not GlobalEnvironment.UltimatumDebug and isfile and Connect(Service"Run".Heartbeat,function()
 		if OwnerSettings.AutoUpdate and 60 < os.clock()-LastCheck then
 			LastCheck = os.clock()
