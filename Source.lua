@@ -479,7 +479,7 @@ local function RemoveConnections(GivenConnections)
 		end
 	end
 end
-local Character,Backpack = GetCharacter(Owner,1)
+local Character,Backpack,PlayerGui = GetCharacter(Owner,1),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")
 Commands = {
 	Exit_close_leave_shutdown = {
 		Function = function()
@@ -896,7 +896,7 @@ for Replace,Info in ({
 						Wait(5)
 						Variables.Collecting = false
 						RunCommand"Invisible"
-						Wait(WaitForSequence(Owner,"PlayerGui","MainGUI","Game","CashBag","Full"):GetPropertyChangedSignal"Visible")
+						Wait(WaitForSequence(PlayerGui,"MainGUI","Game","CashBag","Full"):GetPropertyChangedSignal"Visible")
 						Character:BreakJoints()
 					end)
 					Variables.Stepped = Connect(Service"Run".Stepped,function()
@@ -1035,7 +1035,7 @@ for Replace,Info in ({
 									task.defer(keyrelease,69)
 								end
 							end
-							if Variables.PlayerGui:FindFirstChild"ObbyInfoBillBoard" and Variables.PlayerGui.ObbyInfoBillBoard:FindFirstChild"TopText" and Variables.PlayerGui.ObbyInfoBillBoard.TopText.Text == "Start Obby" then
+							if PlayerGui:FindFirstChild"ObbyInfoBillBoard" and PlayerGui.ObbyInfoBillBoard:FindFirstChild"TopText" and PlayerGui.ObbyInfoBillBoard.TopText.Text == "Start Obby" then
 								Variables.Position = Vector3.new(0,1,408)
 								Wait(1)
 							end
@@ -1077,7 +1077,6 @@ for Replace,Info in ({
 			Variables = game.PlaceId == 6755746130 and {
 				RequestPrestige = Service"ReplicatedStorage":WaitForChild"RequestPrestige",
 				HeldFruits = Owner:WaitForChild"HeldFruits",
-				PlayerGui = Owner:WaitForChild"PlayerGui",
 				CollectFruit = Service"ReplicatedStorage":WaitForChild"CollectFruit",
 				Money = WaitForSequence(Owner,"leaderstats","Money"),
 				Prestige = WaitForSequence(Owner,"leaderstats","Prestige"),
@@ -1158,8 +1157,6 @@ for Replace,Info in ({
 				Wall = WaitForSequence(workspace,"Obby","Sign","Forcefield","Wall"),
 				PurchaseButton = WaitForSequence(Service"ReplicatedStorage","Knit","Services","TycoonService","RE","PurchaseButton"),
 				SellRats = WaitForSequence(Service"ReplicatedStorage","Knit","Services","TycoonService","RE","SellRats"),
-				PlayerGui = Owner:WaitForChild"PlayerGui",
-				Backpack = Owner:WaitForChild"Backpack",
 				CollectRat = WaitForSequence(Service"ReplicatedStorage","Knit","Services","TycoonService","RE","CollectRat"),
 				Cash = WaitForSequence(Owner,"leaderstats","Cash"),
 				Rebirth = WaitForSequence(Owner,"leaderstats","Rebirth"),
@@ -1321,13 +1318,17 @@ local function CreateWindow(Settings)
 			}
 		}
 	}
-	--[[for _,Line in Settings.Content) do
-
-	end]]
 end
 Connections = {
 	Connect(Owner.CharacterAdded,function(NewCharacter)
 		Character = NewCharacter
+	end),
+	Connect(Owner.ChildAdded,function(Object)
+		if Valid.Instance(Object,"Backpack") then
+			Backpack = Object
+		elseif Valid.Instance(Object,"PlayerGui") then
+			PlayerGui = Object
+		end
 	end),
 	not GlobalEnvironment.UltimatumDebug and isfile and Connect(Service"Run".Heartbeat,function()
 		if OwnerSettings.AutoUpdate and 60 < os.clock()-LastCheck then
