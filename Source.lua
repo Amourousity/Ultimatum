@@ -19,7 +19,7 @@ local function Load(Name)
 	end
 end
 Load"Conversio"()
-local Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,Owner = Load"Utilitas""All"
+local Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass = Load"Utilitas""All"
 local GlobalEnvironment = getgenv and getgenv() or shared
 pcall(GlobalEnvironment.Ultimatum)
 local OwnerSettings
@@ -33,7 +33,6 @@ do
 		PlayIntro = "Always",
 		Notifications = "All",
 		CommandSeperator = "/",
-		ArgumentSeperator = " ",
 		Keybind = "LeftBracket",
 		ExpressionSeperator = ",",
 		EdgeDetect = "GuiAndMouse"
@@ -418,7 +417,7 @@ end
 local Commands,Connections
 local function RunCommand(Text)
 	for _,Input in Text:split(OwnerSettings.CommandSeperator) do
-		local Arguments = Input:split(OwnerSettings.ArgumentSeperator)
+		local Arguments = Input:split" "
 		local Command = Arguments[1]
 		table.remove(Arguments,1)
 		local RanCommand
@@ -437,7 +436,7 @@ local function RunCommand(Text)
 							break
 						end
 						if ArgumentProperties.Concatenate then
-							Arguments[ArgumentNumber] = table.concat(Arguments,OwnerSettings.ArgumentSeperator,ArgumentNumber)
+							Arguments[ArgumentNumber] = table.concat(Arguments," ",ArgumentNumber)
 							for Index = ArgumentNumber+1,#Arguments do
 								Arguments[Index] = nil
 							end
@@ -480,7 +479,7 @@ local function RemoveConnections(GivenConnections)
 		end
 	end
 end
-local Character = GetCharacter(Owner,1)
+local Character,Backpack = GetCharacter(Owner,1)
 Commands = {
 	Exit_close_leave_shutdown = {
 		Function = function()
@@ -981,16 +980,22 @@ for Replace,Info in ({
 				if Enabled then
 					RunCommand"AntiAFK"
 					Variables.Debounce = false
-					Variables.Connection = Connect(Service"Run".Stepped,function()
+					Variables.Connection = Connect(Service"Run".Heartbeat,function()
 						if not Character then
 							return
+						end
+						Character:PivotTo(CFrame.new(Variables.Position)*CFrame.Angles(math.pi/2,0,0))
+						for _,BasePart in Character:GetChildren() do
+							if Valid.Instance(BasePart,"BasePart") then
+								BasePart.AssemblyLinearVelocity = Vector3.zero
+							end
 						end
 						if not Variables.Debounce then
 							Variables.Debounce = true
 							if not Valid.Instance(Variables.OwnedTycoon.Value,"Model") then
 								for _,Tycoon in Variables.Tycoons:GetChildren() do
 									if not Valid.Instance(Tycoon:WaitForChild"Owner".Value,"Player") then
-										Variables:MoveTo(WaitForSequence(Tycoon,"Essentials","Entrance").Position)
+										Variables.Position = WaitForSequence(Tycoon,"Essentials","Entrance").Position
 										Wait(1)
 										break
 									end
@@ -999,9 +1004,8 @@ for Replace,Info in ({
 							if not Valid.Instance(Variables.Tycoon,"Model") then
 								Variables.Tycoon = Variables.OwnedTycoon.Value
 								Variables.Essentials = Variables.Tycoon:WaitForChild"Essentials"
-								Variables.HolderPosition = WaitForSequence(Variables.Essentials,"FruitHolder","HolderBottom").Position
-								Variables.JuicePosition = WaitForSequence(Variables.Essentials,"JuiceMaker","AddFruitButton").Position+Vector3.new(5,0,0)
-								Variables.JuicePrompt = WaitForSequence(Variables.Essentials.JuiceMaker.AddFruitButton,"PromptAttachment","AddPrompt")
+								Variables.JuicePosition = WaitForSequence(Variables.Essentials,"JuiceMaker","AddFruitButton","PromptAttachment").WorldPosition-Vector3.yAxis*8
+								Variables.JuicePrompt = WaitForSequence(Variables.Essentials.JuiceMaker.AddFruitButton.PromptAttachment,"AddPrompt")
 								Variables.Drops = Variables.Tycoon:WaitForChild"Drops"
 								Variables.Buttons = Variables.Tycoon:WaitForChild"Buttons"
 								Variables.Purchased = Variables.Tycoon:WaitForChild"Purchased"
@@ -1011,36 +1015,33 @@ for Replace,Info in ({
 								Variables.Tycoon = nil
 								Wait(3)
 							end
-							if not Variables.Purchased:FindFirstChild"Auto Collector" then
-								for _,Tool in Variables.Backpack:GetChildren() do
-									Tool.Parent = Character
-								end
-								for _,Drop in Variables.Drops:GetChildren() do
+							for _,Tool in Backpack:GetChildren() do
+								Tool.Parent = Character
+							end
+							local Collect
+							for _,Drop in Variables.Drops:GetChildren() do
+								if not Drop:GetAttribute"Collected" then
+									Collect = true
+									Drop:SetAttribute("Collected",true)
 									Variables.CollectFruit:FireServer(Drop)
 								end
 							end
-							if Variables.PlayerGui:FindFirstChild"ObbyInfoBillBoard" and Variables.PlayerGui.ObbyInfoBillBoard:FindFirstChild"TopText" and Variables.PlayerGui.ObbyInfoBillBoard.TopText.Text == "Start Obby" then
-								Variables:MoveTo(Vector3.new(0,1,408))
-								Wait(1)
-							end
-							if Variables.Money.Value < 1e5 and Variables.Prestige.Value < 20 then
-								for _,Amount in Variables.HeldFruits:GetChildren() do
-									if 0 < Amount.Value then
-										Variables:MoveTo(Variables.JuicePosition)
-										if fireproximityprompt then
-											fireproximityprompt(Variables.JuicePrompt)
-										elseif keypress then
-											keypress(69)
-											task.defer(keyrelease,69)
-										end
-										Wait(.2)
-										break
-									end
+							if Collect then
+								Variables.Position = Variables.JuicePosition
+								if fireproximityprompt then
+									fireproximityprompt(Variables.JuicePrompt)
+								elseif keypress then
+									keypress(69)
+									task.defer(keyrelease,69)
 								end
+							end
+							if Variables.PlayerGui:FindFirstChild"ObbyInfoBillBoard" and Variables.PlayerGui.ObbyInfoBillBoard:FindFirstChild"TopText" and Variables.PlayerGui.ObbyInfoBillBoard.TopText.Text == "Start Obby" then
+								Variables.Position = Vector3.new(0,1,408)
+								Wait(1)
 							end
 							local LowestPrice,ChosenButton = math.huge,nil
 							for _,Button in Variables.Buttons:GetDescendants() do
-								if Valid.Instance(Button,"BasePart") and 0 < #Button:GetChildren() and (not Variables.NoAutoCollect or Button.Name ~= "AutoCollect") then
+								if Valid.Instance(Button,"BasePart") and 0 < #Button:GetChildren() and Button.Name ~= "AutoCollect" then
 									local Price = tonumber((WaitForSequence(Button,"ButtonLabel","CostLabel").Text:gsub("%D",""))) or 0
 									if Price <= Variables.Money.Value and Price < LowestPrice then
 										LowestPrice,ChosenButton = Price,Button
@@ -1048,7 +1049,7 @@ for Replace,Info in ({
 								end
 							end
 							if ChosenButton then
-								Variables:MoveTo(ChosenButton.Position)
+								Variables.Position = ChosenButton.Position
 								Wait(.2)
 							end
 							Variables.Debounce = false
@@ -1074,16 +1075,94 @@ for Replace,Info in ({
 				}
 			},
 			Variables = game.PlaceId == 6755746130 and {
-				NoAutoCollect = WaitForSequence(Owner,"PlayerGui","MenusGui","AchievementsFrame","ScrollerHolder","ScrollingFrame","PrestigeNoAutoCollect","ProgressLabel").Text == "Locked",
 				RequestPrestige = Service"ReplicatedStorage":WaitForChild"RequestPrestige",
 				HeldFruits = Owner:WaitForChild"HeldFruits",
 				PlayerGui = Owner:WaitForChild"PlayerGui",
-				Backpack = Owner:WaitForChild"Backpack",
 				CollectFruit = Service"ReplicatedStorage":WaitForChild"CollectFruit",
 				Money = WaitForSequence(Owner,"leaderstats","Money"),
 				Prestige = WaitForSequence(Owner,"leaderstats","Prestige"),
 				OwnedTycoon = Owner:WaitForChild"OwnedTycoon",
 				Tycoons = workspace:WaitForChild"Tycoons",
+				Position = workspace.CurrentCamera.Focus.Position
+			}
+		}
+	},
+	_10347946161 = {
+		AutoFarm_autoplay_autop_autof_farm_af = {
+			Function = function(Variables,Enabled)
+				if not Assert(not (Variables.Enabled and Enabled),"Auto-farm is already enabled",not (not Variables.Enabled and not Enabled),"Auto-farm is already disabled") then
+					return
+				end
+				if Enabled then
+					RunCommand"AntiAFK"
+					Variables.Debounce = false
+					Variables.Connection = Connect(Service"Run".Stepped,function()
+						if not Character then
+							return
+						end
+						if not Variables.Debounce then
+							Variables.Debounce = true
+							if not Valid.Instance(Variables.Tycoon,"Folder") then
+								Variables.Tycoon = Owner.RespawnLocation.Parent
+								Variables.Rats = Variables.Tycoon:WaitForChild"Rats"
+								Variables.Buttons = Variables.Tycoon:WaitForChild"Buttons"
+							end
+							if not Variables.Wall.CanCollide then
+								Variables:MoveTo(Vector3.yAxis*55)
+								Wait(.2)
+							end
+							local Wash = false
+							for _,Rat in Variables.Rats:GetChildren() do
+								Wash = true
+								Variables.CollectRat:FireServer(tonumber(Rat.Name))
+							end
+							if Wash then
+								Variables.SellRats:FireServer()
+							end
+							local LowestPrice,ChosenButton = math.huge,nil
+							for _,Button in Variables.Buttons:GetChildren() do
+								if Button:GetAttribute"Enabled" and not Button:GetAttribute"Gamepass" then
+									if Button:GetAttribute"Price" <= Variables.Cash.Value and Button:GetAttribute"Price" < LowestPrice then
+										LowestPrice,ChosenButton = Button:GetAttribute"Price",Button
+									end
+								end
+							end
+							if ChosenButton then
+								Variables:MoveTo(ChosenButton:WaitForChild"Hitbox".Position)
+								Variables.PurchaseButton:FireServer(ChosenButton.Name)
+								Wait(.2)
+							end
+							Variables.Debounce = false
+						end
+					end)
+					AddConnections{
+						Variables.Connection
+					}
+					Variables.Enabled = true
+				else
+					RunCommand"AntiAFK False"
+					RemoveConnections{
+						Variables.Connection
+					}
+					Variables.Enabled = false
+				end
+			end,
+			Arguments = {
+				{
+					Name = "Enabled",
+					Type = "Boolean",
+					Substitute = true
+				}
+			},
+			Variables = game.PlaceId == 10347946161 and {
+				Wall = WaitForSequence(workspace,"Obby","Sign","Forcefield","Wall"),
+				PurchaseButton = WaitForSequence(Service"ReplicatedStorage","Knit","Services","TycoonService","RE","PurchaseButton"),
+				SellRats = WaitForSequence(Service"ReplicatedStorage","Knit","Services","TycoonService","RE","SellRats"),
+				PlayerGui = Owner:WaitForChild"PlayerGui",
+				Backpack = Owner:WaitForChild"Backpack",
+				CollectRat = WaitForSequence(Service"ReplicatedStorage","Knit","Services","TycoonService","RE","CollectRat"),
+				Cash = WaitForSequence(Owner,"leaderstats","Cash"),
+				Rebirth = WaitForSequence(Owner,"leaderstats","Rebirth"),
 				MoveTo = function(_,Position)
 					Character:PivotTo(typeof(Position) == "Vector3" and CFrame.new(Position) or Position)
 				end
@@ -1100,7 +1179,7 @@ local function UpdateSuggestions()
 		Gui.CommandBar.Text = Gui.CommandBar.Text:gsub("^%W+","")
 		IgnoreUpdate = false
 		local Command = Gui.CommandBar.Text:split(OwnerSettings.CommandSeperator)
-		Command = ((Command[#Command] or ""):split(OwnerSettings.ArgumentSeperator)[1] or ""):lower()
+		Command = ((Command[#Command] or ""):split" "[1] or ""):lower()
 		Gui.SuggestionsScroll.CanvasSize = UDim2.new()
 		for _,TextLabel in Gui.SuggestionsScroll:GetChildren() do
 			if TextLabel:IsA"TextLabel" then
@@ -1119,7 +1198,7 @@ local function UpdateSuggestions()
 						for _,ArgumentInfo in CommandInfo.Arguments do
 							table.insert(Arguments,(ArgumentInfo.Required and "%s:%s" or "<font color = '#A0A0A0'>%s:%s</font>"):format(ArgumentInfo.Name,ArgumentInfo.Type))
 						end
-						return ("%s%s"):format(OwnerSettings.ArgumentSeperator,table.concat(Arguments,OwnerSettings.ArgumentSeperator))
+						return ("%s%s"):format(" ",table.concat(Arguments," "))
 					end)() or ""))
 					break
 				end
