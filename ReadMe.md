@@ -14,6 +14,8 @@
 
 *Keep in mind that the effectiveness of these features is dependent on the quality of your exploit. Exploits like [Script-Ware](https://script-ware.com) ($20) or [Krnl](https://krnl.place) (free) are recommended.*
 
+Note: will not work with Synapse v2 due to their interpreter being out-of-date (does not support some Luau syntax)
+
 ## Usage
 
 In order for offline support to work, you ***MUST*** use the loader directly.
