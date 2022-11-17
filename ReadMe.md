@@ -21,20 +21,3 @@ Note: will not work with Synapse v2 due to their interpreter being out-of-date (
 In order for offline support to work, you ***MUST*** use the loader directly.
 
 Copy the [loader](/Loader.lua), paste it in your exploit's script editor, press Execute and enjoy!
-
-## Global Commands
-
-Command|Arguments|Description
----|---|---
-Exit| |Closes the current Roblox window/proccess
-Rejoin| |Rejoins the current Roblox server you're in, or joins a different server if not possible
-Invisible| |Makes you invisible to other players
-ServerHop| |Joins a random server that you weren't previously in
-Magic8Ball| |Notifies the Magic 8 Ball's response to your yes-or-no question
-CopyJoinScript| |Copies JavaScript to your clipboard used to join the same server
-CloseRobloxMessage| |Closes any [messages/errors](https://roblox.fandom.com/wiki/Error) displayed by Roblox
-WalkSpeed|Speed:Number |Changes the speed you walk at. Allows negative numbers, but you walk backwards. Your walking animation speed doesn't change
-AntiAFK|Enabled:Boolean |Stops Roblox from kicking you for being AFK
-DisableRendering|Disabled:Boolean |Disables 3D rendering (everything except for GUIs are invisible), boosting FPS. Usually used with auto-farms to improve their efficiency
-
-*I am in the process of writing more commands, please be patient.*
