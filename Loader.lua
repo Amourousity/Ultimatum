@@ -5,9 +5,8 @@
 [|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]
 [|]  [|]  [|]        [|]         [|]     [|]       [|] [|]     [|] [|]      [|]  [|]  [|]       [|]
 [||||]   [||||||||] [|]     [|||||||||] [|]       [|] [|]     [|] [|]       [||||]   [|]       []]
-local UltimatumStart,Ultimatum = os.clock()
 local function Set(Source)
-	Ultimatum = loadstring(Source or readfile"Source.Ultimatum","Ultimatum")
+	loadstring(Source or readfile"Source.Ultimatum","Ultimatum")()
 end
 if isfile and isfile"Source.Ultimatum" then
 	Set()
@@ -22,6 +21,3 @@ else
 		end
 	end
 end
-local Environment = getfenv(Ultimatum)
-Environment.UltimatumStart = UltimatumStart
-setfenv(Ultimatum,Environment)()
