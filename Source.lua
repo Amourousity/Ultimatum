@@ -977,6 +977,7 @@ for Replace,Info in ({
 				end
 			end,
 			Toggles = Templates.Unfarm,
+			ToggleCheck = true,
 			Variables = {}
 		}
 	},
@@ -1103,6 +1104,7 @@ for Replace,Info in ({
 				end
 			end,
 			Toggles = Templates.Unfarm,
+			ToggleCheck = true,
 			Variables = game.PlaceId == 6755746130 and {
 				Ignored = workspace:WaitForChild"Ignored",
 				Position = workspace.CurrentCamera.Focus,
@@ -1169,6 +1171,7 @@ for Replace,Info in ({
 				end
 			end,
 			Toggles = Templates.Unfarm,
+			ToggleCheck = true,
 			Variables = game.PlaceId == 10347946161 and {
 				Wall = WaitForSequence(workspace,"Obby","Sign","Forcefield","Wall"),
 				PurchaseButton = WaitForSequence(Service"ReplicatedStorage","Knit","Services","TycoonService","RE","PurchaseButton"),
@@ -1240,6 +1243,7 @@ for Replace,Info in ({
 				end
 			end,
 			Toggles = Templates.Unfarm,
+			ToggleCheck = true,
 			Variables = game.PlaceId == 537413528 and {
 				CurrentStage = -1,
 				CFrame = workspace.CurrentCamera.Focus,
