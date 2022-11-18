@@ -26,7 +26,6 @@ local OwnerSettings
 do
 	local DefaultSettings = {
 		Scale = 1,
-		Blur = true,
 		StayOpen = false,
 		AutoUpdate = true,
 		LoadOnRejoin = true,
@@ -97,6 +96,21 @@ local Gui = Create{
 			OnTopOfCoreBlur = true,
 			DisplayOrder = 0x7FFFFFFF,
 			ZIndexBehavior = Enum.ZIndexBehavior.Global
+		}
+	},
+	{
+		Name = "ScreenCover",
+		Parent = "Holder",
+		ClassName = "TextButton",
+		Properties = {
+			ZIndex = -1,
+			Modal = true,
+			Active = true,
+			TextTransparency = 1,
+			AutoButtonColor = false,
+			Size = UDim2.new(1,0,1,0),
+			BackgroundTransparency = 1,
+			BackgroundColor3 = Color3.new()
 		}
 	},
 	{
@@ -202,7 +216,7 @@ local Gui = Create{
 			Font = Enum.Font.Arial,
 			ClearTextOnFocus = false,
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1,-10,1,0),
+			Size = UDim2.new(1,-20,1,0),
 			Position = UDim2.new(0,10,0,0),
 			TextColor3 = Color3.new(1,1,1),
 			TextXAlignment = Enum.TextXAlignment.Left,
@@ -222,7 +236,10 @@ local Gui = Create{
 		Name = "SuggestionsSection",
 		Parent = "Main",
 		ClassName = "Frame",
-		Properties = {BackgroundTransparency = 1}
+		Properties = {
+			ClipsDescendants = true,
+			BackgroundTransparency = 1
+		}
 	},
 	{
 		Name = "SuggestionsScroll",
@@ -231,7 +248,6 @@ local Gui = Create{
 		Properties = {
 			BorderSizePixel = 0,
 			ScrollBarThickness = 0,
-			ClipsDescendants = true,
 			BackgroundTransparency = 1,
 			Size = UDim2.new(1,-8,1,-8),
 			Position = UDim2.new(0,4,0,4)
@@ -264,6 +280,7 @@ local Gui = Create{
 		ClassName = "UIListLayout",
 		Properties = {
 			Padding = UDim.new(0,10),
+			SortOrder = Enum.SortOrder.LayoutOrder,
 			VerticalAlignment = Enum.VerticalAlignment.Bottom,
 			HorizontalAlignment = Enum.HorizontalAlignment.Right
 		}
@@ -358,24 +375,22 @@ local function Notify(Settings)
 		}
 	},Notification.Content,{
 		Time = .25,
-		Properties = {
-			TextTransparency = 0
-		},
+		Properties = {TextTransparency = 0},
 		EasingStyle = Enum.EasingStyle.Linear
 	})
 	task.delay(Settings.Duration,Animate,Notification.Main,{
 		Time = 1,
-		Properties = {
-			BackgroundTransparency = 1
-		}
+		Properties = {BackgroundTransparency = 1}
 	},Notification.Content,{
 		Time = 1,
-		Properties = {
-			TextTransparency = 1
-		},
+		Yields = true,
+		Properties = {TextTransparency = 1},
 		EasingStyle = Enum.EasingStyle.Linear
+	},Notification.Main,{
+		Time = .25,
+		Properties = {Size = UDim2.new(Size.X.Scale,Size.X.Offset,0,0)}
 	})
-	Settings.Duration += 1
+	Settings.Duration += 1.25
 	task.spawn(function()
 		local Start = os.clock()
 		repeat
@@ -408,9 +423,7 @@ local function ResizeMain(X,Y)
 		}
 	},Gui.CommandBarBackground,{
 		Time = .25,
-		Properties = {
-			Visible = 40 < X
-		}
+		Properties = {Visible = 40 < X}
 	})
 end
 local Commands,Connections
@@ -421,6 +434,9 @@ local function RunCommand(Text)
 		table.remove(Arguments,1)
 		local RanCommand
 		for CommandNames,CommandInfo in Commands do
+			if CommandInfo.Toggles then
+				CommandNames = ("%s_%s"):format(CommandNames,CommandInfo.Toggles)
+			end
 			CommandNames = CommandNames:split"_"
 			local Continue
 			for _,CommandName in CommandNames do
@@ -441,6 +457,27 @@ local function RunCommand(Text)
 							end
 						end
 						Arguments[ArgumentNumber] = Valid[ArgumentProperties.Type](Arguments[ArgumentNumber],ArgumentProperties.Substitute)
+					end
+					if CommandInfo.Toggles then
+						local Enabled = true
+						for _,Toggle in CommandInfo.Toggles:lower():split"_" do
+							if Toggle == Command:lower() then
+								Enabled = false
+								break
+							end
+						end
+						if CommandInfo.ToggleCheck then
+							if (CommandInfo.Enabled or false) == Enabled then
+								Enabled = Enabled and "En" or "Dis"
+								Notify{
+									Title = ("Already %sabled"):format(Enabled),
+									Text = ("The command is already %sabled"):format(Enabled:lower())
+								}
+								return
+							end
+							CommandInfo.Enabled = Enabled
+						end
+						table.insert(Arguments,1,Enabled)
 					end
 					if CommandInfo.Variables then
 						table.insert(Arguments,1,CommandInfo.Variables)
@@ -500,7 +537,7 @@ Commands = {
 		Function = function()
 			game:Shutdown()
 		end,
-		Description = "Closes the current Roblox window/proccess"
+		Description = "Leaves the current Roblox server"
 	},
 	CopyJoinScript_copyjoincode_copyjoin_copyjcode_copyjscript_copyj_cjoin_copyjs_cj_cjs_cjc = {
 		Function = function()
@@ -520,18 +557,12 @@ Commands = {
 		end,
 		Description = setclipboard and "Copies JavaScript to your clipboard used to join the same server" or "Notifies JavaScript to be copied to your clipboard used to join the same server"
 	},
-	DisableRendering_disablerender_drendering_derender_drender_dr_norendering_norender = {
-		Function = function(Disabled)
-			Service"Run":Set3dRenderingEnabled(not Disabled)
+	EnableRendering_enablerender_erendering_erender_er_rendering_render = {
+		Function = function(Enabled)
+			Service"Run":Set3dRenderingEnabled(Enabled)
 		end,
-		Arguments = {
-			{
-				Name = "Disabled",
-				Type = "Boolean",
-				Substitute = true
-			}
-		},
-		Description = "Disables 3D rendering (everything except for GUIs are invisible), boosting FPS. Usually used with auto-farms to improve their efficiency"
+		Toggles = "disablerendering_disablerender_drendering_derender_drender_dr_norendering_norender",
+		Description = "Enables/disables 3D rendering (everything except for GUIs are invisible), boosting FPS. Usually used with auto-farms to improve their efficiency"
 	},
 	Rejoin_rejoinserver_rejoingame_rej_rj = {
 		Function = function()
@@ -744,45 +775,34 @@ Commands = {
 		Variables = {},
 		Description = "Makes you invisible to other players"
 	},
-	AntiAFK_noafk_afk = {
+	AntiAFK_noafk_unafk = {
 		Function = function(Variables,Enabled)
-			if not Assert(not (Variables.Enabled and Enabled),"Anti-AFK is already enabled",not (not Variables.Enabled and not Enabled),"Anti-AFK is already disabled") then
-				return
-			end
 			if Enabled then
 				Variables.Connection = Connect(Owner.Idled,function()
 					Service"VirtualUser":Button2Down(Vector2.zero,CFrame.new())
 					task.defer(Service"VirtualUser".Button2Up,Service"VirtualUser",Vector2.zero,CFrame.new())
 				end)
-				AddConnections{
-					Variables.Connection
-				}
-				Variables.Enabled = true
+				AddConnections{Variables.Connection}
 			else
-				RemoveConnections{
-					Variables.Connection
-				}
-				Variables.Enabled = false
+				RemoveConnections{Variables.Connection}
 			end
 		end,
-		Arguments = {
-			{
-				Name = "Enabled",
-				Type = "Boolean",
-				Substitute = true
-			}
-		},
+		Toggles = "unantiafk_allowafk_afk",
+		ToggleCheck = true,
 		Variables = {},
 		Description = "Stops Roblox from kicking you for being AFK"
 	}
 }
+local Templates = {
+	AutoFarm = "AutoFarm_autoplay_autop_autof_farm_af",
+	Unfarm = "Unfarm_unautofarm_unautoplay_stopplaying_unautp_stopp_unautof_unf_uaf_uf",
+	SensoryPerception = "SensoryPerception_sensoryp_sperception_sp_unextrasensoryperception_unextrasensoryp_unesperception_unextrasp_unesp_uesp",
+	ExtrasensoryPerception = "ExtrasensoryPerception_extrasensoryp_esensoryperception_esperception_extrasp_esp"
+}
 for Replace,Info in ({
 	_142823291 = {
-		ExtrasensoryPerception_extrasensoryp_esensoryperception_esperception_extrasp_esp = {
+		[Templates.ExtrasensoryPerception] = {
 			Function = function(Variables,Enabled)
-				if not Assert(not (Variables.Enabled and Enabled),"Extrasensory perception is already enabled",not (not Variables.Enabled and not Enabled),"Extrasensory perception is already disabled") then
-					return
-				end
 				if Enabled then
 					Variables.Time,Variables.Connection = os.clock(),Connect(Service"Run".Heartbeat,function()
 						if not Variables.Calculating and 1 < os.clock()-Variables.Time or 5 < os.clock()-Variables.Time then
@@ -804,25 +824,14 @@ for Replace,Info in ({
 							Variables.Calculating = false
 						end
 					end)
-					AddConnections{
-						Variables.Connection
-					}
-					Variables.Enabled = true
+					AddConnections{Variables.Connection}
 				else
-					RemoveConnections{
-						Variables.Connection
-					}
+					RemoveConnections{Variables.Connection}
 					Destroy(Variables.ExtrasensoryPerceptions)
-					Variables.Enabled = false
 				end
 			end,
-			Arguments = {
-				{
-					Name = "Enabled",
-					Type = "Boolean",
-					Substitute = true
-				}
-			},
+			Toggles = Templates.SensoryPerception,
+			ToggleCheck = true,
 			Variables = game.PlaceId == 142823291 and {
 				ExtrasensoryPerceptions = {},
 				PlayerDataRemote = WaitForSequence(Service"ReplicatedStorage","Remotes","Extras","GetPlayerData"),
@@ -880,11 +889,8 @@ for Replace,Info in ({
 				end
 			}
 		},
-		AutoFarm_autoplay_autop_autof_farm_af = {
+		[Templates.AutoFarm] = {
 			Function = function(Variables,Enabled)
-				if not Assert(not (Variables.Enabled and Enabled),"Auto-farm is already enabled",not (not Variables.Enabled and not Enabled),"Auto-farm is already disabled") then
-					return
-				end
 				if Enabled then
 					RunCommand"AntiAFK"
 					Variables.Delta,Variables.LastFrame,Variables.Coins,Variables.IgnoreCoins,Variables.Position = 0,os.clock(),{},{},workspace.CurrentCamera.Focus.Position
@@ -895,14 +901,10 @@ for Replace,Info in ({
 							Connection = Connect(Coin.AncestryChanged,function()
 								if not Coin:IsDescendantOf(workspace) then
 									table.remove(Variables.Coins,table.find(Variables.Coins,Coin))
-									RemoveConnections{
-										Connection
-									}
+									RemoveConnections{Connection}
 								end
 							end)
-							AddConnections{
-								Connection
-							}
+							AddConnections{Connection}
 						end
 					end)
 					Variables.CharacterAdded = Connect(Owner.CharacterAdded,function(Character)
@@ -964,34 +966,23 @@ for Replace,Info in ({
 						Variables.CoinAdded,
 						Variables.Stepped
 					}
-					Variables.Enabled = true
 				else
-					RunCommand"AntiAFK False"
+					RunCommand"AllowAFK"
 					RemoveConnections{
 						Variables.CharacterAdded,
 						Variables.Connection,
 						Variables.CoinAdded,
 						Variables.Stepped
 					}
-					Variables.Enabled = false
 				end
 			end,
-			Arguments = {
-				{
-					Name = "Enabled",
-					Type = "Boolean",
-					Substitute = true
-				}
-			},
+			Toggles = Templates.Unfarm,
 			Variables = {}
 		}
 	},
 	_6755746130 = {
-		AutoFarm_autoplay_autop_autof_farm_af = {
+		[Templates.AutoFarm] = {
 			Function = function(Variables,Enabled)
-				if not Assert(not (Variables.Enabled and Enabled),"Auto-farm is already enabled",not (not Variables.Enabled and not Enabled),"Auto-farm is already disabled") then
-					return
-				end
 				if Enabled then
 					RunCommand"AntiAFK"
 					Variables.Debounce = false
@@ -1094,9 +1085,8 @@ for Replace,Info in ({
 						Variables.Connection,
 						Variables.RenderStepped
 					}
-					Variables.Enabled = true
 				else
-					RunCommand"AntiAFK False"
+					RunCommand"AllowAFK"
 					if Character and Backpack then
 						for _,Tool in Character:GetChildren() do
 							if Valid.Instance(Tool,"Tool") then
@@ -1110,16 +1100,9 @@ for Replace,Info in ({
 						Variables.Connection,
 						Variables.RenderStepped
 					}
-					Variables.Enabled = false
 				end
 			end,
-			Arguments = {
-				{
-					Name = "Enabled",
-					Type = "Boolean",
-					Substitute = true
-				}
-			},
+			Toggles = Templates.Unfarm,
 			Variables = game.PlaceId == 6755746130 and {
 				Ignored = workspace:WaitForChild"Ignored",
 				Position = workspace.CurrentCamera.Focus,
@@ -1135,11 +1118,8 @@ for Replace,Info in ({
 		}
 	},
 	_10347946161 = {
-		AutoFarm_autoplay_autop_autof_farm_af = {
+		[Templates.AutoFarm] = {
 			Function = function(Variables,Enabled)
-				if not Assert(not (Variables.Enabled and Enabled),"Auto-farm is already enabled",not (not Variables.Enabled and not Enabled),"Auto-farm is already disabled") then
-					return
-				end
 				if Enabled then
 					RunCommand"AntiAFK"
 					Variables.Debounce = false
@@ -1182,25 +1162,13 @@ for Replace,Info in ({
 							Variables.Debounce = false
 						end
 					end)
-					AddConnections{
-						Variables.Connection
-					}
-					Variables.Enabled = true
+					AddConnections{Variables.Connection}
 				else
-					RunCommand"AntiAFK False"
-					RemoveConnections{
-						Variables.Connection
-					}
-					Variables.Enabled = false
+					RunCommand"AllowAFK"
+					RemoveConnections{Variables.Connection}
 				end
 			end,
-			Arguments = {
-				{
-					Name = "Enabled",
-					Type = "Boolean",
-					Substitute = true
-				}
-			},
+			Toggles = Templates.Unfarm,
 			Variables = game.PlaceId == 10347946161 and {
 				Wall = WaitForSequence(workspace,"Obby","Sign","Forcefield","Wall"),
 				PurchaseButton = WaitForSequence(Service"ReplicatedStorage","Knit","Services","TycoonService","RE","PurchaseButton"),
@@ -1215,11 +1183,8 @@ for Replace,Info in ({
 		}
 	},
 	_537413528 = {
-		AutoFarm_autoplay_autop_autof_farm_af = {
+		[Templates.AutoFarm] = {
 			Function = function(Variables,Enabled)
-				if not Assert(not (Variables.Enabled and Enabled),"Auto-farm is already enabled",not (not Variables.Enabled and not Enabled),"Auto-farm is already disabled") then
-					return
-				end
 				if Enabled then
 					RunCommand"AntiAFK"
 					Variables.Debounce = false
@@ -1266,23 +1231,15 @@ for Replace,Info in ({
 						Variables.Heartbeat,
 						Variables.Stepped
 					}
-					Variables.Enabled = true
 				else
-					RunCommand"AntiAFK False"
+					RunCommand"AllowAFK"
 					RemoveConnections{
 						Variables.Heartbeat,
 						Variables.Stepped
 					}
-					Variables.Enabled = false
 				end
 			end,
-			Arguments = {
-				{
-					Name = "Enabled",
-					Type = "Boolean",
-					Substitute = true
-				}
-			},
+			Toggles = Templates.Unfarm,
 			Variables = game.PlaceId == 537413528 and {
 				CurrentStage = -1,
 				CFrame = workspace.CurrentCamera.Focus,
@@ -1299,32 +1256,38 @@ local function UpdateSuggestions()
 		IgnoreUpdate = true
 		Gui.CommandBar.Text = Gui.CommandBar.Text:gsub("^%W+","")
 		IgnoreUpdate = false
+		Gui.CommandBar.TextXAlignment = Enum.TextXAlignment[Gui.CommandBar.TextFits and "Left" or "Right"]
 		local Command = Gui.CommandBar.Text:split"/"
 		Command = ((Command[#Command] or ""):split" "[1] or ""):lower()
 		Gui.SuggestionsScroll.CanvasSize = UDim2.new()
 		for _,TextLabel in Gui.SuggestionsScroll:GetChildren() do
-			if TextLabel:IsA"TextLabel" then
+			if Valid.Instance(TextLabel,"TextLabel") then
 				Destroy(TextLabel)
 			end
 		end
 		local CommandDisplays = {}
 		for CommandNames,CommandInfo in Commands do
+			if CommandInfo.Toggles then
+				CommandNames = ("%s_%s"):format(CommandNames,CommandInfo.Toggles)
+			end
 			CommandNames = CommandNames:split"_"
 			for _,CommandName in CommandNames do
-				if (CommandName:lower()):find(Command,1,true) then
-					table.insert(CommandDisplays,("%s<i>%s</i>"):format(CommandNames[1],CommandInfo.Arguments and (function()
+				if CommandName:lower():find(Command,1,true) then
+					table.insert(CommandDisplays,("<font color = '#FFFFFF'>%s</font>%s%s"):format(CommandNames[1],CommandInfo.Arguments and (function()
 						local Arguments = {}
 						for _,ArgumentInfo in CommandInfo.Arguments do
-							table.insert(Arguments,(ArgumentInfo.Required and "%s:%s" or "<font color = '#A0A0A0'>%s:%s</font>"):format(ArgumentInfo.Name,ArgumentInfo.Type))
+							table.insert(Arguments,("%s:%s"):format(ArgumentInfo.Name,ArgumentInfo.Type))
 						end
-						return ("%s%s"):format(" ",table.concat(Arguments," "))
-					end)() or ""))
+						return (" <i>%s</i>"):format(table.concat(Arguments," "))
+					end)() or "",CommandInfo.Toggles and " [Toggles]" or ""))
 					break
 				end
 			end
 		end
 		table.sort(CommandDisplays,function(String1,String2)
-			return Service"Text":GetTextSize(GetContentText(String1),14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X < Service"Text":GetTextSize(GetContentText(String2),14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X and true or false
+			String1 = Service"Text":GetTextSize(GetContentText(String1):split" "[1],14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X
+			String2 = Service"Text":GetTextSize(GetContentText(String2):split" "[1],14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X
+			return if CheckAxis"Y" then String1 < String2 else String2 < String1
 		end)
 		for Index,Text in CommandDisplays do
 			NewInstance("TextLabel",Gui.SuggestionsScroll,{
@@ -1335,7 +1298,7 @@ local function UpdateSuggestions()
 				Font = Enum.Font.Arial,
 				BackgroundTransparency = 1,
 				TextStrokeTransparency = .8,
-				TextColor3 = Color3.new(1,1,1),
+				TextColor3 = Color3.fromHex"A0A0A0",
 				TextXAlignment = Enum.TextXAlignment.Left
 			})
 		end
@@ -1388,8 +1351,8 @@ local function CreateWindow(Settings)
 			Properties = {
 				TextSize = 14,
 				Text = Settings.Title,
+				Font = Enum.Font.Arial,
 				BackgroundTransparency = 1,
-				Font = Enum.Font.ArialBold,
 				Size = UDim2.new(1,-45,0,20),
 				Position = UDim2.new(0,5,0,0),
 				TextColor3 = Color3.new(1,1,1),
@@ -1411,36 +1374,33 @@ local function CreateWindow(Settings)
 		{
 			Name = "Exit",
 			Parent = "Main",
-			ClassName = "TextButton",
+			ClassName = "ImageButton",
 			Properties = {
-				Text = "x",
 				Modal = true,
-				TextSize = 40,
 				AutoButtonColor = false,
-				Font = Enum.Font.Nunito,
 				BackgroundTransparency = 1,
-				Size = UDim2.new(0,20,0,20),
-				TextColor3 = Color3.new(1,1,1),
-				Position = UDim2.new(1,-20,0,0)
+				Size = UDim2.new(0,14,0,14),
+				Position = UDim2.new(1,-17,0,3),
+				Image = "rbxasset://textures/DevConsole/Close.png"
 			}
 		},
 		{
 			Name = "Minimize",
 			Parent = "Main",
-			ClassName = "TextButton",
+			ClassName = "ImageButton",
 			Properties = {
-				Text = "-",
 				Modal = true,
-				TextSize = 40,
-				Font = Enum.Font.Arial,
 				AutoButtonColor = false,
 				BackgroundTransparency = 1,
-				Size = UDim2.new(0,20,0,20),
-				TextColor3 = Color3.new(1,1,1),
-				Position = UDim2.new(1,-40,0,0)
+				Size = UDim2.new(0,14,0,14),
+				Position = UDim2.new(1,-37,0,3),
+				Image = "rbxasset://textures/DevConsole/Minimize.png"
 			}
 		}
 	}
+	Animate(Window.Main,{
+		Properties = {Position = UDim2.new(.5,0,.5,0)}
+	})
 end
 Connections = {
 	Connect(Owner.CharacterAdded,function(NewCharacter)
@@ -1524,6 +1484,7 @@ Connections = {
 		elseif Service"UserInput":IsKeyDown(Enum.KeyCode.Escape) then
 			Gui.CommandBar.Text = ""
 		end
+		Gui.CommandBar.TextXAlignment = Enum.TextXAlignment[Gui.CommandBar.TextFits and "Left" or "Right"]
 		ResizeMain()
 		task.delay(.25,function()
 			if Service"UserInput":GetFocusedTextBox() ~= Gui.CommandBar then
@@ -1563,21 +1524,15 @@ EnableDrag = function(Frame,IsMain)
 				FinalPosition = UDim2.new(math.round(MousePosition.X-CardSize.X/2)/ScreenSize.X,0,math.round(MousePosition.Y-CardSize.Y/2)/ScreenSize.Y,0)
 				Animate(Frame,{
 					Time = 0,
-					Properties = {
-						Position = FinalPosition
-					}
+					Properties = {Position = FinalPosition}
 				})
 			end)
-			AddConnections{
-				DragConnection
-			}
+			AddConnections{DragConnection}
 		end
 	end),Connect(Service"UserInput".InputEnded,function(Input)
 		if DragConnection and Input.UserInputType.Name == "MouseButton1" then
 			Service"UserInput".MouseIconEnabled = OldEnabled
-			RemoveConnections{
-				DragConnection
-			}
+			RemoveConnections{DragConnection}
 			DragConnection = nil
 			Debounce = false
 			if IsMain then
@@ -1609,11 +1564,13 @@ end
 EnableDrag(Gui.Main,true)
 if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
 	GlobalEnvironment.UltimatumLoaded = true
-	if OwnerSettings.Blur then
-		Service"Run":SetRobloxGuiFocused(true)
-		task.delay(1.5,Service"Run".SetRobloxGuiFocused,Service"Run",false)
-	end
-	Animate(Gui.Main,{
+	Service"Run":SetRobloxGuiFocused(true)
+	task.delay(1.5,Service"Run".SetRobloxGuiFocused,Service"Run",false)
+	Animate(Gui.ScreenCover,{
+		Time = .25,
+		EasingStyle = Enum.EasingStyle.Linear,
+		Properties = {BackgroundTransparency = .2}
+	},Gui.Main,{
 		Yields = true,
 		Properties = {
 			Position = UDim2.new(.5,0,.5,0),
@@ -1630,6 +1587,10 @@ if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and 
 			CornerRadius = UDim.new(0,4)
 		},
 		FinishDelay = .5
+	},Gui.ScreenCover,{
+		Time = .25,
+		EasingStyle = Enum.EasingStyle.Linear,
+		Properties = {BackgroundTransparency = 1}
 	},Gui.Main,{
 		Properties = {
 			Rotation = 180,
@@ -1651,6 +1612,7 @@ else
 	GlobalEnvironment.UltimatumLoaded = true
 end
 Wait()
+Destroy(Gui.ScreenCover)
 for Name,Properties in {
 	Logo = {
 		Rotation = 0,
@@ -1663,21 +1625,11 @@ for Name,Properties in {
 		Size = UDim2.new(0,40,0,40),
 		Position = UDim2.new(0,0,1,0)
 	},
-	MainCorner = {
-		CornerRadius = UDim.new(0,4)
-	},
-	MainAspectRatioConstraint = {
-		Parent = Gui.Logo
-	},
-	MainListLayout = {
-		Parent = Gui.MainSection
-	},
-	SuggestionsSection = {
-		Size = UDim2.new(1,0,1,-40)
-	},
-	CommandBarSection = {
-		Size = UDim2.new(1,0,0,40)
-	}
+	MainListLayout = {Parent = Gui.MainSection},
+	MainCorner = {CornerRadius = UDim.new(0,4)},
+	MainAspectRatioConstraint = {Parent = Gui.Logo},
+	CommandBarSection = {Size = UDim2.new(1,0,0,40)},
+	SuggestionsSection = {Size = UDim2.new(1,0,1,-40)}
 } do
 	if not Gui or not Gui[Name] then
 		pcall(GlobalEnvironment.Ultimatum)
