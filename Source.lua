@@ -36,7 +36,7 @@ do
 		Notifications = "All",
 		Keybind = "LeftBracket"
 	}
-	local Settings = DecodeJSON(isfile and isfile"UltimatumSettings.json" and readfile"UltimatumSettings":gsub("^%bA{","{"),DefaultSettings)
+	local Settings = DecodeJSON(isfile and isfile"UltimatumSettings.json" and readfile"UltimatumSettings.json":gsub("^%bA{","{"),DefaultSettings)
 	for SettingName in Settings do
 		if DefaultSettings[SettingName] == nil then
 			Settings[SettingName] = nil
