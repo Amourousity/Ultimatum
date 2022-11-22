@@ -957,4 +957,3 @@ Animate(Gui.Main,{
 	Properties = {Position = UDim2.new(0,0,1,-40)}
 })
 Debounce = false
-CreateWindow()
