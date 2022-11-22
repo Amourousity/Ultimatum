@@ -677,31 +677,6 @@ local function FireTouchInterest(Toucher,Touched,TouchTime)
 		Touched.CFrame = OldCFrame
 	end
 end
-local SendValue = NewInstance"BindableEvent"
-local function GetCommandSet(ID)
-	ID = Valid.Number(ID,0)
-	local Success,Result = pcall(game.HttpGet,game,("https://raw.githubusercontent.com/Amourousity/Ultimatum/main/CommandSets/%d.lua"):format(ID),true)
-	if isfolder and not isfolder"UltimatumCommandSets" then
-		makefolder"UltimatumCommandSets"
-	end
-	if Success then
-		if isfolder then
-			writefile(("UltimatumCommandSets/%d.lua"):format(ID),Result)
-		end
-	elseif isfolder and isfile and isfile(("UltimatumCommandSets/%d.lua"):format(ID)) then
-		Success,Result = true,readfile(("UltimatumCommandSets/%d.lua"):format(ID))
-	end
-	if Success then
-		for Name,Info in loadstring(Result)(Utilitas,SendValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,GetCharacter(Owner,.5),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")) do
-			if printuiconsole then
-				printuiconsole(("Loaded %s"):format(Name:split"_"[1]))
-			end
-			Commands[Name] = Info
-		end
-	end
-end
-GetCommandSet()
-GetCommandSet(game.PlaceId)
 local IgnoreUpdate
 local function UpdateSuggestions()
 	if Service"UserInput":GetFocusedTextBox() == Gui.CommandBar and not IgnoreUpdate then
@@ -759,6 +734,7 @@ local function UpdateSuggestions()
 		ResizeMain(nil,0 < CommandNumber and 48+20*math.min(CommandNumber,5) or 40)
 	end
 end
+local SendValue = NewInstance"BindableEvent"
 Connections = {
 	Connect(Owner.CharacterAdded,function(NewCharacter)
 		SendValue:Fire("Character",NewCharacter)
@@ -855,6 +831,30 @@ Connections = {
 	end),
 	Connect(Gui.CommandBar:GetPropertyChangedSignal"Text",UpdateSuggestions)
 }
+local function GetCommandSet(ID)
+	ID = Valid.Number(ID,0)
+	local Success,Result = pcall(game.HttpGet,game,("https://raw.githubusercontent.com/Amourousity/Ultimatum/main/CommandSets/%d.lua"):format(ID),true)
+	if isfolder and not isfolder"UltimatumCommandSets" then
+		makefolder"UltimatumCommandSets"
+	end
+	if Success then
+		if isfolder then
+			writefile(("UltimatumCommandSets/%d.lua"):format(ID),Result)
+		end
+	elseif isfolder and isfile and isfile(("UltimatumCommandSets/%d.lua"):format(ID)) then
+		Success,Result = true,readfile(("UltimatumCommandSets/%d.lua"):format(ID))
+	end
+	if Success then
+		for Name,Info in loadstring(Result,("Command Set %d"):format(ID))(Utilitas,SendValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,GetCharacter(Owner,.5),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")) do
+			if printuiconsole then
+				printuiconsole(("Loaded %s"):format(Name:split"_"[1]))
+			end
+			Commands[Name] = Info
+		end
+	end
+end
+GetCommandSet()
+GetCommandSet(game.PlaceId)
 pcall(GlobalEnvironment.Ultimatum)
 GlobalEnvironment.Ultimatum = function()
 	local Unfinished = 0
