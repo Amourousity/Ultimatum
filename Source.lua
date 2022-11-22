@@ -22,7 +22,8 @@ local function Load(Name)
 	end
 end
 Load"Conversio"()
-local Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass = Load"Utilitas""All"
+local Utilitas = Load"Utilitas""All"
+local Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass = unpack(Utilitas)
 local GlobalEnvironment = getgenv and getgenv() or shared
 pcall(GlobalEnvironment.Ultimatum)
 local OwnerSettings
@@ -413,7 +414,8 @@ local function ResizeMain(X,Y)
 		Properties = {Visible = 40 < X}
 	})
 end
-local Commands,Connections
+local Commands = {}
+local Connections
 local function RunCommand(Text)
 	for _,Input in Text:split"/" do
 		local Arguments = Input:split" "
@@ -489,7 +491,7 @@ end
 local function AddConnections(GivenConnections)
 	for Name,Connection in Valid.Table(GivenConnections) do
 		if typeof(Connection) == "RBXScriptConnection" and Connection.Connected then
-			Connections[type(Name) ~= "number" and Name or #Connections+1] = Connection
+			Connections[if type(Name) ~= "number" then Name else #Connections+1] = Connection
 			table.insert(Connections,Connection)
 		end
 	end
@@ -501,6 +503,163 @@ local function RemoveConnections(GivenConnections)
 			pcall(table.remove,Connections,table.find(Connections,Connection))
 		end
 	end
+end
+local function EnableDrag(Frame,IsMain)
+	local DragConnection
+	local InputBegan,InputEnded,Removed = Connect(Frame.InputBegan,function(Input,Ignore)
+		if not Ignore and not Debounce and Input.UserInputType.Name == "MouseButton1" then
+			if IsMain then
+				ResizeMain(40)
+			end
+			Debounce = true
+			DragConnection = Connect(Service"Run".RenderStepped,function()
+				Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
+				local MousePosition = Service"UserInput":GetMouseLocation()
+				local ScreenSize,FrameSize,AnchorPoint = Gui.Holder.AbsoluteSize,Frame.AbsoluteSize,Frame.AnchorPoint
+				MousePosition = UDim2.new(math.round(math.clamp(MousePosition.X-FrameSize.X/2+FrameSize.X*AnchorPoint.X,FrameSize.X*AnchorPoint.X,ScreenSize.X-FrameSize.X*(1-AnchorPoint.X)))/ScreenSize.X,0,math.round(math.clamp(MousePosition.Y-FrameSize.Y/2+FrameSize.Y*AnchorPoint.Y,FrameSize.Y*AnchorPoint.Y,ScreenSize.Y-FrameSize.Y*(1-AnchorPoint.Y)))/ScreenSize.Y,0)
+				Animate(Frame,{
+					Time = 0,
+					Properties = {Position = MousePosition}
+				})
+			end)
+			AddConnections{DragConnection}
+		end
+	end),Connect(Service"UserInput".InputEnded,function(Input)
+		if DragConnection and Input.UserInputType.Name == "MouseButton1" then
+			Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+			RemoveConnections{DragConnection}
+			DragConnection = nil
+			Debounce = false
+			if IsMain then
+				ResizeMain()
+			end
+		end
+	end)
+	Removed = Connect(Frame.AncestryChanged,function()
+		if not Frame:IsDescendantOf(gethui()) then
+			RemoveConnections{
+				Removed,
+				InputBegan,
+				InputEnded,
+				DragConnection
+			}
+		end
+	end)
+	AddConnections{
+		Removed,
+		InputBegan,
+		InputEnded
+	}
+end
+local function CreateWindow(Title)
+	local Window = Create{
+		{
+			Name = "Main",
+			Parent = Gui.Holder,
+			ClassName = "Frame",
+			Properties = {
+				ClipsDescendants = true,
+				Size = UDim2.new(0,500,0,250),
+				Position = UDim2.new(.5,0,1,125),
+				AnchorPoint = Vector2.new(.5,.5),
+				BackgroundColor3 = Color3.fromHex"505064"
+			}
+		},
+		{
+			Name = "MainCorner",
+			Parent = "Main",
+			ClassName = "UICorner",
+			Properties = {CornerRadius = UDim.new(0,4)}
+		},
+		{
+			Name = "MainGradient",
+			Parent = "Main",
+			ClassName = "UIGradient",
+			Properties = {
+				Rotation = 90,
+				Color = ColorSequence.new(Color3.new(1,1,1),Color3.new(.5,.5,.5))
+			}
+		},
+		{
+			Name = "Title",
+			Parent = "Main",
+			ClassName = "TextLabel",
+			Properties = {
+				TextSize = 14,
+				Font = Enum.Font.Arial,
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,-45,0,20),
+				Position = UDim2.new(0,5,0,0),
+				TextColor3 = Color3.new(1,1,1),
+				Text = Valid.String(Title,"Ultimatum"),
+				TextXAlignment = Enum.TextXAlignment.Left
+			}
+		},
+		{
+			Name = "TitleGradient",
+			Parent = "Title",
+			ClassName = "UIGradient",
+			Properties = {
+				Transparency = NumberSequence.new{
+					NumberSequenceKeypoint.new(0,0),
+					NumberSequenceKeypoint.new(.95,0),
+					NumberSequenceKeypoint.new(1,1)
+				}
+			}
+		},
+		{
+			Name = "Close",
+			Parent = "Main",
+			ClassName = "ImageButton",
+			Properties = {
+				Modal = true,
+				AutoButtonColor = false,
+				BackgroundTransparency = 1,
+				Size = UDim2.new(0,14,0,14),
+				Position = UDim2.new(1,-17,0,3),
+				Image = "rbxasset://textures/DevConsole/Close.png"
+			}
+		},
+		{
+			Name = "Minimize",
+			Parent = "Main",
+			ClassName = "ImageButton",
+			Properties = {
+				Modal = true,
+				AutoButtonColor = false,
+				BackgroundTransparency = 1,
+				Size = UDim2.new(0,14,0,14),
+				Position = UDim2.new(1,-37,0,3),
+				Image = "rbxasset://textures/DevConsole/Minimize.png"
+			}
+		}
+	}
+	task.defer(function()
+		Animate(Window.Main,{
+			Yields = true,
+			Properties = {Position = UDim2.new(.5,0,.5,0)}
+		})
+		EnableDrag(Window.Main)
+		local Minimize,Close = Connect(Window.Minimize.MouseButton1Click,function()
+		end)
+		AddConnections{
+			Close,
+			Minimize
+		}
+		Close = Connect(Window.Close.MouseButton1Click,function()
+			RemoveConnections{
+				Close,
+				Minimize
+			}
+			Animate(Window.Main,{
+				Yields = true,
+				EasingDirection = Enum.EasingDirection.In,
+				Properties = {Position = UDim2.new(Window.Main.Position.X.Scale,0,1,125)}
+			})
+			Destroy(Window)
+		end)
+	end)
+	return Window
 end
 local function FireTouchInterest(Toucher,Touched,TouchTime)
 	TouchTime = Valid.Number(TouchTime,0)
@@ -518,715 +677,31 @@ local function FireTouchInterest(Toucher,Touched,TouchTime)
 		Touched.CFrame = OldCFrame
 	end
 end
-local Character,Backpack,PlayerGui = GetCharacter(Owner,1),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")
-Commands = {
-	Exit_close_leave_shutdown = {
-		Function = function()
-			game:Shutdown()
-		end,
-		Description = "Leaves the current Roblox server"
-	},
-	CopyJoinScript_copyjoincode_copyjoin_copyjcode_copyjscript_copyj_cjoin_copyjs_cj_cjs_cjc = {
-		Function = function()
-			local JoinScript = ('javascript:Roblox.GameLauncher.joinGameInstance(%d,"%s")'):format(game.PlaceId,game.JobId)
-			if setclipboard then
-				setclipboard(JoinScript)
-				Notify{
-					Title = "Successfully Copied",
-					Text = "Paste the copied script into your brower's URL bar and press Enter"
-				}
-			else
-				Notify{
-					Title = "Copy to Clipboard",
-					Text = ("%s\nPaste the above script into your brower's URL bar and press Enter"):format(JoinScript)
-				}
+local SendValue = NewInstance"BindableEvent"
+local function GetCommandSet(ID)
+	ID = Valid.Number(ID,0)
+	local Success,Result = pcall(game.HttpGet,game,("https://raw.githubusercontent.com/Amourousity/Ultimatum/main/CommandSets/%d.lua"):format(ID),true)
+	if isfolder and not isfolder"UltimatumCommandSets" then
+		makefolder"UltimatumCommandSets"
+	end
+	if Success then
+		if isfolder then
+			writefile(("UltimatumCommandSets/%d.lua"):format(ID),Result)
+		end
+	elseif isfolder and isfile and isfile(("UltimatumCommandSets/%d.lua"):format(ID)) then
+		Success,Result = true,readfile(("UltimatumCommandSets/%d.lua"):format(ID))
+	end
+	if Success then
+		for Name,Info in loadstring(Result)(Utilitas,SendValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,GetCharacter(Owner,.5),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")) do
+			if printuiconsole then
+				printuiconsole(("Loaded %s"):format(Name:split"_"[1]))
 			end
-		end,
-		Description = setclipboard and "Copies JavaScript to your clipboard used to join the same server" or "Notifies JavaScript to be copied to your clipboard used to join the same server"
-	},
-	EnableRendering_enablerender_erendering_erender_er_rendering_render = {
-		Function = function(Enabled)
-			Service"Run":Set3dRenderingEnabled(Enabled)
-		end,
-		Toggles = "disablerendering_disablerender_drendering_derender_drender_dr_norendering_norender",
-		Description = "Enables/disables 3D rendering (everything except for GUIs are invisible), boosting FPS. Usually used with auto-farms to improve their efficiency"
-	},
-	Rejoin_rejoinserver_rejoingame_rej_rj = {
-		Function = function()
-			if 1 < #Service"Players":GetPlayers() then
-				pcall(Service"Teleport".TeleportToPlaceInstance,Service"Teleport",game.PlaceId,game.JobId)
-			else
-				Owner:Kick()
-				RunCommand"CloseRobloxMessage"
-				task.delay(2,pcall,Service"Teleport".Teleport,Service"Teleport",game.PlaceId)
-			end
-		end,
-		Description = "Rejoins the current server you're in"
-	},
-	CloseRobloxMessage_closerobloxerror_closemessage_closeerror_cmessage_cerror_closermessage_closererror_crobloxmessage_crobloxerror_clearrobloxmessage_clearrobloxerror_clearrerror_clearrmessage_clearmessage_clearerror_cm_crm_cre_ce_closekickmessage_clearkickmessage_clearkick_closekick_ckm_ck_closekickerror_clearkickerror_cke = {
-		Function = function()
-			Service"Gui":ClearError()
-		end,
-		Description = "Closes any messages/errors (the grey containers with the blurred background) displayed by Roblox"
-	},
-	WalkSpeed_speed_wspeed_walks_runspeed_rspeed_runs_spoofwalkspeed_spoofspeed_spoofwspeed_spoofwalks_spoofrunspeed_spoofrspeed_spoofruns_swalkspeed_sspeed_swspeed_swalks_srunspeed_srspeed_sruns_fakewalkspeed_fakewspeed_fakewalks_fakerunspeed_fakerspeed_fakeruns_ws_frs_srs = {
-		Function = function(Variables,Speed)
-			Variables.Speed = Speed
-			if not Variables.Enabled then
-				if not Character then
-					return
-				end
-				local Humanoid = GetHumanoid(Character,5)
-				if not Humanoid then
-					return
-				end
-				Variables.Connection = Connect(Service"Run".Heartbeat,function(Delta)
-					if not Character:IsDescendantOf(workspace) or Humanoid:GetState().Name == "Dead" then
-						RemoveConnections{Variables.Connection}
-						Variables.Enabled,Variables.Connection = false,nil
-					end
-					if 0 < Humanoid.MoveDirection.Magnitude and table.find({
-						"Landed",
-						"Jumping",
-						"Running",
-						"Freefall",
-						"Swimming"
-					},Humanoid:GetState().Name) then
-						Character:TranslateBy(Humanoid.MoveDirection*math.min(Delta,1/15)*(Variables.Speed-Humanoid.WalkSpeed))
-					end
-				end)
-				AddConnections{Variables.Connection}
-				Variables.Enabled = true
-			end
-		end,
-		Arguments = {
-			{
-				Name = "Speed",
-				Type = "Number",
-				Substitute = 16
-			}
-		},
-		Variables = {},
-		Description = "Changes the speed you walk at. Allows negative numbers, but you walk backwards. Your walking animation speed doesn't change"
-	},
-	Magic8Ball_8ball_magicball_magic8_8b_m8b_m8_8_magiceightball_eightball_meb_mb_eightballpu_eightballpr = {
-		Function = function()
-			Notify{
-				Title = "Magic 8 Ball",
-				Text = ({
-					"Yes.",
-					"Most likely.",
-					"Outlook good.",
-					"It is certain.",
-					"Very doubtful.",
-					"My reply is no.",
-					"Yes definitely.",
-					"Ask again later.",
-					"Without a doubt.",
-					"As I see it, yes.",
-					"Don't count on it.",
-					"My sources say no.",
-					"Cannot predict now.",
-					"It is decidedly so.",
-					"Signs point to yes.",
-					"You may rely on it.",
-					"Outlook not so good.",
-					"Reply hazy, try again.",
-					"Better not tell you now.",
-					"Concentrate and ask again."
-				})[math.random(20)]
-			}
-		end,
-		Description = "Notifies the Magic 8 Ball's response to your yes-or-no question"
-	},
-	ServerHop_serverh_sh_hopserver_hops_hserver_newserver_nserver_ns_news_shop = {
-		Function = function()
-			Notify{
-				Title = "Searching for Servers",
-				Text = "You will be teleported shortly..."
-			}
-			local Page,UnfilteredServers,Servers,Start,ServerCount,ViableServerCount = "",{},{},os.clock(),0,0
-			while #Servers < 1 do
-				local Success,Result = pcall(game.HttpGet,game,("https://games.roblox.com/v1/games/%s/servers/Public?limit=100%s%s"):format(game.PlaceId,0 < #Page and "&cursor=" or "",Page),true)
-				if not Assert(Success,Valid.String(Result,"An unknown error has occurred")) then
-					return
-				end
-				Result = Service"Http":JSONDecode(Result)
-				Page,UnfilteredServers = Result.nextPageCursor,Result.data
-				Servers = {}
-				for _,ServerInfo in UnfilteredServers do
-					ServerCount += 1
-					if ServerInfo.playing < ServerInfo.maxPlayers and 0 < ServerInfo.playing and ServerInfo.id ~= game.JobId then
-						table.insert(Servers,ServerInfo)
-						ViableServerCount += 1
-					end
-				end
-				if #UnfilteredServers < 1 or #Servers < 1 and not Valid.String(Page) then
-					local Players = Service"Players":GetPlayers()
-					table.remove(Players,table.find(Players,Owner))
-					Destroy(Players)
-					RunCommand"Rejoin"
-					return
-				end
-			end
-			local Server = Servers[math.random(#Servers)]
-			Notify{
-				Title = "Joining Server",
-				Text = ("Took %s to search %d servers (%d viable). Server <i>%s</i> has %d/%d players"):format(ConvertTime(os.clock()-Start),ServerCount,ViableServerCount,Server.id,Server.playing,Server.maxPlayers)
-			}
-			task.delay(2,Service"Teleport".TeleportToPlaceInstance,Service"Teleport",game.PlaceId,Server.id)
-		end,
-		Description = "Joins a random server that you weren't previously in"
-	},
-	Invisible_invis_iv = {
-		Function = function(Variables)
-			if not Variables.Enabled then
-				if not Character then
-					return
-				end
-				local Humanoid = GetHumanoid(Character,5)
-				if not Humanoid then
-					return
-				end
-				local HumanoidRootPart = Character:FindFirstChild"HumanoidRootPart"
-				if not Assert(HumanoidRootPart,"Player does not have a HumanoidRootPart") then
-					return
-				end
-				local R6 = Humanoid.RigType.Name == "R6"
-				if not Assert(not R6,"R6 invisibility is not supported yet") then
-					return
-				end
-				local LowerTorso = Character:FindFirstChild"LowerTorso"
-				if not Assert(LowerTorso,"Player does not have a LowerTorso") then
-					return
-				end
-				local Root = LowerTorso:FindFirstChild"Root"
-				if not Assert(Root,"Player does not have a Root") then
-					return
-				end
-				local OldCFrame,NewRoot = HumanoidRootPart.CFrame,Root:Clone()
-				HumanoidRootPart.Parent,Character.PrimaryPart = workspace,HumanoidRootPart
-				Character:MoveTo(Vector3.new(OldCFrame.X,9e9,OldCFrame.Z))
-				HumanoidRootPart.Parent = Character
-				task.delay(.5,function()
-					NewRoot.Parent,HumanoidRootPart.CFrame = LowerTorso,OldCFrame
-				end)
-				Variables.Connection = Connect(Service"Run".RenderStepped,function()
-					if not Character:IsDescendantOf(workspace) or Humanoid:GetState().Name == "Dead" then
-						RemoveConnections{Variables.Connection}
-						Variables.Enabled,Variables.Connection = false,nil
-						return
-					end
-					for _,Object in Character:GetDescendants() do
-						if not Object:IsDescendantOf(HumanoidRootPart) then
-							for Types,Properties in {
-								BasePart_Decal = {LocalTransparencyModifier = 1},
-								LayerCollector_Fire_Sparkles_ParticleEmitter = {
-									Enabled = false
-								},
-								Sound = {
-									RollOffMaxDistance = 0,
-									RollOffMinDistance = 0
-								},
-								Decal = {Transparency = 1}
-							} do
-								for _,Type in Types:split"_" do
-									if Object:IsA(Type) then
-										for Property,Value in Properties do
-											pcall(function()
-												Object[Property] = Value
-											end)
-										end
-									end
-								end
-							end
-						end
-					end
-				end)
-				AddConnections{Variables.Connection}
-				Variables.Enabled = true
-			end
-		end,
-		Variables = {},
-		Description = "Makes you invisible to other players"
-	},
-	AntiAFK_noafk_unafk = {
-		Function = function(Variables,Enabled)
-			if Enabled then
-				Variables.Connection = Connect(Owner.Idled,function()
-					Service"VirtualUser":Button2Down(Vector2.zero,CFrame.new())
-					task.defer(Service"VirtualUser".Button2Up,Service"VirtualUser",Vector2.zero,CFrame.new())
-				end)
-				AddConnections{Variables.Connection}
-			else
-				RemoveConnections{Variables.Connection}
-			end
-		end,
-		Toggles = "unantiafk_allowafk_afk",
-		ToggleCheck = true,
-		Variables = {},
-		Description = "Stops Roblox from kicking you for being AFK"
-	}
-}
-local Templates = {
-	AutoFarm = "AutoFarm_autoplay_autop_autof_farm_af",
-	Unfarm = "Unfarm_unautofarm_unautoplay_stopplaying_unautp_stopp_unautof_unf_uaf_uf",
-	ExtrasensoryPerception = "ExtrasensoryPerception_extrasensoryp_esensoryperception_esperception_extrasp_esp",
-	SensoryPerception = "SensoryPerception_sensoryp_sperception_sp_unextrasensoryperception_unextrasensoryp_unesperception_unextrasp_unesp_uesp"
-}
-for Replace,Info in ({
-	_142823291 = {
-		[Templates.ExtrasensoryPerception] = {
-			Function = function(Variables,Enabled)
-				if Enabled then
-					Variables.Time,Variables.Connection = os.clock(),Connect(Service"Run".Heartbeat,function()
-						if not Variables.Calculating and 1 < os.clock()-Variables.Time or 5 < os.clock()-Variables.Time then
-							Variables.Time,Variables.Calculating = os.clock(),true
-							local PlayerData = Variables.PlayerDataRemote:InvokeServer()
-							if not Variables.Enabled then
-								return
-							end
-							Destroy(Variables.ExtrasensoryPerceptions)
-							if workspace:FindFirstChild"GunDrop" then
-								Variables:CreatESP(workspace.GunDrop,"Gun")
-							end
-							for _,Player in Service"Players":GetPlayers() do
-								local Data = PlayerData[Player.Name]
-								if Data and not Data.Dead and Player.Name ~= Owner.Name then
-									Variables:CreatESP(Player.Character:FindFirstChild"HumanoidRootPart" or Player.Character:FindFirstChildWhichIsA"BasePart",Data.Role)
-								end
-							end
-							Variables.Calculating = false
-						end
-					end)
-					AddConnections{Variables.Connection}
-				else
-					RemoveConnections{Variables.Connection}
-					Destroy(Variables.ExtrasensoryPerceptions)
-				end
-			end,
-			Toggles = Templates.SensoryPerception,
-			ToggleCheck = true,
-			Variables = game.PlaceId == 142823291 and {
-				ExtrasensoryPerceptions = {},
-				PlayerDataRemote = WaitForSequence(Service"ReplicatedStorage","Remotes","Extras","GetPlayerData"),
-				CreateExtrasensoryPerception = function(Variables,Object,Role)
-					local LargestAxis = math.max(Object.Size.X,Object.Size.Y,Object.Size.Z)
-					table.insert(Variables.ExtrasensoryPerceptions,Create{
-						{
-							Name = "ExtrasensoryPerceptionHolder",
-							Parent = Gui.Holder,
-							ClassName = "BillboardGui",
-							Properties = {
-								Active = false,
-								Adornee = Object,
-								AlwaysOnTop = true,
-								LightInfluence = 0,
-								ResetOnSpawn = false,
-								Size = UDim2.new(LargestAxis,0,LargestAxis,0)
-							}
-						},
-						{
-							Name = "Main",
-							Parent = "ExtrasensoryPerceptionHolder",
-							ClassName = "Frame",
-							Properties = {
-								Size = UDim2.new(1,0,1,0),
-								BackgroundColor3 = ({
-									Gun = Color3.new(.5,0,1),
-									Hero = Color3.new(1,1,0),
-									Sheriff = Color3.new(0,0,1),
-									Zombie = Color3.new(0,.5,0),
-									Innocent = Color3.new(0,1,0),
-									Murderer = Color3.new(1,0,0),
-									Survivor = Color3.new(0,0,1)
-								})[Role]
-							}
-						},
-						{
-							Name = "Gradient",
-							Parent = "Main",
-							ClassName = "UIGradient",
-							Properties = {
-								Rotation = 90,
-								Transparency = NumberSequence.new(0,1)
-							}
-						},
-						{
-							Name = "Corner",
-							Parent = "Main",
-							ClassName = "UICorner",
-							Properties = {CornerRadius = UDim.new(.5,0)}
-						}
-					})
-				end
-			}
-		},
-		[Templates.AutoFarm] = {
-			Function = function(Variables,Enabled)
-				if Enabled then
-					RunCommand"AntiAFK"
-					Variables.Delta,Variables.LastFrame,Variables.Coins,Variables.IgnoreCoins,Variables.Position = 0,os.clock(),{},{},workspace.CurrentCamera.Focus.Position
-					Variables.CoinAdded = Connect(workspace.DescendantAdded,function(Coin)
-						if Coin:IsA"BasePart" and Coin.Name == "Coin_Server" then
-							table.insert(Variables.Coins,Coin)
-							local Connection
-							Connection = Connect(Coin.AncestryChanged,function()
-								if not Coin:IsDescendantOf(workspace) then
-									table.remove(Variables.Coins,table.find(Variables.Coins,Coin))
-									RemoveConnections{Connection}
-								end
-							end)
-							AddConnections{Connection}
-						end
-					end)
-					Variables.CharacterAdded = Connect(Owner.CharacterAdded,function(Character)
-						Variables.Collecting = true
-						Variables.Position = Character:GetPivot().Position
-						Wait(5)
-						Variables.Collecting = false
-						RunCommand"Invisible"
-						Wait(WaitForSequence(PlayerGui,"MainGUI","Game","CashBag","Full"):GetPropertyChangedSignal"Visible")
-						Character:BreakJoints()
-					end)
-					Variables.Stepped = Connect(Service"Run".Stepped,function()
-						if not Variables.FoundCoin then
-							return
-						end
-						for _,BasePart in Valid.Table(Character and Character:GetChildren()) do
-							if Valid.Instance(BasePart,"BasePart") then
-								BasePart.AssemblyLinearVelocity,BasePart.CanCollide,BasePart.CanTouch,BasePart.CanQuery = Vector3.zero,BasePart.Name == "HumanoidRootPart" and Variables.Collecting,Variables.Collecting,Variables.Collecting
-							end
-						end
-					end)
-					Variables.Connection = Connect(Service"Run".Heartbeat,function()
-						Variables.Delta,Variables.LastFrame = math.min(os.clock()-Variables.LastFrame,1/15)*60,os.clock()
-						for Coin,Time in Variables.IgnoreCoins do
-							if not Coin:IsDescendantOf(workspace) or 3 < Variables.LastFrame-Time then
-								Variables.IgnoreCoins[Coin] = nil
-							end
-						end
-						Variables.FoundCoin = false
-						if not Variables.Collecting then
-							local Distance,Coin = math.huge,nil
-							for _,NewCoin in Variables.Coins do
-								local Magnitude = (NewCoin.Position-Variables.Position).Magnitude
-								if not Variables.IgnoreCoins[NewCoin] and not NewCoin:FindFirstChildWhichIsA"Model" and NewCoin:FindFirstChild"Coin" and Magnitude < Distance then
-									Coin,Distance = NewCoin,Magnitude
-								end
-							end
-							if Coin and Distance < 250 and Variables.Position ~= Coin.Position then
-								Variables.FoundCoin = true
-								Variables.Position = CFrame.lookAt(Variables.Position,Coin.Position)*CFrame.new(0,0,-math.min(25*Variables.Delta/60,Distance)).Position
-								Character:PivotTo(CFrame.new(Variables.Position-Vector3.yAxis*2)*CFrame.Angles(math.pi/2,0,0))
-								if (Variables.Position-Coin.Position).Magnitude < .01 then
-									Variables.Collecting = true
-									Variables.IgnoreCoins[Coin] = os.clock()
-									repeat
-										Wait()
-										Character:PivotTo(CFrame.new(Variables.Position)*CFrame.Angles(math.pi/2,0,0))
-									until .25 < os.clock()-Variables.IgnoreCoins[Coin]
-									Variables.Collecting = false
-								end
-							else
-								Variables.Position = Character:GetPivot().Position
-							end
-						end
-					end)
-					AddConnections{
-						Variables.Stepped,
-						Variables.CoinAdded,
-						Variables.Connection,
-						Variables.CharacterAdded
-					}
-				else
-					RunCommand"AllowAFK"
-					RemoveConnections{
-						Variables.Stepped,
-						Variables.CoinAdded,
-						Variables.Connection,
-						Variables.CharacterAdded
-					}
-				end
-			end,
-			Toggles = Templates.Unfarm,
-			ToggleCheck = true,
-			Variables = {}
-		}
-	},
-	_6755746130 = {
-		[Templates.AutoFarm] = {
-			Function = function(Variables,Enabled)
-				if Enabled then
-					RunCommand"AntiAFK"
-					Variables.Debounce = false
-					Service"StarterGui":SetCoreGuiEnabled("Backpack",false)
-					Variables.Connection = Connect(Service"Run".Heartbeat,function()
-						if not Character then
-							return
-						end
-						local Toucher = Character:FindFirstChildWhichIsA"BasePart"
-						if not Toucher then
-							return
-						end
-						Character:PivotTo(Variables.Position)
-						for _,BasePart in Character:GetChildren() do
-							if Valid.Instance(BasePart,"BasePart") then
-								BasePart.AssemblyLinearVelocity = Vector3.zero
-							end
-						end
-						if PlayerGui:FindFirstChild"HintGui" then
-							PlayerGui.HintGui.Enabled = false
-						end
-						for _,BasePart in Variables.Ignored:GetDescendants() do
-							if Valid.Instance(BasePart,"BasePart") then
-								BasePart.LocalTransparencyModifier = 1
-							end
-						end
-						if not Variables.Debounce then
-							Variables.Debounce = true
-							if not Valid.Instance(Variables.OwnedTycoon.Value,"Model") then
-								for _,Tycoon in Variables.Tycoons:GetChildren() do
-									if not Valid.Instance(Tycoon:WaitForChild"Owner".Value,"Player") then
-										FireTouchInterest(Toucher,WaitForSequence(Tycoon,"Essentials","Entrance"))
-										Wait(1)
-										break
-									end
-								end
-							end
-							if not Valid.Instance(Variables.Tycoon,"Model") then
-								Variables.Tycoon = Variables.OwnedTycoon.Value
-								Variables.Essentials = Variables.Tycoon:WaitForChild"Essentials"
-								local PromptAttachment = WaitForSequence(Variables.Essentials,"JuiceMaker","AddFruitButton","PromptAttachment")
-								Variables.Position = CFrame.new(PromptAttachment.WorldPosition-Vector3.yAxis*8)*CFrame.Angles(math.pi/2,0,0)
-								Variables.AddPrompt = PromptAttachment:WaitForChild"AddPrompt"
-								Variables.Drops = Variables.Tycoon:WaitForChild"Drops"
-								Variables.Buttons = Variables.Tycoon:WaitForChild"Buttons"
-								Variables.Purchased = Variables.Tycoon:WaitForChild"Purchased"
-								Variables.Spawn = Variables.Essentials:WaitForChild"SpawnLocation"
-							end
-							if Variables.Purchased:FindFirstChild"Golden Tree Statue" then
-								Variables.RequestPrestige:FireServer()
-								Variables.Tycoon = nil
-								Wait(3)
-							end
-							if Backpack then
-								for _,Tool in Backpack:GetChildren() do
-									Tool.Parent = Character
-								end
-								local Collect
-								for _,Drop in Variables.Drops:GetChildren() do
-									if not Drop:GetAttribute"Collected" then
-										Collect = true
-										Drop:SetAttribute("Collected",true)
-										Variables.CollectFruit:FireServer(Drop)
-									end
-								end
-								if Collect then
-									if fireproximityprompt then
-										fireproximityprompt(Variables.AddPrompt)
-									elseif keypress then
-										keypress(69)
-										task.defer(keyrelease,69)
-									end
-								end
-							end
-							if Toucher and PlayerGui:FindFirstChild"ObbyInfoBillBoard" and PlayerGui.ObbyInfoBillBoard:FindFirstChild"TopText" and PlayerGui.ObbyInfoBillBoard.TopText.Text == "Start Obby" then
-								FireTouchInterest(Toucher,Variables.VictoryPart)
-								Wait(1)
-							end
-							local LowestPrice,ChosenButton = math.huge,nil
-							for _,Button in Variables.Buttons:GetDescendants() do
-								if Valid.Instance(Button,"BasePart") and 0 < #Button:GetChildren() and Button.Name ~= "AutoCollect" then
-									local Price = tonumber((WaitForSequence(Button,"ButtonLabel","CostLabel").Text:gsub("%D",""))) or 0
-									if Price <= Variables.Money.Value and Price < LowestPrice then
-										LowestPrice,ChosenButton = Price,Button
-									end
-								end
-							end
-							if ChosenButton and Toucher then
-								FireTouchInterest(Toucher,ChosenButton)
-							end
-							Variables.Debounce = false
-						end
-					end)
-					Variables.RenderStepped = Connect(Service"Run".RenderStepped,function()
-						if Variables.Spawn then
-							workspace.CurrentCamera.Focus,workspace.CurrentCamera.CFrame = Variables.Spawn.CFrame,Variables.Spawn.CFrame*CFrame.Angles(-math.pi/4,0,0)*CFrame.new(0,0,75)
-						end
-					end)
-					AddConnections{
-						Variables.Connection,
-						Variables.RenderStepped
-					}
-				else
-					RunCommand"AllowAFK"
-					if Character and Backpack then
-						for _,Tool in Character:GetChildren() do
-							if Valid.Instance(Tool,"Tool") then
-								Tool.Parent = Backpack
-							end
-						end
-					end
-					Character:PivotTo(Variables.Spawn.CFrame*CFrame.new(0,3.5,0))
-					Service"StarterGui":SetCoreGuiEnabled("Backpack",true)
-					RemoveConnections{
-						Variables.Connection,
-						Variables.RenderStepped
-					}
-				end
-			end,
-			Toggles = Templates.Unfarm,
-			ToggleCheck = true,
-			Variables = game.PlaceId == 6755746130 and {
-				Position = workspace.CurrentCamera.Focus,
-				Ignored = workspace:WaitForChild"Ignored",
-				Tycoons = workspace:WaitForChild"Tycoons",
-				HeldFruits = Owner:WaitForChild"HeldFruits",
-				OwnedTycoon = Owner:WaitForChild"OwnedTycoon",
-				Money = WaitForSequence(Owner,"leaderstats","Money"),
-				Prestige = WaitForSequence(Owner,"leaderstats","Prestige"),
-				VictoryPart = WaitForSequence(workspace,"ObbyParts","VictoryPart"),
-				CollectFruit = Service"ReplicatedStorage":WaitForChild"CollectFruit",
-				RequestPrestige = Service"ReplicatedStorage":WaitForChild"RequestPrestige"
-			}
-		}
-	},
-	_10347946161 = {
-		[Templates.AutoFarm] = {
-			Function = function(Variables,Enabled)
-				if Enabled then
-					RunCommand"AntiAFK"
-					Variables.Debounce = false
-					Variables.Connection = Connect(Service"Run".Stepped,function()
-						if not Character then
-							return
-						end
-						if not Variables.Debounce then
-							Variables.Debounce = true
-							if not Valid.Instance(Variables.Tycoon,"Folder") then
-								Variables.Tycoon = Owner.RespawnLocation.Parent
-								Variables.Rats = Variables.Tycoon:WaitForChild"Rats"
-								Variables.Buttons = Variables.Tycoon:WaitForChild"Buttons"
-							end
-							if not Variables.Wall.CanCollide then
-								Variables:MoveTo(Vector3.yAxis*55)
-								Wait(.2)
-							end
-							local Wash = false
-							for _,Rat in Variables.Rats:GetChildren() do
-								Wash = true
-								Variables.CollectRat:FireServer(tonumber(Rat.Name))
-							end
-							if Wash then
-								Variables.SellRats:FireServer()
-							end
-							local LowestPrice,ChosenButton = math.huge,nil
-							for _,Button in Variables.Buttons:GetChildren() do
-								if Button:GetAttribute"Enabled" and not Button:GetAttribute"Gamepass" then
-									if Button:GetAttribute"Price" <= Variables.Cash.Value and Button:GetAttribute"Price" < LowestPrice then
-										LowestPrice,ChosenButton = Button:GetAttribute"Price",Button
-									end
-								end
-							end
-							if ChosenButton then
-								Variables:MoveTo(ChosenButton:WaitForChild"Hitbox".Position)
-								Variables.PurchaseButton:FireServer(ChosenButton.Name)
-								Wait(.2)
-							end
-							Variables.Debounce = false
-						end
-					end)
-					AddConnections{Variables.Connection}
-				else
-					RunCommand"AllowAFK"
-					RemoveConnections{Variables.Connection}
-				end
-			end,
-			Toggles = Templates.Unfarm,
-			ToggleCheck = true,
-			Variables = game.PlaceId == 10347946161 and {
-				Cash = WaitForSequence(Owner,"leaderstats","Cash"),
-				Rebirth = WaitForSequence(Owner,"leaderstats","Rebirth"),
-				Wall = WaitForSequence(workspace,"Obby","Sign","Forcefield","Wall"),
-				SellRats = WaitForSequence(Service"ReplicatedStorage","Knit","Services","TycoonService","RE","SellRats"),
-				CollectRat = WaitForSequence(Service"ReplicatedStorage","Knit","Services","TycoonService","RE","CollectRat"),
-				PurchaseButton = WaitForSequence(Service"ReplicatedStorage","Knit","Services","TycoonService","RE","PurchaseButton"),
-				MoveTo = function(_,Position)
-					Character:PivotTo(typeof(Position) == "Vector3" and CFrame.new(Position) or Position)
-				end
-			}
-		}
-	},
-	_537413528 = {
-		[Templates.AutoFarm] = {
-			Function = function(Variables,Enabled)
-				if Enabled then
-					RunCommand"AntiAFK"
-					Variables.Debounce = false
-					Variables.CurrentStage = 0
-					Variables.CurrentCharacter = Character
-					Variables.Heartbeat = Connect(Service"Run".Heartbeat,function()
-						if not Character then
-							return
-						end
-						Character:PivotTo(Character ~= Variables.CurrentCharacter and CFrame.new(0,-50,0) or Variables.CFrame*CFrame.Angles(math.pi/2,0,0))
-						for _,BasePart in Character:GetChildren() do
-							if Valid.Instance(BasePart,"BasePart") then
-								BasePart.AssemblyLinearVelocity = Vector3.zero
-							end
-						end
-						if not Variables.Debounce then
-							Variables.Debounce = true
-							if Character ~= Variables.CurrentCharacter then
-								Wait(2)
-								task.spawn(getconnections(WaitForSequence(PlayerGui,"RiverResultsGui","Frame","BuyButton").MouseButton1Click)[1].Function)
-								Wait(1)
-								Variables.CurrentStage = 0
-								Variables.CurrentCharacter = Character
-							end
-							Variables.CurrentStage += 1
-							local DarknessPart = 10 < Variables.CurrentStage or WaitForSequence(Variables.Stages,("CaveStage%d"):format(Variables.CurrentStage),"DarknessPart")
-							Variables.CFrame = 10 < Variables.CurrentStage and CFrame.new(-56,-360,9500) or DarknessPart.CFrame*CFrame.new(0,1-DarknessPart.Size.Y/2,0)
-							Wait(2.5)
-							Variables.Debounce = false
-						end
-					end)
-					Variables.Stepped = Connect(Service"Run".Stepped,function()
-						if not Character then
-							return
-						end
-						for _,BasePart in Character:GetDescendants() do
-							if Valid.Instance(BasePart,"BasePart") then
-								local Variable = 10 < Variables.CurrentStage
-								BasePart.CanCollide,BasePart.CanTouch,BasePart.CanQuery = Variable,Variable,Variable
-							end
-						end
-					end)
-					AddConnections{
-						Variables.Stepped,
-						Variables.Heartbeat
-					}
-				else
-					RunCommand"AllowAFK"
-					RemoveConnections{
-						Variables.Stepped,
-						Variables.Heartbeat
-					}
-				end
-			end,
-			Toggles = Templates.Unfarm,
-			ToggleCheck = true,
-			Variables = game.PlaceId == 537413528 and {
-				CurrentStage = -1,
-				CFrame = workspace.CurrentCamera.Focus,
-				Stages = WaitForSequence(workspace,"BoatStages","NormalStages")
-			}
-		}
-	}
-})[("_%d"):format(game.PlaceId)] or {} do
-	Commands[Replace] = Info
+			Commands[Name] = Info
+		end
+	end
 end
+GetCommandSet()
+GetCommandSet(game.PlaceId)
 local IgnoreUpdate
 local function UpdateSuggestions()
 	if Service"UserInput":GetFocusedTextBox() == Gui.CommandBar and not IgnoreUpdate then
@@ -1284,127 +759,15 @@ local function UpdateSuggestions()
 		ResizeMain(nil,0 < CommandNumber and 48+20*math.min(CommandNumber,5) or 40)
 	end
 end
-local EnableDrag
-local function CreateWindow(Settings)
-	Settings = Valid.Table(Settings,{
-		Title = "Ultimatum",
-		Content = {"(no content)"}
-	})
-	local Window = Create{
-		{
-			Name = "Main",
-			Parent = Gui.Holder,
-			ClassName = "Frame",
-			Properties = {
-				ClipsDescendants = true,
-				Size = UDim2.new(0,500,0,250),
-				Position = UDim2.new(.5,0,1,125),
-				AnchorPoint = Vector2.new(.5,.5),
-				BackgroundColor3 = Color3.fromHex"505064"
-			}
-		},
-		{
-			Name = "MainCorner",
-			Parent = "Main",
-			ClassName = "UICorner",
-			Properties = {CornerRadius = UDim.new(0,4)}
-		},
-		{
-			Name = "MainGradient",
-			Parent = "Main",
-			ClassName = "UIGradient",
-			Properties = {
-				Rotation = 90,
-				Color = ColorSequence.new(Color3.new(1,1,1),Color3.new(.5,.5,.5))
-			}
-		},
-		{
-			Name = "Title",
-			Parent = "Main",
-			ClassName = "TextLabel",
-			Properties = {
-				TextSize = 14,
-				Text = Settings.Title,
-				Font = Enum.Font.Arial,
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1,-45,0,20),
-				Position = UDim2.new(0,5,0,0),
-				TextColor3 = Color3.new(1,1,1),
-				TextXAlignment = Enum.TextXAlignment.Left
-			}
-		},
-		{
-			Name = "TitleGradient",
-			Parent = "Title",
-			ClassName = "UIGradient",
-			Properties = {
-				Transparency = NumberSequence.new{
-					NumberSequenceKeypoint.new(0,0),
-					NumberSequenceKeypoint.new(.95,0),
-					NumberSequenceKeypoint.new(1,1)
-				}
-			}
-		},
-		{
-			Name = "Close",
-			Parent = "Main",
-			ClassName = "ImageButton",
-			Properties = {
-				Modal = true,
-				AutoButtonColor = false,
-				BackgroundTransparency = 1,
-				Size = UDim2.new(0,14,0,14),
-				Position = UDim2.new(1,-17,0,3),
-				Image = "rbxasset://textures/DevConsole/Close.png"
-			}
-		},
-		{
-			Name = "Minimize",
-			Parent = "Main",
-			ClassName = "ImageButton",
-			Properties = {
-				Modal = true,
-				AutoButtonColor = false,
-				BackgroundTransparency = 1,
-				Size = UDim2.new(0,14,0,14),
-				Position = UDim2.new(1,-37,0,3),
-				Image = "rbxasset://textures/DevConsole/Minimize.png"
-			}
-		}
-	}
-	Animate(Window.Main,{
-		Yields = true,
-		Properties = {Position = UDim2.new(.5,0,.5,0)}
-	})
-	EnableDrag(Window.Main)
-	local Minimize,Close = Connect(Window.Minimize.MouseButton1Click,function()
-	end)
-	AddConnections{
-		Close,
-		Minimize
-	}
-	Close = Connect(Window.Close.MouseButton1Click,function()
-		RemoveConnections{
-			Close,
-			Minimize
-		}
-		Animate(Window.Main,{
-			Yields = true,
-			EasingDirection = Enum.EasingDirection.In,
-			Properties = {Position = UDim2.new(Window.Main.Position.X.Scale,0,1,125)}
-		})
-		Destroy(Window)
-	end)
-end
 Connections = {
 	Connect(Owner.CharacterAdded,function(NewCharacter)
-		Character = NewCharacter
+		SendValue:Fire("Character",NewCharacter)
 	end),
 	Connect(Owner.ChildAdded,function(Object)
 		if Valid.Instance(Object,"Backpack") then
-			Backpack = Object
+			SendValue:Fire("Backpack",Object)
 		elseif Valid.Instance(Object,"PlayerGui") then
-			PlayerGui = Object
+			SendValue:Fire("PlayerGui",Object)
 		end
 	end),
 	not GlobalEnvironment.UltimatumDebug and isfile and Connect(Service"Run".Heartbeat,function()
@@ -1492,55 +855,22 @@ Connections = {
 	end),
 	Connect(Gui.CommandBar:GetPropertyChangedSignal"Text",UpdateSuggestions)
 }
-EnableDrag = function(Frame,IsMain)
-	local DragConnection
-	local InputBegan,InputEnded,Removed = Connect(Frame.InputBegan,function(Input,Ignore)
-		if not Ignore and not Debounce and Input.UserInputType.Name == "MouseButton1" then
-			if IsMain then
-				ResizeMain(40)
-			end
-			Debounce = true
-			DragConnection = Connect(Service"Run".RenderStepped,function()
-				Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
-				local MousePosition = Service"UserInput":GetMouseLocation()
-				local ScreenSize,FrameSize,AnchorPoint = Gui.Holder.AbsoluteSize,Frame.AbsoluteSize,Frame.AnchorPoint
-				MousePosition = UDim2.new(math.round(math.clamp(MousePosition.X-FrameSize.X/2+FrameSize.X*AnchorPoint.X,FrameSize.X*AnchorPoint.X,ScreenSize.X-FrameSize.X*(1-AnchorPoint.X)))/ScreenSize.X,0,math.round(math.clamp(MousePosition.Y-FrameSize.Y/2+FrameSize.Y*AnchorPoint.Y,FrameSize.Y*AnchorPoint.Y,ScreenSize.Y-FrameSize.Y*(1-AnchorPoint.Y)))/ScreenSize.Y,0)
-				Animate(Frame,{
-					Time = 0,
-					Properties = {Position = MousePosition}
-				})
-			end)
-			AddConnections{DragConnection}
-		end
-	end),Connect(Service"UserInput".InputEnded,function(Input)
-		if DragConnection and Input.UserInputType.Name == "MouseButton1" then
-			Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
-			RemoveConnections{DragConnection}
-			DragConnection = nil
-			Debounce = false
-			if IsMain then
-				ResizeMain()
-			end
-		end
-	end)
-	Removed = Connect(Frame.AncestryChanged,function()
-		if not Frame:IsDescendantOf(gethui()) then
-			RemoveConnections{
-				Removed,
-				InputBegan,
-				InputEnded,
-				DragConnection
-			}
-		end
-	end)
-	AddConnections{
-		Removed,
-		InputBegan,
-		InputEnded
-	}
-end
 pcall(GlobalEnvironment.Ultimatum)
 GlobalEnvironment.Ultimatum = function()
+	local Unfinished = 0
+	for _,Info in Commands do
+		if Info.ToggleCheck and Info.Enabled then
+			task.spawn(function()
+				Unfinished += 1
+				RunCommand(Info.Toggles:split"_"[1])
+				Unfinished -= 1
+			end)
+		end
+	end
+	WaitForSignal(function()
+		Wait()
+		return Unfinished < 1
+	end,10)
 	Destroy(Connections,Gui)
 	GlobalEnvironment.Ultimatum = nil
 end
@@ -1627,3 +957,4 @@ Animate(Gui.Main,{
 	Properties = {Position = UDim2.new(0,0,1,-40)}
 })
 Debounce = false
+CreateWindow()
