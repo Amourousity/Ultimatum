@@ -31,6 +31,7 @@ do
 	local DefaultSettings = {
 		Scale = 1,
 		StayOpen = false,
+		AutoUpdate = true,
 		LoadOnRejoin = true,
 		PlayIntro = "Always",
 		Notifications = "All",
@@ -770,7 +771,7 @@ Connections = {
 		end
 	end),
 	not GlobalEnvironment.UltimatumDebug and isfile and Connect(Service"Run".Heartbeat,function()
-		if 60 < os.clock()-LastCheck then
+		if OwnerSettings.AutoUpdate and 60 < os.clock()-LastCheck then
 			LastCheck = os.clock()
 			local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua",true)
 			if Success and (not isfile"Ultimatum.lua" or Result ~= readfile"Ultimatum.lua") then
