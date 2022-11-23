@@ -17,13 +17,15 @@ return {
 			if Enabled then
 				RunCommand"AntiAFK"
 				Variables.Debounce = false
-				Variables.CurrentStage = 0
+				Variables.CurrentStep = 1
+				Variables.Position = workspace.CurrentCamera.Focus.Position-Vector3.yAxis*10
 				Variables.CurrentCharacter = Character
+				Variables.Delta,Variables.LastFrame = 0,os.clock()
 				Variables.Heartbeat = Connect(Service"Run".Heartbeat,function()
+					Variables.Delta,Variables.LastFrame = math.min(os.clock()-Variables.LastFrame,1/15)*60,os.clock()
 					if not Character then
 						return
 					end
-					Character:PivotTo(Character ~= Variables.CurrentCharacter and CFrame.new(0,-50,0) or Variables.CFrame*CFrame.Angles(math.pi/2,0,0))
 					for _,BasePart in Character:GetChildren() do
 						if Valid.Instance(BasePart,"BasePart") then
 							BasePart.AssemblyLinearVelocity = Vector3.zero
@@ -33,15 +35,24 @@ return {
 						Variables.Debounce = true
 						if Character ~= Variables.CurrentCharacter then
 							Wait(2)
-							task.spawn(getconnections(WaitForSequence(PlayerGui,"RiverResultsGui","Frame","BuyButton").MouseButton1Click)[1].Function)
-							Wait(1)
-							Variables.CurrentStage = 0
+							Variables.CurrentStep = 1
+							Variables.Position = workspace.CurrentCamera.Focus.Position-Vector3.yAxis*10
 							Variables.CurrentCharacter = Character
 						end
-						Variables.CurrentStage += 1
-						local DarknessPart = 10 < Variables.CurrentStage or WaitForSequence(Variables.Stages,("CaveStage%d"):format(Variables.CurrentStage),"DarknessPart")
-						Variables.CFrame = 10 < Variables.CurrentStage and CFrame.new(-56,-360,9500) or DarknessPart.CFrame*CFrame.new(0,1-DarknessPart.Size.Y/2,0)
-						Wait(2.5)
+						local Target = ({
+							Vector3.new(-56,-28,1150),
+							Vector3.new(-56,-28,8500),
+							Vector3.new(-56,-370,8500),
+							Vector3.new(-56,-370,9490),
+							Vector3.new(-56,-360,9490)
+						})[Variables.CurrentStep]
+						if Target then
+							Variables.Position = CFrame.lookAt(Variables.Position,Target)*CFrame.new(0,0,-math.min(Variables.Delta*(35/6),(Variables.Position-Target).Magnitude)).Position
+							Character:PivotTo(CFrame.new(Variables.Position)*CFrame.Angles(math.pi/2,0,0))
+							if (Variables.Position-Target).Magnitude < .01 then
+								Variables.CurrentStep += 1
+							end
+						end
 						Variables.Debounce = false
 					end
 				end)
@@ -51,7 +62,7 @@ return {
 					end
 					for _,BasePart in Character:GetDescendants() do
 						if Valid.Instance(BasePart,"BasePart") then
-							local Variable = 10 < Variables.CurrentStage
+							local Variable = 5 < Variables.CurrentStep
 							BasePart.CanCollide,BasePart.CanTouch,BasePart.CanQuery = Variable,Variable,Variable
 						end
 					end
@@ -74,6 +85,7 @@ return {
 			CurrentStage = -1,
 			CFrame = workspace.CurrentCamera.Focus,
 			Stages = WaitForSequence(workspace,"BoatStages","NormalStages")
-		}
+		},
+		Description = "Automatically collects gold coins/blocks"
 	}
 }
