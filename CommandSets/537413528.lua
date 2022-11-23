@@ -42,11 +42,12 @@ return {
 						local Target = ({
 							Vector3.new(-56,-28,1150),
 							Vector3.new(-56,-28,8500),
-							Vector3.new(-56,-370,8500),
+							Vector3.new(-56,-370,8510),
 							Vector3.new(-56,-370,9490),
 							Vector3.new(-56,-360,9490)
 						})[Variables.CurrentStep]
 						if Target then
+							Variables.OldPosition = Variables.Position
 							Variables.Position = CFrame.lookAt(Variables.Position,Target)*CFrame.new(0,0,-math.min(Variables.Delta*(35/6),(Variables.Position-Target).Magnitude)).Position
 							Character:PivotTo(CFrame.new(Variables.Position)*CFrame.Angles(math.pi/2,0,0))
 							if (Variables.Position-Target).Magnitude < .01 then
@@ -65,6 +66,15 @@ return {
 							local Variable = 5 < Variables.CurrentStep
 							BasePart.CanCollide,BasePart.CanTouch,BasePart.CanQuery = Variable,Variable,Variable
 						end
+					end
+				end)
+				Variables.RenderStepped = Connect(Service"Run".RenderStepped,function()
+					if Variables.OldPosition and Variables.Position then
+						local Y = workspace:Raycast(Variables.Position*Vector3.new(1,0,1),-Vector3.yAxis*1e3)
+						Y = if Y then Y.Position+Vector3.yAxis*20 else Variables.Position.Y+Vector3.yAxis*25
+						local LookDirection = CFrame.lookAt(Variables.OldPosition,Variables.Position)
+						Variables.CameraPosition = CFrame.new(Variables.Position*Vector3.new(1,0,1)+Y)*CFrame.new(-LookDirection.Position)*LookDirection:Lerp(CFrame.new(Variables.Position*Vector3.new(1,0,1)+Vector3.yAxis*Variables.CameraPosition.Y)*CFrame.new(-Variables.CameraPosition.Position)*Variables.CameraPosition,.9^Variables.Delta)
+						workspace.CurrentCamera.CFrame = Variables.CameraPosition
 					end
 				end)
 				AddConnections{
@@ -86,7 +96,7 @@ return {
 		end,
 		Toggles = "Unfarm_unautofarm_unautoplay_stopplaying_unautp_stopp_unautof_unf_uaf_uf",
 		ToggleCheck = true,
-		Variables = {},
+		Variables = {CameraPosition = CFrame.new()},
 		Description = "Automatically collects gold coins/blocks"
 	}
 }
