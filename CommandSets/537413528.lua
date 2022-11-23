@@ -87,7 +87,7 @@ return {
 				RemoveConnections{
 					Variables.Stepped,
 					Variables.Heartbeat,
-					Variables.REnderStepped
+					Variables.RenderStepped
 				}
 				for _,BasePart in Character:GetChildren() do
 					if Valid.Instance(BasePart,"BasePart") then
