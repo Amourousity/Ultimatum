@@ -54,7 +54,7 @@ return {
 								Variables.CurrentStep += 1
 							end
 						else
-							Variables.OldPosition,Variables.Position = Vector3.new(-56,-.7,9463.3),Vector3.new(-56,0,9464)
+							Variables.OldPosition,Variables.Position = Vector3.new(-56,.7,9463.3),Vector3.new(-56,0,9464)
 						end
 						Variables.Debounce = false
 					end
@@ -77,6 +77,11 @@ return {
 						local LookDirection = CFrame.lookAt(Variables.OldPosition,Variables.Position)
 						Variables.CameraPosition = (CFrame.new(Variables.Position*Vector3.new(1,0,1)+Y)*CFrame.new(-LookDirection.Position)*LookDirection):Lerp(CFrame.new(Variables.Position*Vector3.new(1,0,1)+Vector3.yAxis*Variables.CameraPosition.Y)*CFrame.new(-Variables.CameraPosition.Position)*Variables.CameraPosition,.9^Variables.Delta)
 						workspace.CurrentCamera.CFrame = Variables.CameraPosition
+					end
+					for _,BasePart in Character:GetDescendants() do
+						if Valid.Instance(BasePart,"BasePart") then
+							BasePart.LocalTransparencyModifier = 1
+						end
 					end
 				end)
 				AddConnections{
