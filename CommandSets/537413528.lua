@@ -78,7 +78,9 @@ return {
 					Variables.Heartbeat
 				}
 				for _,BasePart in Character:GetChildren() do
-					BasePart.CanCollide,BasePart.CanTouch,BasePart.CanQuery = true,true,true
+					if Valid.Instance(BasePart,"BasePart") then
+						BasePart.CanCollide,BasePart.CanTouch,BasePart.CanQuery = true,true,true
+					end
 				end
 			end
 		end,
