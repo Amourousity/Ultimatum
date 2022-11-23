@@ -73,7 +73,7 @@ return {
 						local Y = workspace:Raycast(Variables.Position*Vector3.new(1,0,1),-Vector3.yAxis*1e3)
 						Y = if Y then Y.Position*Vector3.yAxis+Vector3.yAxis*20 else Variables.Position*Vector3.yAxis+Vector3.yAxis*25
 						local LookDirection = CFrame.lookAt(Variables.OldPosition,Variables.Position)
-						Variables.CameraPosition = CFrame.new(Variables.Position*Vector3.new(1,0,1)+Y)*CFrame.new(-LookDirection.Position)*LookDirection:Lerp(CFrame.new(Variables.Position*Vector3.new(1,0,1)+Vector3.yAxis*Variables.CameraPosition.Y)*CFrame.new(-Variables.CameraPosition.Position)*Variables.CameraPosition,.9^Variables.Delta)
+						Variables.CameraPosition = (CFrame.new(Variables.Position*Vector3.new(1,0,1)+Y)*CFrame.new(-LookDirection.Position)*LookDirection):Lerp(CFrame.new(Variables.Position*Vector3.new(1,0,1)+Vector3.yAxis*Variables.CameraPosition.Y)*CFrame.new(-Variables.CameraPosition.Position)*Variables.CameraPosition,.9^Variables.Delta)
 						workspace.CurrentCamera.CFrame = Variables.CameraPosition
 					end
 				end)
