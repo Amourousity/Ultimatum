@@ -79,13 +79,15 @@ return {
 				end)
 				AddConnections{
 					Variables.Stepped,
-					Variables.Heartbeat
+					Variables.Heartbeat,
+					Variables.RenderStepped
 				}
 			else
 				RunCommand"AllowAFK"
 				RemoveConnections{
 					Variables.Stepped,
-					Variables.Heartbeat
+					Variables.Heartbeat,
+					Variables.REnderStepped
 				}
 				for _,BasePart in Character:GetChildren() do
 					if Valid.Instance(BasePart,"BasePart") then
