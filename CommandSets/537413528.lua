@@ -81,11 +81,7 @@ return {
 		end,
 		Toggles = "Unfarm_unautofarm_unautoplay_stopplaying_unautp_stopp_unautof_unf_uaf_uf",
 		ToggleCheck = true,
-		Variables = {
-			CurrentStage = -1,
-			CFrame = workspace.CurrentCamera.Focus,
-			Stages = WaitForSequence(workspace,"BoatStages","NormalStages")
-		},
+		Variables = {},
 		Description = "Automatically collects gold coins/blocks"
 	}
 }
