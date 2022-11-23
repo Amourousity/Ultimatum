@@ -54,7 +54,7 @@ return {
 								Variables.CurrentStep += 1
 							end
 						else
-							Variables.OldPosition,Variables.Position = Vector3.new(-56,-17.36,9365.52),Vector3.new(-56,0,9464)
+							Variables.OldPosition,Variables.Position = Vector3.new(-56,-.7,9463.3),Vector3.new(-56,0,9464)
 						end
 						Variables.Debounce = false
 					end
