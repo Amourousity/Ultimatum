@@ -77,6 +77,9 @@ return {
 					Variables.Stepped,
 					Variables.Heartbeat
 				}
+				for _,BasePart in Character:GetChildren() do
+					BasePart.CanCollide,BasePart.CanTouch,BasePart.CanQuery = true,true,true
+				end
 			end
 		end,
 		Toggles = "Unfarm_unautofarm_unautoplay_stopplaying_unautp_stopp_unautof_unf_uaf_uf",
