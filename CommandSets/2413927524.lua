@@ -161,6 +161,7 @@ return {
 		Toggles = "Unfarm_unautofarm_unautoplay_stopplaying_unautp_stopp_unautof_unf_uaf_uf",
 		ToggleCheck = true,
 		Variables = {
+			ScrapSpawns = WaitForSequence(workspace,"Filter","ScrapSpawns"),
 			Path = Service"Pathfinding":CreatePath{
 				AgentCanClimb = true,
 				WaypointSpacing = math.huge
