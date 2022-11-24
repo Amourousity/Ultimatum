@@ -106,51 +106,11 @@ return {
 				Variables.Delta,Variables.LastFrame = 0,os.clock()
 				Variables.Position = workspace.CurrentCamera.Focus.Position
 				Variables.Connection = Connect(Service"Run".Heartbeat,function()
-					Variables.Delta,Variables.LastFrame = math.min(os.clock()-Variables.LastFrame,1/15)*60,os.clock()
-					if not Character then
-						return
-					end
-					local Waypoint = Variables.Waypoints[Variables.Index]
-					if Waypoint then
-						if Waypoint.Action == Enum.PathWaypointAction.Jump then
-							Variables.Position *= Vector3.new(1,0,1)
-							Variables.Position += Vector3.yAxis*(Waypoint.Position.Y+2.5)
-							Variables.Index += 1
-						else
-							local OldPosition = Variables.Position
-							Variables.Position = CFrame.lookAt(Variables.Position,Waypoint.Position+Vector3.yAxis*2.5)*CFrame.new(0,0,-math.min(Variables.Delta/2,(Variables.Position-(Waypoint.Position+Vector3.yAxis*2.5)).Magnitude)).Position
-							for _,BasePart in Character:GetChildren() do
-								if Valid.Instance(BasePart,"BasePart") then
-									BasePart.AssemblyLinearVelocity = CFrame.lookAt(OldPosition,Variables.Position).LookVector*30
-								end
-							end
-							if (Variables.Position-(Waypoint.Position+Vector3.yAxis*2.5)).Magnitude < .01 then
-								Variables.Index += 1
-							end
-						end
-						Character:PivotTo(CFrame.new(Variables.Position)*CFrame.new(-Character:GetPivot().Position)*Character:GetPivot())
-					elseif not Variables.Debounce then
-						Variables.Debounce = true
-						Variables.Position = Character:GetPivot().Position
-						local Closest,Distance = nil,math.huge
-						for _,Spawn in Variables.ScrapSpawns:GetChildren() do
-							local Descendants = Spawn:GetDescendants()
-							if 0 < #Descendants then
-								for _,Scrap in Descendants do
-									if Valid.Instance(Scrap,"BasePart") then
-										local Magnitude = (Scrap.Position-Character:GetPivot().Position).Magnitude
-										if Magnitude < Distance then
-											Closest,Distance = Scrap,Magnitude
-										end
-										break
-									end
-								end
-							end
-						end
-						if Closest then
-							Variables:MoveTo(Closest.Position)
-						end
-						Variables.Debounce = false
+					Variables:FireHeartbeat()
+				end)
+				Variables.RenderStepped = Connect(Service"Run".RenderStepped,function()
+					if Character and Variables.LookAt then
+						Character:PivotTo(CFrame.lookAt(Variables.Position,Variables.Position+Variables.LookAt))
 					end
 				end)
 				AddConnections{Variables.Connection}
@@ -166,7 +126,7 @@ return {
 			Path = Service"Pathfinding":CreatePath{
 				AgentCanClimb = true,
 				AgentCanJump = true,
-				WaypointSpacing = 3
+				WaypointSpacing = 1
 			},
 			MoveTo = function(Variables,Position)
 				Variables.Path:ComputeAsync(Variables.Position,Position)
@@ -180,6 +140,58 @@ return {
 						end
 					end)
 					AddConnections{Blocked}
+				end
+			end,
+			FireHeartbeat = function(Variables)
+				Variables.Delta,Variables.LastFrame = math.min(os.clock()-Variables.LastFrame,1/15)*60,os.clock()
+				if not Character then
+					return
+				end
+				local Waypoint = Variables.Waypoints[Variables.Index]
+				if Waypoint and Variables.Target and Variables.Target:IsDescendantOf(Variables.ScrapSpawns) then
+					if Waypoint.Action == Enum.PathWaypointAction.Jump then
+						Variables.Position = Variables.Position*Vector3.new(1,0,1)+Vector3.yAxis*(Waypoint.Position.Y+2.5)
+					end
+					local OldPosition = Variables.Position
+					local DistanceLeft = Variables.Delta/2
+					local Travel = math.min(DistanceLeft,(Variables.Position-(Waypoint.Position+Vector3.yAxis*2.5)).Magnitude)
+					DistanceLeft -= Travel
+					Variables.Position = CFrame.lookAt(Variables.Position,Waypoint.Position+Vector3.yAxis*2.5)*CFrame.new(0,0,-Travel).Position
+					Variables.LookAt = CFrame.lookAt(OldPosition,Variables.Position*Vector3.new(1,0,1)+Vector3.yAxis*OldPosition.Y).LookVector
+					for _,BasePart in Character:GetChildren() do
+						if Valid.Instance(BasePart,"BasePart") then
+							BasePart.AssemblyLinearVelocity = Variables.LookAt*30
+						end
+					end
+					if 0 < DistanceLeft then
+						Variables.Index += 1
+						Variables.LastFrame = os.clock()-(DistanceLeft*2)
+						Variables:FireHeartbeat()
+					end
+					Character:PivotTo(CFrame.lookAt(Variables.Position,Variables.Position+Variables.LookAt))
+				elseif not Variables.Debounce then
+					Variables.Debounce = true
+					Variables.Position = Character:GetPivot().Position
+					local Closest,Distance = nil,math.huge
+					for _,Spawn in Variables.ScrapSpawns:GetChildren() do
+						local Descendants = Spawn:GetDescendants()
+						if 0 < #Descendants then
+							for _,Scrap in Descendants do
+								if Valid.Instance(Scrap,"BasePart") then
+									local Magnitude = (Scrap.Position-Character:GetPivot().Position).Magnitude
+									if Magnitude < Distance then
+										Closest,Distance = Scrap,Magnitude
+									end
+									break
+								end
+							end
+						end
+					end
+					if Closest then
+						Variables.Target = Closest
+						Variables:MoveTo(Closest.Position)
+					end
+					Variables.Debounce = false
 				end
 			end
 		}
