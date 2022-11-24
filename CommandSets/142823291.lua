@@ -22,7 +22,7 @@ return {
 						if not Variables.Enabled then
 							return
 						end
-						Destroy(Variables.ExtrasensoryPerceptions)
+						Destroy(Variables.ESPs)
 						if workspace:FindFirstChild"GunDrop" then
 							Variables:CreatESP(workspace.GunDrop,"Gun")
 						end
@@ -38,19 +38,19 @@ return {
 				AddConnections{Variables.Connection}
 			else
 				RemoveConnections{Variables.Connection}
-				Destroy(Variables.ExtrasensoryPerceptions)
+				Destroy(Variables.ESPs)
 			end
 		end,
 		Toggles = "SensoryPerception_sensoryp_sperception_sp_unextrasensoryperception_unextrasensoryp_unesperception_unextrasp_unesp_uesp",
 		ToggleCheck = true,
-		Variables = game.PlaceId == 142823291 and {
-			ExtrasensoryPerceptions = {},
+		Variables = {
+			ESPs = {},
 			PlayerDataRemote = WaitForSequence(Service"ReplicatedStorage","Remotes","Extras","GetPlayerData"),
-			CreateExtrasensoryPerception = function(Variables,Object,Role)
+			CreateESP = function(Variables,Object,Role)
 				local LargestAxis = math.max(Object.Size.X,Object.Size.Y,Object.Size.Z)
-				table.insert(Variables.ExtrasensoryPerceptions,Create{
+				table.insert(Variables.ESPs,Create{
 					{
-						Name = "ExtrasensoryPerceptionHolder",
+						Name = "ESPHolder",
 						Parent = Gui.Holder,
 						ClassName = "BillboardGui",
 						Properties = {
@@ -64,7 +64,7 @@ return {
 					},
 					{
 						Name = "Main",
-						Parent = "ExtrasensoryPerceptionHolder",
+						Parent = "ESPHolder",
 						ClassName = "Frame",
 						Properties = {
 							Size = UDim2.new(1,0,1,0),

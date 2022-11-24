@@ -74,6 +74,7 @@ return {
 			MoveTo = function(_,Position)
 				Character:PivotTo(typeof(Position) == "Vector3" and CFrame.new(Position) or Position)
 			end
-		}
+		},
+		Description = "Automatically collects and washes rats, buys new rat types, activates washing frenzy, and rebirths"
 	}
 }

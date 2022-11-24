@@ -36,6 +36,7 @@ return {
 						if Character ~= Variables.CurrentCharacter then
 							Wait(2)
 							Variables.CurrentStep = 1
+							Variables.CameraPosition = workspace.Currentcamera.CFrame
 							Variables.Position = workspace.CurrentCamera.Focus.Position-Vector3.yAxis*10
 							Variables.CurrentCharacter = Character
 						end

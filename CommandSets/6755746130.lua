@@ -146,6 +146,7 @@ return {
 			VictoryPart = WaitForSequence(workspace,"ObbyParts","VictoryPart"),
 			CollectFruit = Service"ReplicatedStorage":WaitForChild"CollectFruit",
 			RequestPrestige = Service"ReplicatedStorage":WaitForChild"RequestPrestige"
-		}
+		},
+		Description = "Automatically collects and sells fruit, buys upgrades, activates frenzy and prestiges"
 	}
 }
