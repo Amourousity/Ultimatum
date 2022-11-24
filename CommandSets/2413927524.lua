@@ -128,6 +128,7 @@ return {
 								Variables.Index += 1
 							end
 						end
+						Character:PivotTo(CFrame.new(Variables.Position)*CFrame.new(-Character:GetPivot().Position)*Character:GetPivot())
 					elseif not Variables.Debounce then
 						Variables.Debounce = true
 						local Closest,Distance = nil,math.huge
