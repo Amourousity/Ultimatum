@@ -164,7 +164,8 @@ return {
 			ScrapSpawns = WaitForSequence(workspace,"Filter","ScrapSpawns"),
 			Path = Service"Pathfinding":CreatePath{
 				AgentCanClimb = true,
-				WaypointSpacing = math.huge
+				AgentCanJump = true,
+				WaypointSpacing = 2
 			},
 			MoveTo = function(Variables,Position)
 				Variables.Path:ComputeAsync(Variables.Position,Position)
