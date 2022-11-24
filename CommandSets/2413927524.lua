@@ -140,7 +140,6 @@ return {
 										if Magnitude < Distance then
 											Closest,Distance = Scrap,Magnitude
 										end
-										Variables:CreateESP(Scrap,"Scrap")
 										break
 									end
 								end
