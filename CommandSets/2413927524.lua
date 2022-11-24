@@ -131,6 +131,7 @@ return {
 						Character:PivotTo(CFrame.new(Variables.Position)*CFrame.new(-Character:GetPivot().Position)*Character:GetPivot())
 					elseif not Variables.Debounce then
 						Variables.Debounce = true
+						Variables.Position = Character:GetPivot().Position
 						local Closest,Distance = nil,math.huge
 						for _,Spawn in Variables.ScrapSpawns:GetChildren() do
 							local Descendants = Spawn:GetDescendants()
@@ -165,7 +166,7 @@ return {
 			Path = Service"Pathfinding":CreatePath{
 				AgentCanClimb = true,
 				AgentCanJump = true,
-				WaypointSpacing = 2
+				WaypointSpacing = 3
 			},
 			MoveTo = function(Variables,Position)
 				Variables.Path:ComputeAsync(Variables.Position,Position)
