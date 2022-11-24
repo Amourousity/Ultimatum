@@ -118,7 +118,7 @@ return {
 							Variables.Index += 1
 						else
 							local OldPosition = Variables.Position
-							Variables.Position = CFrame.lookAt(Variables.Position,Waypoint.Position+Vector3.yAxis*2.5)*CFrame.new(0,0,-math.min(Variables.Delta/2)).Position
+							Variables.Position = CFrame.lookAt(Variables.Position,Waypoint.Position+Vector3.yAxis*2.5)*CFrame.new(0,0,-math.min(Variables.Delta/2,(Variables.Position-(Waypoint.Position+Vector3.yAxis*2.5)).Magnitude)).Position
 							for _,BasePart in Character:GetChildren() do
 								if Valid.Instance(BasePart,"BasePart") then
 									BasePart.AssemblyLinearVelocity = CFrame.lookAt(OldPosition,Variables.Position).LookVector*30
