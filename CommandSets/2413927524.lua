@@ -113,10 +113,16 @@ return {
 						Character:PivotTo(CFrame.lookAt(Variables.Position,Variables.Position+Variables.LookAt))
 					end
 				end)
-				AddConnections{Variables.Connection}
+				AddConnections{
+					Variables.Connection,
+					Variables.RenderStepped
+				}
 			else
 				RunCommand"AllowAFK"
-				RemoveConnections{Variables.Connection}
+				RemoveConnections{
+					Variables.Connection,
+					Variables.RenderStepped
+				}
 			end
 		end,
 		Toggles = "Unfarm_unautofarm_unautoplay_stopplaying_unautp_stopp_unautof_unf_uaf_uf",
@@ -142,8 +148,10 @@ return {
 					AddConnections{Blocked}
 				end
 			end,
-			FireHeartbeat = function(Variables)
-				Variables.Delta,Variables.LastFrame = math.min(os.clock()-Variables.LastFrame,1/15)*60,os.clock()
+			FireHeartbeat = function(Variables,DistanceLeft)
+				if not DistanceLeft then
+					Variables.Delta,Variables.LastFrame = math.min(os.clock()-Variables.LastFrame,1/15)*60,os.clock()
+				end
 				if not Character then
 					return
 				end
@@ -153,7 +161,7 @@ return {
 						Variables.Position = Variables.Position*Vector3.new(1,0,1)+Vector3.yAxis*(Waypoint.Position.Y+2.5)
 					end
 					local OldPosition = Variables.Position
-					local DistanceLeft = Variables.Delta/2
+					DistanceLeft = DistanceLeft or Variables.Delta/2
 					local Travel = math.min(DistanceLeft,(Variables.Position-(Waypoint.Position+Vector3.yAxis*2.5)).Magnitude)
 					DistanceLeft -= Travel
 					Variables.Position = CFrame.lookAt(Variables.Position,Waypoint.Position+Vector3.yAxis*2.5)*CFrame.new(0,0,-Travel).Position
@@ -165,8 +173,7 @@ return {
 					end
 					if 0 < DistanceLeft then
 						Variables.Index += 1
-						Variables.LastFrame = os.clock()-(DistanceLeft*2)
-						Variables:FireHeartbeat()
+						Variables:FireHeartbeat(DistanceLeft)
 					end
 					Character:PivotTo(CFrame.lookAt(Variables.Position,Variables.Position+Variables.LookAt))
 				elseif not Variables.Debounce then
