@@ -1,4 +1,4 @@
-local Utilitas,ReceiveValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character:Model,Backpack,PlayerGui = ...
+local Utilitas,ReceiveValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = ...
 local Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass = unpack(Utilitas)
 AddConnections{
 	Connect(ReceiveValue.Event,function(Type,Object)
@@ -150,7 +150,7 @@ return {
 				if not Character then
 					return
 				end
-				if 3 < (Variables.Position-Character:GetPivot().Position*Vector3.new(1,0,1)).Magnitude then
+				if 3 < ((Variables.Position-Character:GetPivot().Position)*Vector3.new(1,0,1)).Magnitude then
 					Variables.Position = Character:GetPivot().Position
 					Variables.Waypoints,Variables.Index = {},2
 				end
@@ -158,7 +158,7 @@ return {
 				if Waypoint and Variables.Target and Variables.Target:IsDescendantOf(Variables.ScrapSpawns) then
 					Waypoint = Waypoint.Position
 					DistanceLeft = DistanceLeft or Variables.Delta/2
-					local Travel = math.min(DistanceLeft,(Variables.Position-Waypoint).Magnitude)
+					local Travel = math.min(DistanceLeft,((Variables.Position-Waypoint)*Vector3.new(1,0,1)).Magnitude)
 					DistanceLeft -= Travel
 					Variables.Position = CFrame.lookAt(Variables.Position,Waypoint*Vector3.new(1,0,1)+Variables.Position*Vector3.yAxis)*CFrame.new(0,0,-Travel).Position
 					for _,BasePart in Character:GetChildren() do
@@ -176,14 +176,14 @@ return {
 					Character:PivotTo(CFrame.new(Floor and Floor+Vector3.yAxis*3 or Variables.Position)*CFrame.new(-Character:GetPivot().Position)*Character:GetPivot())
 				elseif not Variables.Debounce then
 					Variables.Debounce = true
-					Variables.Position = Character:GetPivot().Position*Vector3.new(1,0,1)
+					Variables.Position = Character:GetPivot().Position
 					local Closest,Distance = nil,math.huge
 					for _,Spawn in Variables.ScrapSpawns:GetChildren() do
 						local Descendants = Spawn:GetDescendants()
 						if 0 < #Descendants then
 							for _,Scrap in Descendants do
 								if Valid.Instance(Scrap,"BasePart") then
-									local Magnitude = (Scrap.Position-Character:GetPivot().Position).Magnitude
+									local Magnitude = (Scrap.Position-Variables.Position).Magnitude
 									if Magnitude < Distance then
 										Closest,Distance = Scrap,Magnitude
 									end
