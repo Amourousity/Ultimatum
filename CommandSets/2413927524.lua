@@ -144,6 +144,9 @@ return {
 				if not Character then
 					return
 				end
+				if 3 < (Variables.Position-Character:GetPivot().Position).Magnitude then
+					Variables.Position = Character:GetPivot().Position
+				end
 				local Waypoint = Variables.Waypoints[Variables.Index]
 				if Waypoint and Variables.Target and Variables.Target:IsDescendantOf(Variables.ScrapSpawns) then
 					if Waypoint.Action == Enum.PathWaypointAction.Jump then
