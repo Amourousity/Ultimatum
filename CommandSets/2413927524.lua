@@ -108,21 +108,10 @@ return {
 				Variables.Connection = Connect(Service"Run".Heartbeat,function()
 					Variables:FireHeartbeat()
 				end)
-				Variables.RenderStepped = Connect(Service"Run".RenderStepped,function()
-					if Character and Variables.LookAt then
-						Character:PivotTo(CFrame.lookAt(Variables.Position,Variables.Position+Variables.LookAt))
-					end
-				end)
-				AddConnections{
-					Variables.Connection,
-					Variables.RenderStepped
-				}
+				AddConnections{Variables.Connection}
 			else
 				RunCommand"AllowAFK"
-				RemoveConnections{
-					Variables.Connection,
-					Variables.RenderStepped
-				}
+				RemoveConnections{Variables.Connection}
 			end
 		end,
 		Toggles = "Unfarm_unautofarm_unautoplay_stopplaying_unautp_stopp_unautof_unf_uaf_uf",
@@ -165,17 +154,16 @@ return {
 					local Travel = math.min(DistanceLeft,(Variables.Position-(Waypoint.Position+Vector3.yAxis*2.5)).Magnitude)
 					DistanceLeft -= Travel
 					Variables.Position = CFrame.lookAt(Variables.Position,Waypoint.Position+Vector3.yAxis*2.5)*CFrame.new(0,0,-Travel).Position
-					Variables.LookAt = CFrame.lookAt(OldPosition,Variables.Position*Vector3.new(1,0,1)+Vector3.yAxis*OldPosition.Y).LookVector
 					for _,BasePart in Character:GetChildren() do
 						if Valid.Instance(BasePart,"BasePart") then
-							BasePart.AssemblyLinearVelocity = Variables.LookAt*30
+							BasePart.AssemblyLinearVelocity = CFrame.lookAt(OldPosition,Variables.Position*Vector3.new(1,0,1)+Vector3.yAxis*OldPosition.Y).LookVector*30
 						end
 					end
 					if 0 < DistanceLeft then
 						Variables.Index += 1
 						Variables:FireHeartbeat(DistanceLeft)
 					end
-					Character:PivotTo(CFrame.lookAt(Variables.Position,Variables.Position+Variables.LookAt))
+					Character:PivotTo(CFrame.new(Variables.Position)*CFrame.new(-Character:GetPivot().Position)*Character:GetPivot())
 				elseif not Variables.Debounce then
 					Variables.Debounce = true
 					Variables.Position = Character:GetPivot().Position
