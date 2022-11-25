@@ -1,4 +1,4 @@
-local Utilitas,ReceiveValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = ...
+local Utilitas,ReceiveValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character:Model,Backpack,PlayerGui = ...
 local Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass = unpack(Utilitas)
 AddConnections{
 	Connect(ReceiveValue.Event,function(Type,Object)
@@ -117,24 +117,30 @@ return {
 		Toggles = "Unfarm_unautofarm_unautoplay_stopplaying_unautp_stopp_unautof_unf_uaf_uf",
 		ToggleCheck = true,
 		Variables = {
+			RayParams = (function()
+				local RayParams = RaycastParams.new()
+				RayParams.IgnoreWater = true
+				RayParams.RespectCanCollide = true
+				return RayParams
+			end)(),
 			ScrapSpawns = WaitForSequence(workspace,"Filter","ScrapSpawns"),
 			Path = Service"Pathfinding":CreatePath{
-				AgentCanClimb = true,
 				AgentCanJump = true,
-				WaypointSpacing = 1
+				WaypointSpacing = 1,
+				AgentCanClimb = true
 			},
 			MoveTo = function(Variables,Position)
+				RemoveConnections{Variables.Blocked}
 				Variables.Path:ComputeAsync(Variables.Position,Position)
 				if Variables.Path.Status == Enum.PathStatus.Success then
 					Variables.Waypoints,Variables.Index = Variables.Path:GetWaypoints(),2
-					local Blocked
-					Blocked = Connect(Variables.Path.Blocked,function(BlockedIndex)
+					Variables.Blocked = Connect(Variables.Path.Blocked,function(BlockedIndex)
 						if Variables.Index <= BlockedIndex then
 							Variables.Waypoints,Variables.Index = {},2
-							RemoveConnections{Blocked}
+							RemoveConnections{Variables.Blocked}
 						end
 					end)
-					AddConnections{Blocked}
+					AddConnections{Variables.Blocked}
 				end
 			end,
 			FireHeartbeat = function(Variables,DistanceLeft)
@@ -144,32 +150,33 @@ return {
 				if not Character then
 					return
 				end
-				if 3 < (Variables.Position-Character:GetPivot().Position).Magnitude then
+				if 3 < (Variables.Position-Character:GetPivot().Position*Vector3.new(1,0,1)).Magnitude then
 					Variables.Position = Character:GetPivot().Position
+					Variables.Waypoints,Variables.Index = {},2
 				end
 				local Waypoint = Variables.Waypoints[Variables.Index]
 				if Waypoint and Variables.Target and Variables.Target:IsDescendantOf(Variables.ScrapSpawns) then
-					if Waypoint.Action == Enum.PathWaypointAction.Jump then
-						Variables.Position = Variables.Position*Vector3.new(1,0,1)+Vector3.yAxis*(Waypoint.Position.Y+2.5)
-					end
-					local OldPosition = Variables.Position
+					Waypoint = Waypoint.Position
 					DistanceLeft = DistanceLeft or Variables.Delta/2
-					local Travel = math.min(DistanceLeft,(Variables.Position-(Waypoint.Position+Vector3.yAxis*2.5)).Magnitude)
+					local Travel = math.min(DistanceLeft,(Variables.Position-Waypoint).Magnitude)
 					DistanceLeft -= Travel
-					Variables.Position = CFrame.lookAt(Variables.Position,Waypoint.Position+Vector3.yAxis*2.5)*CFrame.new(0,0,-Travel).Position
+					Variables.Position = CFrame.lookAt(Variables.Position,Waypoint*Vector3.new(1,0,1)+Variables.Position*Vector3.yAxis)*CFrame.new(0,0,-Travel).Position
 					for _,BasePart in Character:GetChildren() do
 						if Valid.Instance(BasePart,"BasePart") then
-							BasePart.AssemblyLinearVelocity = CFrame.lookAt(OldPosition,Variables.Position*Vector3.new(1,0,1)+Vector3.yAxis*OldPosition.Y).LookVector*30
+							BasePart.AssemblyLinearVelocity = Vector3.zero
 						end
 					end
 					if 0 < DistanceLeft then
 						Variables.Index += 1
 						Variables:FireHeartbeat(DistanceLeft)
 					end
-					Character:PivotTo(CFrame.new(Variables.Position)*CFrame.new(-Character:GetPivot().Position)*Character:GetPivot())
+					Variables.RayParams.FilterDescendantsInstances = {Character}
+					local Ceiling = workspace:Raycast(Variables.Position,Vector3.yAxis*1e3,Variables.RayParams)
+					local Floor = workspace:Raycast(Ceiling and Ceiling.Position or Variables.Position+Vector3.yAxis*1e3,-Vector3.yAxis*5e3,Variables.RayParams)
+					Character:PivotTo(CFrame.new(Floor and Floor+Vector3.yAxis*3 or Variables.Position)*CFrame.new(-Character:GetPivot().Position)*Character:GetPivot())
 				elseif not Variables.Debounce then
 					Variables.Debounce = true
-					Variables.Position = Character:GetPivot().Position
+					Variables.Position = Character:GetPivot().Position*Vector3.new(1,0,1)
 					local Closest,Distance = nil,math.huge
 					for _,Spawn in Variables.ScrapSpawns:GetChildren() do
 						local Descendants = Spawn:GetDescendants()
