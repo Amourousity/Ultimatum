@@ -25,7 +25,7 @@ Load"Conversio"()
 local Utilitas = Load"Utilitas""All"
 local Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass = unpack(Utilitas)
 local GlobalEnvironment = getgenv and getgenv() or shared
-pcall(GlobalEnvironment.Ultimatum)
+pcall(GlobalEnvironment.CloseUltimatum)
 local OwnerSettings
 do
 	local DefaultSettings = {
@@ -82,7 +82,7 @@ if Service"CoreGui":FindFirstChild"RobloxLoadingGui" and Service"CoreGui".Roblox
 	WaitForSignal(Service"CoreGui".RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency",3)
 	Wait(math.random())
 end
-pcall(GlobalEnvironment.Ultimatum)
+pcall(GlobalEnvironment.CloseUltimatum)
 local Gui = Create{
 	{
 		Name = "Holder",
@@ -116,6 +116,7 @@ local Gui = Create{
 		Parent = "Holder",
 		ClassName = "Frame",
 		Properties = {
+			ZIndex = 1,
 			ClipsDescendants = true,
 			BackgroundTransparency = 1,
 			Size = UDim2.new(.25,0,.25,0),
@@ -551,13 +552,14 @@ local function EnableDrag(Frame,IsMain)
 		InputEnded
 	}
 end
-local function CreateWindow(Title)
+local function CreateWindow(Title,DataList)
 	local Window = Create{
 		{
 			Name = "Main",
 			Parent = Gui.Holder,
 			ClassName = "Frame",
 			Properties = {
+				Active = true,
 				ClipsDescendants = true,
 				Size = UDim2.new(0,500,0,250),
 				Position = UDim2.new(.5,0,1,125),
@@ -632,33 +634,59 @@ local function CreateWindow(Title)
 				Position = UDim2.new(1,-37,0,3),
 				Image = "rbxasset://textures/DevConsole/Minimize.png"
 			}
+		},
+		{
+			Name = "Display",
+			Parent = "Main",
+			ClassName = "ScrollingFrame",
+			Properties = {
+				BorderSizePixel = 0,
+				ScrollBarThickness = 0,
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,-8,1,-24),
+				Position = UDim2.new(0,4,0,20)
+			}
+		},
+		{
+			Name = "DisplayListLayout",
+			Parent = "Display",
+			ClassName = "UIListLayout",
+			Properties = {SortOrder = Enum.SortOrder.LayoutOrder}
 		}
 	}
-	task.defer(function()
+	local WindowConnections = {}
+	for Index,Data in DataList do
+		local Main = NewInstance("TextLabel",nil,{
+			LayoutOrder = Index,
+			Font = Enum.Font.Arial,
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,20),
+			TextStrokeTransparency = .8,
+			Text = ("  %s"):format(Data.Text),
+			TextXAlignment = Enum.TextXAlignment.Left
+		});
+		({
+			Slider = function()
+
+			end
+		})[Data.Type]()
+	end
+	Animate(Window.Main,{
+		Yields = true,
+		Properties = {Position = UDim2.new(.5,0,.5,0)}
+	})
+	EnableDrag(Window.Main)
+	table.insert(WindowConnections,Connect(Window.Minimize.MouseButton1Click,function()
+	end))
+	table.insert(WindowConnections,Connect(Window.Close.MouseButton1Click,function()
+		RemoveConnections(WindowConnections)
 		Animate(Window.Main,{
 			Yields = true,
-			Properties = {Position = UDim2.new(.5,0,.5,0)}
+			EasingDirection = Enum.EasingDirection.In,
+			Properties = {Position = UDim2.new(Window.Main.Position.X.Scale,0,1,125)}
 		})
-		EnableDrag(Window.Main)
-		local Minimize,Close = Connect(Window.Minimize.MouseButton1Click,function()
-		end)
-		AddConnections{
-			Close,
-			Minimize
-		}
-		Close = Connect(Window.Close.MouseButton1Click,function()
-			RemoveConnections{
-				Close,
-				Minimize
-			}
-			Animate(Window.Main,{
-				Yields = true,
-				EasingDirection = Enum.EasingDirection.In,
-				Properties = {Position = UDim2.new(Window.Main.Position.X.Scale,0,1,125)}
-			})
-			Destroy(Window)
-		end)
-	end)
+		Destroy(Window)
+	end))
 	return Window
 end
 local function FireTouchInterest(Toucher,Touched,TouchTime)
@@ -687,6 +715,7 @@ local function UpdateSuggestions()
 		local Command = Gui.CommandBar.Text:split"/"
 		Command = ((Command[#Command] or ""):split" "[1] or ""):lower()
 		Gui.SuggestionsScroll.CanvasSize = UDim2.new()
+		Gui.SuggestionsGridLayout.Parent = nil
 		for _,TextLabel in Gui.SuggestionsScroll:GetChildren() do
 			if Valid.Instance(TextLabel,"TextLabel") then
 				Destroy(TextLabel)
@@ -729,6 +758,7 @@ local function UpdateSuggestions()
 				TextXAlignment = Enum.TextXAlignment.Left
 			})
 		end
+		Gui.SuggestionsGridLayout.Parent = Gui.SuggestionsScroll
 		local CommandNumber = #Gui.SuggestionsScroll:GetChildren()-1
 		Gui.SuggestionsScroll.CanvasSize = UDim2.new(0,0,0,20*CommandNumber)
 		ResizeMain(nil,0 < CommandNumber and 48+20*math.min(CommandNumber,5) or 40)
@@ -746,7 +776,7 @@ Connections = {
 			SendValue:Fire("PlayerGui",Object)
 		end
 	end),
-	not GlobalEnvironment.UltimatumDebug and isfile and Connect(Service"Run".Heartbeat,function()
+	isfile and Connect(Service"Run".Heartbeat,function()
 		if OwnerSettings.AutoUpdate and 60 < os.clock()-LastCheck then
 			LastCheck = os.clock()
 			local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua",true)
@@ -769,7 +799,7 @@ Connections = {
 			end
 		end
 	end),
-	not GlobalEnvironment.UltimatumDebug and queue_on_teleport and Connect(Owner.OnTeleport,isfile and function(TeleportState)
+	queue_on_teleport and Connect(Owner.OnTeleport,isfile and function(TeleportState)
 		if OwnerSettings.LoadOnRejoin and TeleportState.Name == "Started" then
 			queue_on_teleport(isfile"Source.Ultimatum" and readfile"Source.Ultimatum" or "warn'Source.Ultimatum missing from workspace folder (Ultimatum cannot run)'")
 		end
@@ -831,6 +861,17 @@ Connections = {
 	end),
 	Connect(Gui.CommandBar:GetPropertyChangedSignal"Text",UpdateSuggestions)
 }
+local function LoadCommands(Lua,Name)
+	Name = Valid.String(Name,"Custom Command Set")
+	Notify{
+		Title = "Loading Commands",
+		Text = ("Loading %s"):format(Name)
+	}
+	for CommandName,Info in loadstring(Lua,Name or "Custom Command Set")(Utilitas,SendValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,GetCharacter(Owner,.5),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")) do
+		Commands[CommandName] = Info
+	end
+end
+GlobalEnvironment.LoadUltimatumCommands = LoadCommands
 local function GetCommandSet(ID)
 	ID = Valid.Number(ID,0)
 	local Success,Result = pcall(game.HttpGet,game,("https://raw.githubusercontent.com/Amourousity/Ultimatum/main/CommandSets/%d.lua"):format(ID),true)
@@ -845,18 +886,13 @@ local function GetCommandSet(ID)
 		Success,Result = true,readfile(("UltimatumCommandSets/%d.lua"):format(ID))
 	end
 	if Success then
-		for Name,Info in loadstring(Result,("Command Set %d"):format(ID))(Utilitas,SendValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,GetCharacter(Owner,.5),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")) do
-			if printuiconsole then
-				printuiconsole(("Loaded %s"):format(Name:split"_"[1]))
-			end
-			Commands[Name] = Info
-		end
+		LoadCommands(Result,("Command Set %d"):format(ID))
 	end
 end
 GetCommandSet()
 GetCommandSet(game.PlaceId)
-pcall(GlobalEnvironment.Ultimatum)
-GlobalEnvironment.Ultimatum = function()
+pcall(GlobalEnvironment.CloseUltimatum)
+GlobalEnvironment.CloseUltimatum = function()
 	local Unfinished = 0
 	for _,Info in Commands do
 		if Info.ToggleCheck and Info.Enabled then
@@ -872,7 +908,7 @@ GlobalEnvironment.Ultimatum = function()
 		return Unfinished < 1
 	end,10)
 	Destroy(Connections,Gui)
-	GlobalEnvironment.Ultimatum = nil
+	GlobalEnvironment.CloseUltimatum = nil
 end
 EnableDrag(Gui.Main,true)
 if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
@@ -943,7 +979,7 @@ for Name,Properties in {
 	SuggestionsSection = {Size = UDim2.new(1,0,1,-40)}
 } do
 	if not Gui or not Gui[Name] then
-		pcall(GlobalEnvironment.Ultimatum)
+		pcall(GlobalEnvironment.CloseUltimatum)
 		error(not Gui and "Ultimatum's Gui was never instantiated!" or ("Gui object \"%s\" was deleted or never instantiated!"):format(Name))
 		return
 	end
