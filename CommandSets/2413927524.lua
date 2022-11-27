@@ -157,7 +157,7 @@ return {
 				local Waypoint = Variables.Waypoints[Variables.Index]
 				if Waypoint and Variables.Target and Variables.Target:IsDescendantOf(Variables.ScrapSpawns) then
 					Waypoint = Waypoint.Position
-					DistanceLeft = DistanceLeft or Variables.Delta/2
+					DistanceLeft = DistanceLeft or Variables.Delta*(25/60)
 					local Travel = math.min(DistanceLeft,((Variables.Position-Waypoint)*Vector3.new(1,0,1)).Magnitude)
 					DistanceLeft -= Travel
 					Variables.Position = CFrame.lookAt(Variables.Position,Waypoint*Vector3.new(1,0,1)+Variables.Position*Vector3.yAxis)*CFrame.new(0,0,-Travel).Position
@@ -173,7 +173,7 @@ return {
 					Variables.RayParams.FilterDescendantsInstances = {Character}
 					local Ceiling = workspace:Raycast(Variables.Position,Vector3.yAxis*1e3,Variables.RayParams)
 					local Floor = workspace:Raycast(Ceiling and Ceiling.Position or Variables.Position+Vector3.yAxis*1e3,-Vector3.yAxis*5e3,Variables.RayParams)
-					Character:PivotTo(CFrame.new(Floor and Floor+Vector3.yAxis*3 or Variables.Position)*CFrame.new(-Character:GetPivot().Position)*Character:GetPivot())
+					Character:PivotTo(CFrame.new(Floor and Floor.Position+Vector3.yAxis*4.5 or Variables.Position)*CFrame.new(-Character:GetPivot().Position)*Character:GetPivot())
 				elseif not Variables.Debounce then
 					Variables.Debounce = true
 					Variables.Position = Character:GetPivot().Position
