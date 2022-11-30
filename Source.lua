@@ -23,10 +23,35 @@ local function Load(Name)
 end
 Load"Conversio"()
 local Utilitas = Load"Utilitas""All"
-local Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass = unpack(Utilitas)
+for Index,Name in {
+	"Owner",
+	"Nil",
+	"Connect",
+	"Destroy",
+	"Wait",
+	"Service",
+	"Valid",
+	"WaitForSequence",
+	"RandomString",
+	"RandomBool",
+	"NilConvert",
+	"NewInstance",
+	"Create",
+	"DecodeJSON",
+	"WaitForSignal",
+	"Animate",
+	"Assert",
+	"GetCharacter",
+	"GetHumanoid",
+	"ConvertTime",
+	"GetContentText",
+	"WaitForChildOfClass"
+} do
+	getfenv()[Name] = Utilitas[Index]
+end
 local GlobalEnvironment = getgenv and getgenv() or shared
 pcall(GlobalEnvironment.CloseUltimatum)
-local OwnerSettings
+local Settings
 do
 	local DefaultSettings = {
 		Scale = 1,
@@ -37,21 +62,21 @@ do
 		Notifications = "All",
 		Keybind = "LeftBracket"
 	}
-	local Settings = DecodeJSON(isfile and isfile"UltimatumSettings.json" and readfile"UltimatumSettings.json":gsub("^%bA{","{"),DefaultSettings)
-	for SettingName in Settings do
+	local SettingsTable = DecodeJSON(isfile and isfile"UltimatumSettings.json" and readfile"UltimatumSettings.json":gsub("^%bA{","{"),DefaultSettings)
+	for SettingName in SettingsTable do
 		if DefaultSettings[SettingName] == nil then
-			Settings[SettingName] = nil
+			SettingsTable[SettingName] = nil
 		end
 	end
-	OwnerSettings = setmetatable({},{
+	Settings = setmetatable({},{
 		__index = function(_,Index)
-			return Settings[Index]
+			return SettingsTable[Index]
 		end,
 		__newindex = function(_,Index,Value)
-			Settings[Index] = Value
+			SettingsTable[Index] = Value
 			if writefile then
 				local FormattedSettings = {}
-				for SettingName,SettingValue in Settings do
+				for SettingName,SettingValue in SettingsTable do
 					table.insert(FormattedSettings,("\t%s : %s,"):format(("%q"):format(SettingName),type(SettingValue) == "string" and ("%q"):format(SettingValue) or tostring(SettingValue)))
 				end
 				table.sort(FormattedSettings,function(String1,String2)
@@ -77,12 +102,40 @@ do
 		__metatable = "nil"
 	})
 end
-OwnerSettings._ = nil
+Settings._ = nil
 if Service"CoreGui":FindFirstChild"RobloxLoadingGui" and Service"CoreGui".RobloxLoadingGui:FindFirstChild"BlackFrame" and Service"CoreGui".RobloxLoadingGui.BlackFrame.BackgroundTransparency <= 0 then
 	WaitForSignal(Service"CoreGui".RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency",3)
 	Wait(math.random())
 end
 pcall(GlobalEnvironment.CloseUltimatum)
+local function Holiday(String)
+	local Emoji = os.date"%m%w" == "114" and math.clamp(tonumber(os.date"%d"),22,28) == tonumber(os.date"%d") and "\u{1F983}" or ({
+		_0101 = "\u{1F386}",
+		_0214 = "\u{1F495}",
+		_0317 = "\u{1F340}",
+		[(function(Year)
+			local A = math.floor(Year/100)
+			local B = math.floor((13+8*A)/25)
+			local C = (15-B+A-math.floor(A/4))%30
+			local D = (4+A-math.floor(A/4))%7
+			local E = (19*(Year%19)+C)%30
+			local F = (2*(Year%4)+4*(Year%7)+6*E+D)%7
+			local Days = (22+E+F)
+			if E == 29 and F == 6 then
+				return "_0419"
+			elseif E == 28 and F == 6 then
+				return "_0418"
+			elseif 31 < Days then
+				return ("_04%02d"):format(Days-31)
+			end
+			return ("_03%02d"):format(Days)
+		end)(tonumber(os.date"%Y"))] = "\u{1F95A}",
+		_0704 = "\u{1F1FA}\u{1F1F8}",
+		_0931 = "\u{1F383}",
+		_1225 = "\u{1F384}"
+	})[os.date"_%m%d"]
+	return Emoji and ("%s %s %s"):format(Emoji,String,Emoji) or String
+end
 local Gui = Create{
 	{
 		Name = "Holder",
@@ -214,7 +267,7 @@ local Gui = Create{
 			TextColor3 = Color3.new(1,1,1),
 			TextXAlignment = Enum.TextXAlignment.Left,
 			PlaceholderColor3 = Color3.fromHex"A0A0A0",
-			PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Service"UserInput":GetStringForKeyCode(Enum.KeyCode[OwnerSettings.Keybind]))
+			PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Service"UserInput":GetStringForKeyCode(Enum.KeyCode[Settings.Keybind]))
 		}
 	},
 	{
@@ -278,8 +331,8 @@ local Gui = Create{
 	}
 }
 local NotificationIDs = {}
-local function Notify(Settings)
-	Settings = Valid.Table(Settings,{
+local function Notify(Options)
+	Options = Valid.Table(Options,{
 		Buttons = {},
 		Duration = 5,
 		Urgent = false,
@@ -288,8 +341,8 @@ local function Notify(Settings)
 		Title = "Ultimatum",
 		CalculateDuration = true
 	})
-	Settings.Text = ("<b>%s</b>\n%s"):format(Settings.Title,Settings.Text)
-	if OwnerSettings.Notifications == "Off" or OwnerSettings.Notifications == "Urgent" and not Settings.Urgent then
+	Options.Text = ("<b>%s</b>\n%s"):format(Options.Title,Options.Text)
+	if Settings.Notifications == "Off" or Settings.Notifications == "Urgent" and not Options.Urgent then
 		return
 	end
 	local ID
@@ -335,7 +388,7 @@ local function Notify(Settings)
 				TextSize = 14,
 				RichText = true,
 				TextWrapped = true,
-				Text = Settings.Text,
+				Text = Options.Text,
 				TextTransparency = 1,
 				Font = Enum.Font.Arial,
 				BackgroundTransparency = 1,
@@ -346,12 +399,12 @@ local function Notify(Settings)
 			}
 		}
 	}
-	if Settings.CalculateDuration then
+	if Options.CalculateDuration then
 		for _ in utf8.graphemes(Notification.Content.ContentText) do
-			Settings.Duration += .06
+			Options.Duration += .06
 		end
 	end
-	Settings.Duration += .25
+	Options.Duration += .25
 	local Size = Service"Text":GetTextSize(Notification.Content.ContentText,14,Enum.Font.Arial,Vector2.new(Gui.NotificationHolder.AbsoluteSize.X,Gui.NotificationHolder.AbsoluteSize.Y))
 	Notification.Main.Size = UDim2.new(0,Size.X+22,0,Size.Y+20)
 	Size = Notification.Main.Size
@@ -367,7 +420,7 @@ local function Notify(Settings)
 		Properties = {TextTransparency = 0},
 		EasingStyle = Enum.EasingStyle.Linear
 	})
-	task.delay(Settings.Duration,Animate,Notification.Main,{
+	task.delay(Options.Duration,Animate,Notification.Main,{
 		Time = 1,
 		Properties = {BackgroundTransparency = 1}
 	},Notification.Content,{
@@ -379,20 +432,20 @@ local function Notify(Settings)
 		Time = .25,
 		Properties = {Size = UDim2.new(Size.X.Scale,Size.X.Offset,0,0)}
 	})
-	Settings.Duration += 1.25
+	Options.Duration += 1.25
 	task.spawn(function()
 		local Start = os.clock()
 		repeat
 			Notification.Main.LayoutOrder = table.find(NotificationIDs,ID)
 			Wait()
-		until Settings.Duration < os.clock()-Start
+		until Options.Duration < os.clock()-Start
 		table.remove(NotificationIDs,table.find(NotificationIDs,ID))
 	end)
-	if Settings.Yields then
-		Wait(Settings.Duration)
+	if Options.Yields then
+		Wait(Options.Duration)
 		Destroy(Notification)
 	else
-		task.delay(Settings.Duration,Destroy,Notification)
+		task.delay(Options.Duration,Destroy,Notification)
 	end
 end
 local function CheckAxis(Axis)
@@ -400,7 +453,7 @@ local function CheckAxis(Axis)
 end
 local LastCheck,Debounce,LastLeft = 0,true,0
 local function ResizeMain(X,Y)
-	X = OwnerSettings.StayOpen and 400 or Valid.Number(X,400)
+	X = Settings.StayOpen and 400 or Valid.Number(X,400)
 	Y = Valid.Number(Y,40)
 	Gui.CommandBarBackground.LayoutOrder = CheckAxis"X" and -1 or 1
 	Gui.CommandBarSection.LayoutOrder = CheckAxis"Y" and 1 or -1
@@ -777,7 +830,7 @@ Connections = {
 		end
 	end),
 	isfile and Connect(Service"Run".Heartbeat,function()
-		if OwnerSettings.AutoUpdate and 60 < os.clock()-LastCheck then
+		if Settings.AutoUpdate and 60 < os.clock()-LastCheck then
 			LastCheck = os.clock()
 			local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua",true)
 			if Success and (not isfile"Ultimatum.lua" or Result ~= readfile"Ultimatum.lua") then
@@ -800,11 +853,11 @@ Connections = {
 		end
 	end),
 	queue_on_teleport and Connect(Owner.OnTeleport,isfile and function(TeleportState)
-		if OwnerSettings.LoadOnRejoin and TeleportState.Name == "Started" then
+		if Settings.LoadOnRejoin and TeleportState.Name == "Started" then
 			queue_on_teleport(isfile"Source.Ultimatum" and readfile"Source.Ultimatum" or "warn'Source.Ultimatum missing from workspace folder (Ultimatum cannot run)'")
 		end
 	end or function(TeleportState)
-		if OwnerSettings.LoadOnRejoin and TeleportState.Name == "Started" then
+		if Settings.LoadOnRejoin and TeleportState.Name == "Started" then
 			local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua",true)
 			queue_on_teleport(Success and Result or ("warn'HttpGet failed: %s (Ultimatum cannot run)'"):format(Result))
 		end
@@ -837,7 +890,7 @@ Connections = {
 	end),
 	Connect(Gui.CommandBar.FocusLost,function(Sent)
 		Wait()
-		Gui.CommandBar.PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Service"UserInput":GetStringForKeyCode(Enum.KeyCode[OwnerSettings.Keybind]))
+		Gui.CommandBar.PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Service"UserInput":GetStringForKeyCode(Enum.KeyCode[Settings.Keybind]))
 		if Sent and 0 < #Gui.CommandBar.Text then
 			task.spawn(RunCommand,Gui.CommandBar.Text)
 			Gui.CommandBar.Text = ""
@@ -855,23 +908,35 @@ Connections = {
 		Debounce = false
 	end),
 	Connect(Service"UserInput".InputBegan,function(Input,Ignore)
-		if not Ignore and Input.UserInputType.Name == "Keyboard" and Input.KeyCode.Name == OwnerSettings.Keybind and not Debounce then
+		if not Ignore and Input.UserInputType.Name == "Keyboard" and Input.KeyCode.Name == Settings.Keybind and not Debounce then
 			task.defer(Gui.CommandBar.CaptureFocus,Gui.CommandBar)
 		end
 	end),
 	Connect(Gui.CommandBar:GetPropertyChangedSignal"Text",UpdateSuggestions)
 }
 local function LoadCommands(Lua,Name)
-	Name = Valid.String(Name,"Custom Command Set")
-	Notify{
-		Title = "Loading Commands",
-		Text = ("Loading %s"):format(Name)
-	}
-	for CommandName,Info in loadstring(Lua,Name or "Custom Command Set")(Utilitas,SendValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,GetCharacter(Owner,.5),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")) do
+	for CommandName,Info in loadstring(Lua:gsub("\n",[[
+		local Utilitas,ReceiveValue = ...
+		local Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass = unpack(Utilitas)
+		AddConnections{
+			Connect(ReceiveValue.Event,function(Type,Object)
+				if Type == "Character" then
+					Character = Object
+				elseif Type == "Backpack" then
+					Backpack = Object
+				elseif Type == "PlayerGui" then
+					PlayerGui = Object
+				end
+			end)
+		}
+	]]),Valid.String(Name,"Custom Command Set"))(Utilitas,SendValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,GetCharacter(Owner,.5),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")) do
+		if Commands[CommandName] and Commands[CommandName].ToggleCheck and Commands[CommandName].Enabled then
+			RunCommand(Commands[CommandName].Toggles:split"_"[1])
+		end
 		Commands[CommandName] = Info
 	end
 end
-GlobalEnvironment.LoadUltimatumCommands = LoadCommands
+GlobalEnvironment.AddUltimatumCommands = LoadCommands
 local function GetCommandSet(ID)
 	ID = Valid.Number(ID,0)
 	local Success,Result = pcall(game.HttpGet,game,("https://raw.githubusercontent.com/Amourousity/Ultimatum/main/CommandSets/%d.lua"):format(ID),true)
@@ -911,7 +976,7 @@ GlobalEnvironment.CloseUltimatum = function()
 	GlobalEnvironment.CloseUltimatum = nil
 end
 EnableDrag(Gui.Main,true)
-if OwnerSettings.PlayIntro == "Always" or OwnerSettings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
+if Settings.PlayIntro == "Always" or Settings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
 	GlobalEnvironment.UltimatumLoaded = true
 	Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
 	task.delay(1.5,function()
