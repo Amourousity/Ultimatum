@@ -1,16 +1,4 @@
-local Utilitas,ReceiveValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = ...
-local Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass = unpack(Utilitas)
-AddConnections{
-	Connect(ReceiveValue.Event,function(Type,Object)
-		if Type == "Character" then
-			Character = Object
-		elseif Type == "Backpack" then
-			Backpack = Object
-		elseif Type == "PlayerGui" then
-			PlayerGui = Object
-		end
-	end)
-}
+local Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = select(3,...)
 return {
 	Exit_close_leave_shutdown = {
 		Function = function()
@@ -240,7 +228,7 @@ return {
 			end
 		end,
 		Variables = {},
-		Description = "Makes you invisible to other players"
+		Description = "Makes you invisible to other players (R15 only)"
 	},
 	AntiAFK_noafk_unafk = {
 		Function = function(Variables,Enabled)
@@ -257,6 +245,6 @@ return {
 		Toggles = "unantiafk_allowafk_afk",
 		ToggleCheck = true,
 		Variables = {},
-		Description = "Stops Roblox from kicking you for being AFK"
+		Description = "Stops Roblox from disconnecting you for being AFK"
 	}
 }

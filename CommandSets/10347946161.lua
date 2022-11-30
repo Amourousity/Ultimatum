@@ -1,23 +1,11 @@
-local Utilitas,ReceiveValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = ...
-local Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass = unpack(Utilitas)
-AddConnections{
-	Connect(ReceiveValue.Event,function(Type,Object)
-		if Type == "Character" then
-			Character = Object
-		elseif Type == "Backpack" then
-			Backpack = Object
-		elseif Type == "PlayerGui" then
-			PlayerGui = Object
-		end
-	end)
-}
+local Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = select(3,...)
 return {
 	AutoFarm_autoplay_autop_autof_farm_af = {
 		Function = function(Variables,Enabled)
 			if Enabled then
 				RunCommand"AntiAFK"
 				Variables.Debounce = false
-				Variables.Connection = Connect(Service"Run".Stepped,function()
+				Variables.Connection = Connect(Service"Run".Heartbeat,function()
 					if not Character then
 						return
 					end

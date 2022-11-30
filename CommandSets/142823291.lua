@@ -1,16 +1,4 @@
-local Utilitas,ReceiveValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = ...
-local Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass = unpack(Utilitas)
-AddConnections{
-	Connect(ReceiveValue.Event,function(Type,Object)
-		if Type == "Character" then
-			Character = Object
-		elseif Type == "Backpack" then
-			Backpack = Object
-		elseif Type == "PlayerGui" then
-			PlayerGui = Object
-		end
-	end)
-}
+local Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = select(3,...)
 return {
 	ExtrasensoryPerception_extrasensoryp_esensoryperception_esperception_extrasp_esp = {
 		Function = function(Variables,Enabled)
@@ -96,7 +84,8 @@ return {
 					}
 				})
 			end
-		}
+		},
+		Description = "Locates all players and tells you what role they are. Also shows where the gun is, if it's dropped"
 	},
 	AutoFarm_autoplay_autop_autof_farm_af = {
 		Function = function(Variables,Enabled)
@@ -153,7 +142,7 @@ return {
 						end
 						if Coin and Distance < 250 and Variables.Position ~= Coin.Position then
 							Variables.FoundCoin = true
-							Variables.Position = CFrame.lookAt(Variables.Position,Coin.Position)*CFrame.new(0,0,-math.min(25*Variables.Delta/60,Distance)).Position
+							Variables.Position = CFrame.lookAt(Variables.Position,Coin.Position)*CFrame.new(0,0,-math.min(Variables.Delta*5/12,Distance)).Position
 							Character:PivotTo(CFrame.new(Variables.Position-Vector3.yAxis*2)*CFrame.Angles(math.pi/2,0,0))
 							if (Variables.Position-Coin.Position).Magnitude < .01 then
 								Variables.Collecting = true
@@ -187,6 +176,7 @@ return {
 		end,
 		Toggles = "Unfarm_unautofarm_unautoplay_stopplaying_unautp_stopp_unautof_unf_uaf_uf",
 		ToggleCheck = true,
-		Variables = {}
+		Variables = {},
+		Description = "Automatically collects currency (depends on event) during rounds"
 	}
 }

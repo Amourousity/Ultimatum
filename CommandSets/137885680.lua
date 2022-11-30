@@ -1,48 +1,42 @@
-local Utilitas,ReceiveValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = ...
-local Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass = unpack(Utilitas)
-AddConnections{
-	Connect(ReceiveValue.Event,function(Type,Object)
-		if Type == "Character" then
-			Character = Object
-		elseif Type == "Backpack" then
-			Backpack = Object
-		elseif Type == "PlayerGui" then
-			PlayerGui = Object
-		end
-	end)
-}
+local Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = select(3,...)
 return {
 	AutoFarm_autoplay_autop_autof_farm_af = {
-		Function = function(Variables,Enabled,FocusOnKills)
+		Function = function(Variables,Enabled,TargetMethod)
 			if Enabled then
+				TargetMethod = math.clamp(TargetMethod,1,3)
 				RunCommand"AntiAFK"
 				Variables.Debounce = false
 				Variables.LastInventoryCheck,Variables.LastShot = 0,0
 				Variables.Connection = Connect(Service"Run".Heartbeat,function()
 					if 3 < os.clock()-Variables.LastInventoryCheck then
 						Variables.LastInventoryCheck = os.clock()
+						table.clear(Variables.AvailableGuns)
+						Variables.Selection = "Pistol"
 						for _,Gun in Variables.GunSelection:GetChildren() do
-							if Gun:FindFirstChild"Unlocked" and Gun.Unlocked.Value and not table.find(Variables.AvailableGuns,Gun.Name) and Variables.DPS[Gun.Name] then
+							if Gun:FindFirstChild"Unlocked" and Gun.Unlocked.Value and Variables[TargetMethod == 3 and "Firerates" or "DPS"][Gun.Name] then
 								table.insert(Variables.AvailableGuns,Gun.Name)
 							end
 						end
 						for _,Gun in Variables.AvailableGuns do
-							if Variables.DPS[Variables.Selection] < Variables.DPS[Gun] then
+							if if TargetMethod == 3 then Variables.Firerates[Variables.Selection] < Variables.Firerates[Gun] else Variables.DPS[Variables.Selection] < Variables.DPS[Gun] then
 								Variables.Selection = Gun
 							end
 						end
 					end
 					if Character then
 						if workspace.CurrentCamera.CameraSubject:IsDescendantOf(Character) then
-							local Subject = NewInstance("Part",nil,{CFrame = CFrame.new(0,-1e4,0)})
-							Destroy(Subject)
-							workspace.CurrentCamera.CameraSubject = Subject
+							workspace.CurrentCamera.CameraSubject = Variables.Spawns[math.random(#Variables.Spawns)]
 						end
 						Character:PivotTo(CFrame.new())
 						for _,BasePart in Character:GetChildren() do
 							if Valid.Instance(BasePart,"BasePart") then
 								BasePart.AssemblyLinearVelocity = Vector3.zero
 							end
+						end
+					end
+					for Zombie,TaggedAt in Variables.TaggedZombies do
+						if not Zombie:IsDescendantOf(Variables.Zombies) or 10 < os.clock()-TaggedAt then
+							Variables.TaggedZombies[Zombie] = nil
 						end
 					end
 					if not Variables.Debounce and Character then
@@ -56,8 +50,9 @@ return {
 							local Stats = Gun:WaitForChild"Configuration"
 							if Gun.Parent == Backpack then
 								for _,Name in {
-									"Range",
 									"Burst",
+									"Range",
+									"Damage",
 									"Firerate"
 								} do
 									Variables[Name] = Stats:WaitForChild(Name).Value
@@ -67,34 +62,46 @@ return {
 							elseif 1/Variables.Firerate < os.clock()-Variables.LastShot then
 								Variables.LastShot = os.clock()
 								local Target,Hit
-								if FocusOnKills then
-									local LowestHealth = math.huge
-									for _,Zombie in Variables.Zombies:GetChildren() do
-										local Humanoid = Zombie:FindFirstChildOfClass"Humanoid"
-										if Humanoid and 0 < Humanoid.Health and Humanoid.Health < LowestHealth then
-											Target,Hit,LowestHealth = Humanoid,Zombie:GetPivot().Position,Humanoid.Health
+								({
+									function()
+										local Targets = {}
+										for _,Zombie in Variables.Zombies:GetChildren() do
+											local Humanoid = Zombie:FindFirstChildOfClass"Humanoid"
+											if Humanoid and 0 < Humanoid.Health and Zombie:FindFirstChild"Configuration" and Zombie.Configuration:FindFirstChild"XPReward" then
+												table.insert(Targets,{
+													Humanoid = Humanoid,
+													Hit = Zombie:GetPivot().Position,
+													XPReward = Zombie.Configuration.XPReward.Value
+												})
+											end
+										end
+										local HighestWorth = 0
+										for _,Zombie in Targets do
+											local XPWorth = Zombie.XPReward/math.max(Zombie.Humanoid.Health,Variables.DPS[Variables.Selection])
+											if HighestWorth < XPWorth then
+												Target,Hit,HighestWorth = Zombie.Humanoid,Zombie.Hit,XPWorth
+											end
+										end
+									end,
+									function()
+										local LowestHealth = math.huge
+										for _,Zombie in Variables.Zombies:GetChildren() do
+											local Humanoid = Zombie:FindFirstChildOfClass"Humanoid"
+											if Humanoid and 0 < Humanoid.Health and Humanoid.Health < LowestHealth then
+												Target,Hit,LowestHealth = Humanoid,Zombie:GetPivot().Position,Humanoid.Health
+											end
+										end
+									end,
+									function()
+										for _,Zombie in Variables.Zombies:GetChildren() do
+											local Humanoid = Zombie:FindFirstChildOfClass"Humanoid"
+											if Humanoid and Variables.Damage < Humanoid.Health and not Variables.TaggedZombies[Humanoid] then
+												Target,Hit = Humanoid,Zombie:GetPivot().Position
+												Variables.TaggedZombies[Humanoid] = os.clock()
+											end
 										end
 									end
-								else
-									local Targets = {}
-									for _,Zombie in Variables.Zombies:GetChildren() do
-										local Humanoid = Zombie:FindFirstChildOfClass"Humanoid"
-										if Humanoid and 0 < Humanoid.Health and Zombie:FindFirstChild"Configuration" and Zombie.Configuration:FindFirstChild"XPReward" then
-											table.insert(Targets,{
-												Humanoid = Humanoid,
-												Hit = Zombie:GetPivot().Position,
-												XPReward = Zombie.Configuration.XPReward.Value
-											})
-										end
-									end
-									local HighestWorth = 0
-									for _,Zombie in Targets do
-										local XPWorth = Zombie.XPReward/math.max(Zombie.Humanoid.Health,Variables.DPS[Variables.Selection])
-										if HighestWorth < XPWorth then
-											Target,Hit,HighestWorth = Zombie.Humanoid,Zombie.Hit,XPWorth
-										end
-									end
-								end
+								})[TargetMethod]()
 								if Target then
 									local LaserProperties = {}
 									for _ = 1,Variables.Burst do
@@ -115,9 +122,9 @@ return {
 										RealTool = Gun,
 										HumanoidTables = {
 											{
-												BodyHits = 0,
+												BodyHits = TargetMethod == 3 and Variables.Burst or 0,
 												THumanoid = Target,
-												HeadHits = Variables.Burst,
+												HeadHits = TargetMethod == 3 and 0 or Variables.Burst,
 											}
 										},
 										LaserProperties = LaserProperties
@@ -153,65 +160,67 @@ return {
 		ToggleCheck = true,
 		Arguments = {
 			{
-				Name = "FocusOnKills",
-				Type = "Boolean",
-				Substitute = false
+				Name = "TargetMethod",
+				Type = "Number",
+				Substitute = 1
 			}
 		},
 		Variables = {
 			DPS = {
-				BlueMinigun = 2700,
-				Atmoblaster = 360,
-				GhostBlaster = 459,
-				EgoExpander = 693,
-				PigsBoson = 840,
-				EclecticRifle = 1875,
-				FlakCannon = 2550,
-				Sniper = 115.5,
-				GatlingLaser = 2250,
-				FireBlaster = 2325,
-				Luger = 585,
-				SpacePirateGun = 148.5,
-				BlastGun = 2028,
-				Bow = 125.25,
-				DarkMatterPistol = 2484,
-				M1Garand = 660,
-				MarsBlaster = 369,
-				HotChocolateGun = 2100,
 				Pistol = 150.75,
-				IceCannon = 2400,
-				Sterling = 600,
-				GoldenPistol = 735,
-				SuperDisruptor = 1648.5,
 				Shotgun = 165,
-				TarydiumPistol = 840,
-				HeatLauncher = 2174.25,
-				TX08 = 1026,
-				Sviper = 800.25,
-				Zapper = 870,
-				TrenchGun = 637.5,
+				AssaultRifle = 183,
+				LaserRifle = 222,
+				MarsBlaster = 369,
 				PartyRocker = 393.75,
 				SuperFreezeRay = 420,
-				SMG = 126,
-				Spitter = 2853,
-				FreezeRay = 975,
-				LaserRifle = 222,
-				AssaultRifle = 183,
-				["LaserRobot-DanceGun"] = 720,
-				ShrinkRay = 930,
-				PurpleLaserRifle = 765,
-				BlowDryer = 3000,
-				ReapersVoid = 1512,
-				ScatterBlaster = 1950,
-				PewPewGun = 1800,
-				TeslaElectricGun = 900,
+				GhostBlaster = 459,
 				LaserSniper = 487.5,
-				AlienRaygun = 1575,
-				["8BitCrossbow"] = 4650,
+				Luger = 585,
+				Sterling = 600,
+				TrenchGun = 637.5,
+				M1Garand = 660,
+				EgoExpander = 693,
+				["LaserRobot-DanceGun"] = 720,
+				PurpleLaserRifle = 765,
+				Sviper = 800.25,
+				PigsBoson = 840,
+				TarydiumPistol = 840,
+				Zapper = 870,
+				TeslaElectricGun = 900,
+				ShrinkRay = 930,
+				FreezeRay = 975,
+				TX08 = 1026,
 				LavaGun = 1125,
-				LaserPistol = 160.125
+				GoldenPistol = 735,
+				ReapersVoid = 1512,
+				AlienRaygun = 1575,
+				SuperDisruptor = 1648.5,
+				PewPewGun = 1800,
+				EclecticRifle = 1875,
+				ScatterBlaster = 1950,
+				BlastGun = 2028,
+				HotChocolateGun = 2100,
+				HeatLauncher = 2174.25,
+				GatlingLaser = 2250,
+				FireBlaster = 2325,
+				IceCannon = 2400,
+				DarkMatterPistol = 2484,
+				FlakCannon = 2550,
+				BlueMinigun = 2700,
+				Spitter = 2853,
+				BlowDryer = 3000,
+				["8BitCrossbow"] = 4650
+				-- Haven't gotten past this so some stats are missing
+				-- Also I won't be adding any of the paid weapons 'cause they literally cost like 300$ total
+			},
+			Firerates = {
+				Pistol = 6,
+				SMG = 14,
+				Sterling = 16
 			},
 			AvailableGuns = {},
+			TaggedZombies = {},
 			Selection = "Pistol",
 			Zombies = workspace:WaitForChild"Zombie Storage",
 			CurrentGun = WaitForSequence(Owner,"EquipStorage","Primary"),
@@ -220,7 +229,9 @@ return {
 			Primary = WaitForSequence(Service"ReplicatedStorage","WeaponRequirements","Primary"),
 			BackpackEvent = WaitForSequence(Service"ReplicatedStorage","Remotes","BackpackEvent"),
 			GunSelection = WaitForSequence(PlayerGui,"MainGui","Menu","Tab1Frame","ScrollingFrame"),
-			CurrentWave = WaitForSequence(Service"ReplicatedStorage","GameProperties","CurrentWave")
-		}
+			CurrentWave = WaitForSequence(Service"ReplicatedStorage","GameProperties","CurrentWave"),
+			Spawns = WaitForSequence(workspace,"SafehouseLobby",".Functional","SpawnLocations"):GetChildren()
+		},
+		Description = "Automatically shoots at zombies via 1 of 3 targetting methods:\n1. XP worth formula\n2. Lowest health\n3. Assist method (shoot all new zombies once)"
 	}
 }
