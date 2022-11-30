@@ -1,4 +1,3 @@
-local Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = select(3,...)
 return {
 	ExtrasensoryPerception_extrasensoryp_esensoryperception_esperception_extrasp_esp = {
 		Function = function(Variables,Enabled)

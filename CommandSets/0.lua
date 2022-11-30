@@ -1,4 +1,3 @@
-local Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = select(3,...)
 return {
 	Exit_close_leave_shutdown = {
 		Function = function()

@@ -1,4 +1,3 @@
-local Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = select(3,...)
 return {
 	AutoFarm_autoplay_autop_autof_farm_af = {
 		Function = function(Variables,Enabled,TargetMethod)
