@@ -915,8 +915,8 @@ Connections = {
 	Connect(Gui.CommandBar:GetPropertyChangedSignal"Text",UpdateSuggestions)
 }
 local function LoadCommands(Lua,Name)
-	for CommandName,Info in loadstring(Lua:gsub("\n",[[
-		local Utilitas,ReceiveValue = ...
+	for CommandName,Info in loadstring(([[
+		local Utilitas,ReceiveValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = ...
 		local Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass = unpack(Utilitas)
 		AddConnections{
 			Connect(ReceiveValue.Event,function(Type,Object)
@@ -929,7 +929,7 @@ local function LoadCommands(Lua,Name)
 				end
 			end)
 		}
-	]]),Valid.String(Name,"Custom Command Set"))(Utilitas,SendValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,GetCharacter(Owner,.5),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")) do
+	%s]]):format(Lua),Valid.String(Name,"Custom Command Set"))(Utilitas,SendValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,GetCharacter(Owner,.5),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")) do
 		if Commands[CommandName] and Commands[CommandName].ToggleCheck and Commands[CommandName].Enabled then
 			RunCommand(Commands[CommandName].Toggles:split"_"[1])
 		end
