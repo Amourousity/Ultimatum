@@ -90,6 +90,7 @@ return {
 			if Enabled then
 				RunCommand"AntiAFK"
 				Variables.Debounce = false
+				workspace.FallenPartsDestroyHeight = 0/0
 				Variables.Waypoints,Variables.Index = {},2
 				Variables.Delta,Variables.LastFrame = 0,os.clock()
 				Variables.Position = workspace.CurrentCamera.Focus.Position
@@ -100,11 +101,13 @@ return {
 			else
 				RunCommand"AllowAFK"
 				RemoveConnections{Variables.Connection}
+				workspace.FallenPartsDestroyHeight = Variables.DestroyHeight
 			end
 		end,
 		Toggles = "Unfarm_unautofarm_unautoplay_stopplaying_unautp_stopp_unautof_unf_uaf_uf",
 		ToggleCheck = true,
 		Variables = {
+			DestroyHeight = workspace.FallenPartsDestroyHeight,
 			RayParams = (function()
 				local RayParams = RaycastParams.new()
 				RayParams.IgnoreWater = true
@@ -114,7 +117,7 @@ return {
 			ScrapSpawns = WaitForSequence(workspace,"Filter","ScrapSpawns"),
 			Path = Service"Pathfinding":CreatePath{
 				AgentCanJump = true,
-				WaypointSpacing = 1,
+				WaypointSpacing = 3,
 				AgentCanClimb = true
 			},
 			MoveTo = function(Variables,Position)
@@ -138,6 +141,7 @@ return {
 				if not Character then
 					return
 				end
+				local Position = Character:GetPivot().Position
 				if 3 < ((Variables.Position-Character:GetPivot().Position)*Vector3.new(1,0,1)).Magnitude then
 					Variables.Position = Character:GetPivot().Position
 					Variables.Waypoints,Variables.Index = {},2
@@ -158,6 +162,11 @@ return {
 					local Ceiling = workspace:Raycast(Variables.Position,Vector3.yAxis*1e3,Variables.RayParams)
 					local Floor = workspace:Raycast(Ceiling and Ceiling.Position or Variables.Position+Vector3.yAxis*1e3,-Vector3.yAxis*5e3,Variables.RayParams)
 					Character:PivotTo(CFrame.new(Floor and Floor.Position+Vector3.yAxis*4.5 or Variables.Position)*CFrame.new(-Character:GetPivot().Position)*Character:GetPivot())
+					if 100 < (Character:GetPivot().Position-Position).Magnitude then
+						Variables.Position = Position
+						Character:PivotTo(Position)
+						Variables.Waypoints,Variables.Index = {},2
+					end
 					if 0 < DistanceLeft then
 						Variables.Index += 1
 						Variables:FireHeartbeat(DistanceLeft)
