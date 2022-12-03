@@ -23,30 +23,7 @@ local function Load(Name)
 end
 Load"Conversio"()
 local Utilitas = Load"Utilitas""All"
-for Index,Name in {
-	"Owner",
-	"Nil",
-	"Connect",
-	"Destroy",
-	"Wait",
-	"Service",
-	"Valid",
-	"WaitForSequence",
-	"RandomString",
-	"RandomBool",
-	"NilConvert",
-	"NewInstance",
-	"Create",
-	"DecodeJSON",
-	"WaitForSignal",
-	"Animate",
-	"Assert",
-	"GetCharacter",
-	"GetHumanoid",
-	"ConvertTime",
-	"GetContentText",
-	"WaitForChildOfClass"
-} do
+for Index,Name in ("Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass"):split() do
 	getfenv()[Name] = Utilitas[Index]
 end
 local GlobalEnvironment = getgenv and getgenv() or shared
@@ -120,15 +97,13 @@ local function Holiday(String)
 			local D = (4+A-math.floor(A/4))%7
 			local E = (19*(Year%19)+C)%30
 			local F = (2*(Year%4)+4*(Year%7)+6*E+D)%7
-			local Days = (22+E+F)
-			if E == 29 and F == 6 then
-				return "_0419"
-			elseif E == 28 and F == 6 then
-				return "_0418"
-			elseif 31 < Days then
-				return ("_04%02d"):format(Days-31)
+			local G = (22+E+F)
+			if F == 6 and (E == 29 or E == 28) then
+				return ("_041%d"):format(tostring(E):sub(2))
+			elseif 31 < G then
+				return ("_04%02d"):format(G-31)
 			end
-			return ("_03%02d"):format(Days)
+			return ("_03%02d"):format(G)
 		end)(tonumber(os.date"%Y"))] = "\u{1F95A}",
 		_0704 = "\u{1F1FA}\u{1F1F8}",
 		_0931 = "\u{1F383}",
@@ -333,7 +308,6 @@ local Gui = Create{
 local NotificationIDs = {}
 local function Notify(Options)
 	Options = Valid.Table(Options,{
-		Buttons = {},
 		Duration = 5,
 		Urgent = false,
 		Yields = false,
@@ -890,7 +864,7 @@ Connections = {
 	end),
 	Connect(Gui.CommandBar.FocusLost,function(Sent)
 		Wait()
-		Gui.CommandBar.PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Service"UserInput":GetStringForKeyCode(Enum.KeyCode[Settings.Keybind]))
+		Gui.CommandBar.PlaceholderText = "Enter a command"
 		if Sent and 0 < #Gui.CommandBar.Text then
 			task.spawn(RunCommand,Gui.CommandBar.Text)
 			Gui.CommandBar.Text = ""
@@ -903,6 +877,8 @@ Connections = {
 		task.delay(.25,function()
 			if Service"UserInput":GetFocusedTextBox() ~= Gui.CommandBar then
 				ResizeMain(40)
+				Wait(.25)
+				Gui.CommandBar.PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Service"UserInput":GetStringForKeyCode(Enum.KeyCode[Settings.Keybind]))
 			end
 		end)
 		Debounce = false
@@ -929,7 +905,7 @@ local function LoadCommands(Lua,Name)
 				end
 			end)
 		}
-	%s]]):format(Lua),Valid.String(Name,"Custom Command Set"))(Utilitas,SendValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,GetCharacter(Owner,.5),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")) do
+	%s]]):gsub("\n\t*"," "):format(Lua),Valid.String(Name,"Custom Command Set"))(Utilitas,SendValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,GetCharacter(Owner,.5),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")) do
 		if Commands[CommandName] and Commands[CommandName].ToggleCheck and Commands[CommandName].Enabled then
 			RunCommand(Commands[CommandName].Toggles:split"_"[1])
 		end
