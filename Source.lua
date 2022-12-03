@@ -99,7 +99,7 @@ local function Holiday(String)
 			local F = (2*(Year%4)+4*(Year%7)+6*E+D)%7
 			local G = (22+E+F)
 			if F == 6 and (E == 29 or E == 28) then
-				return ("_041%d"):format(tostring(E):sub(2))
+				return ("_041%s"):format(tostring(E):sub(2))
 			elseif 31 < G then
 				return ("_04%02d"):format(G-31)
 			end
@@ -694,7 +694,6 @@ local function CreateWindow(Title,DataList)
 		});
 		({
 			Slider = function()
-
 			end
 		})[Data.Type]()
 	end
@@ -811,10 +810,8 @@ Connections = {
 				writefile("Ultimatum.lua",Result)
 				Notify{
 					Yields = true,
-					Duration = .75,
-					CalculateDuration = false,
-					Title = "Update Detected",
-					Text = "Ultimatum will now update..."
+					Title = "Out of Date",
+					Text = "Your version of Ultimatum is outdated! Updating to newest version..."
 				}
 				loadstring(Result,"Ultimatum")()
 			elseif not Success and not isfile"Ultimatum.lua" then
