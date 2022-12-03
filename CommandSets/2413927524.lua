@@ -187,7 +187,7 @@ return {
 					Variables.Debounce = false
 				end
 				if workspace:FindFirstChild"Rake" and (workspace.Rake:GetPivot().Position-Variables.Position).Magnitude < 50 and (not Variables.Target or Variables.Target.Parent ~= Variables.ScrapSpawns) then
-					Variables.Waypoints,Variables.Index = {},0
+					Variables.Waypoints,Variables.Index = {},2
 					local Rake = workspace.Rake:GetPivot().Position
 					local Closest,Distance = nil,math.huge
 					for _,Spawn in Variables.ScrapSpawns:GetChildren() do
