@@ -190,7 +190,7 @@ return {
 					Variables.Waypoints,Variables.Index = {},0
 					local Rake = workspace.Rake:GetPivot().Position
 					local Closest,Distance = nil,math.huge
-					for _,Spawn in Variables.Scraps:GetChildren() do
+					for _,Spawn in Variables.ScrapSpawns:GetChildren() do
 						local Magnitude = (Spawn.Position-Rake).Magnitude
 						if Magnitude > Distance then
 							Closest,Distance = Spawn,Magnitude
