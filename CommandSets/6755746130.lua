@@ -9,6 +9,11 @@ return {
 					if not Character then
 						return
 					end
+					local Toucher = Character:FindFirstChildWhichIsA"BasePart"
+					if not Toucher then
+						return
+					end
+					Character:PivotTo(Variables.Position)
 					for _,BasePart in Character:GetChildren() do
 						if Valid.Instance(BasePart,"BasePart") then
 							BasePart.AssemblyLinearVelocity = Vector3.zero
@@ -24,11 +29,10 @@ return {
 					end
 					if not Variables.Debounce then
 						Variables.Debounce = true
-						Character:PivotTo(Variables.Position)
 						if not Valid.Instance(Variables.OwnedTycoon.Value,"Model") then
 							for _,Tycoon in Variables.Tycoons:GetChildren() do
 								if not Valid.Instance(Tycoon:WaitForChild"Owner".Value,"Player") then
-									Character:PivotTo(WaitForSequence(Tycoon,"Essentials","Entrance").CFrame)
+									FireTouchInterest(Toucher,WaitForSequence(Tycoon,"Essentials","Entrance"))
 									Wait(1)
 									break
 								end
@@ -71,25 +75,23 @@ return {
 								end
 							end
 						end
-						if PlayerGui:FindFirstChild"ObbyInfoBillBoard" and PlayerGui.ObbyInfoBillBoard:FindFirstChild"TopText" and PlayerGui.ObbyInfoBillBoard.TopText.Text == "Start Obby" then
-							for _,VictoryPart in Variables.VictoryParts do
-								Character:PivotTo(VictoryPart.CFrame)
-								Wait(.5)
-							end
+						if Toucher and PlayerGui:FindFirstChild"ObbyBillboards" and PlayerGui.ObbyBillboards:FindFirstChild"ObbySignBillBoard" and PlayerGui.ObbyBillboards.ObbySignBillBoard:FindFirstChild"TopText" and PlayerGui.ObbyBillboards.ObbySignBillBoard.TopText.Text == "Start Obby" then
+							FireTouchInterest(Toucher,Variables.RealObbyStartPart)
 							Wait(.5)
+							FireTouchInterest(Toucher,Variables.VictoryPart)
+							Wait(1)
 						end
 						local LowestPrice,ChosenButton = math.huge,nil
 						for _,Button in Variables.Buttons:GetDescendants() do
-							if Valid.Instance(Button,"BasePart") and 0 < #Button:GetChildren() and Button.Name ~= "AutoCollect" then
-								local Price = tonumber((WaitForSequence(Button,"ButtonLabel","CostLabel").Text:gsub("%D",""))) or 0
+							if Valid.Instance(Button,"BasePart") and 0 < #Button:GetChildren() and Button.Name ~= "AutoCollect" and not Button:GetAttribute"CostValue" then
+								local Price = Button:GetAttribute"Cost"
 								if Price <= Variables.Money.Value and Price < LowestPrice then
 									LowestPrice,ChosenButton = Price,Button
 								end
 							end
 						end
-						if ChosenButton then
-							Character:PivotTo(ChosenButton.CFrame)
-							Wait(.5)
+						if ChosenButton and Toucher then
+							FireTouchInterest(Toucher,ChosenButton)
 						end
 						Variables.Debounce = false
 					end
@@ -132,13 +134,8 @@ return {
 			Prestige = WaitForSequence(Owner,"leaderstats","Prestige"),
 			CollectFruit = Service"ReplicatedStorage":WaitForChild"CollectFruit",
 			RequestPrestige = Service"ReplicatedStorage":WaitForChild"RequestPrestige",
-			VictoryParts = (function()
-				local VictoryParts = {}
-				for _,Stage in WaitForSequence(workspace,"ObbyParts","Stages"):GetChildren() do
-					table.insert(VictoryParts,Stage:WaitForChild"VictoryPart")
-				end
-				return VictoryParts
-			end)()
+			RealObbyStartPart = WaitForSequence(workspace,"ObbyParts","RealObbyStartPart"),
+			VictoryPart = WaitForSequence(workspace,"ObbyParts","Stages","Hard","VictoryPart")
 		},
 		Description = "Automatically collects and sells fruit, buys upgrades, activates frenzy and prestiges"
 	}
