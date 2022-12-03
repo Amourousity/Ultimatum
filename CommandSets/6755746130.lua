@@ -9,10 +9,6 @@ return {
 					if not Character then
 						return
 					end
-					local Toucher = Character:FindFirstChildWhichIsA"BasePart"
-					if not Toucher then
-						return
-					end
 					Character:PivotTo(Variables.Position)
 					for _,BasePart in Character:GetChildren() do
 						if Valid.Instance(BasePart,"BasePart") then
@@ -32,7 +28,7 @@ return {
 						if not Valid.Instance(Variables.OwnedTycoon.Value,"Model") then
 							for _,Tycoon in Variables.Tycoons:GetChildren() do
 								if not Valid.Instance(Tycoon:WaitForChild"Owner".Value,"Player") then
-									FireTouchInterest(Toucher,WaitForSequence(Tycoon,"Essentials","Entrance"))
+									Character:PivotTo(WaitForSequence(Tycoon,"Essentials","Entrance").CFrame)
 									Wait(1)
 									break
 								end
@@ -75,9 +71,9 @@ return {
 								end
 							end
 						end
-						if Toucher and PlayerGui:FindFirstChild"ObbyInfoBillBoard" and PlayerGui.ObbyInfoBillBoard:FindFirstChild"TopText" and PlayerGui.ObbyInfoBillBoard.TopText.Text == "Start Obby" then
+						if PlayerGui:FindFirstChild"ObbyInfoBillBoard" and PlayerGui.ObbyInfoBillBoard:FindFirstChild"TopText" and PlayerGui.ObbyInfoBillBoard.TopText.Text == "Start Obby" then
 							for _,VictoryPart in Variables.VictoryParts do
-								FireTouchInterest(Toucher,VictoryPart)
+								Character:PivotTo(VictoryPart.CFrame)
 								Wait(.5)
 							end
 							Wait(.5)
@@ -91,8 +87,9 @@ return {
 								end
 							end
 						end
-						if ChosenButton and Toucher then
-							FireTouchInterest(Toucher,ChosenButton)
+						if ChosenButton then
+							Character:PivotTo(ChosenButton.CFrame)
+							Wait(.5)
 						end
 						Variables.Debounce = false
 					end
