@@ -76,8 +76,11 @@ return {
 							end
 						end
 						if Toucher and PlayerGui:FindFirstChild"ObbyInfoBillBoard" and PlayerGui.ObbyInfoBillBoard:FindFirstChild"TopText" and PlayerGui.ObbyInfoBillBoard.TopText.Text == "Start Obby" then
-							FireTouchInterest(Toucher,Variables.VictoryPart)
-							Wait(1)
+							for _,VictoryPart in Variables.VictoryParts do
+								FireTouchInterest(Toucher,VictoryPart)
+								Wait(.5)
+							end
+							Wait(.5)
 						end
 						local LowestPrice,ChosenButton = math.huge,nil
 						for _,Button in Variables.Buttons:GetDescendants() do
@@ -130,9 +133,15 @@ return {
 			OwnedTycoon = Owner:WaitForChild"OwnedTycoon",
 			Money = WaitForSequence(Owner,"leaderstats","Money"),
 			Prestige = WaitForSequence(Owner,"leaderstats","Prestige"),
-			VictoryPart = WaitForSequence(workspace,"ObbyParts","VictoryPart"),
 			CollectFruit = Service"ReplicatedStorage":WaitForChild"CollectFruit",
-			RequestPrestige = Service"ReplicatedStorage":WaitForChild"RequestPrestige"
+			RequestPrestige = Service"ReplicatedStorage":WaitForChild"RequestPrestige",
+			VictoryParts = (function()
+				local VictoryParts = {}
+				for _,Stage in WaitForSequence(workspace,"ObbyParts","Stages"):GetChildren() do
+					table.insert(VictoryParts,Stage:WaitForChild"VictoryPart")
+				end
+				return VictoryParts
+			end)()
 		},
 		Description = "Automatically collects and sells fruit, buys upgrades, activates frenzy and prestiges"
 	}
