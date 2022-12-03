@@ -1,5 +1,12 @@
 return {
-	Exit_close_leave_shutdown = {
+	Close = {
+		Function = function()
+			--- @diagnostic disable-next-line undefined-global
+			pcall(CloseUltimatum)
+		end,
+		Decription = "Closes Ultimatum (\u{2639})"
+	},
+	Exit_leave = {
 		Function = function()
 			game:Shutdown()
 		end,
@@ -241,9 +248,49 @@ return {
 				RemoveConnections{Variables.Connection}
 			end
 		end,
+		Variables = {},
 		Toggles = "unantiafk_allowafk_afk",
 		ToggleCheck = true,
-		Variables = {},
 		Description = "Stops Roblox from disconnecting you for being AFK"
+	},
+	FullBrightness_fullbright_bright_fb_nightvision_nightvis_nightv_nvision_nv_fullvision = {
+		Function = function(Variables,Enabled)
+			if Enabled then
+				Variables.Connection = Connect(Service"Run".RenderStepped,function()
+					for Name,Value in {
+						Brightness = 0,
+						FogEnd = math.huge,
+						FogStart = math.huge,
+						GlobalShadows = false,
+						ExposureCompensation = 0,
+						EnvironmentDiffuseScale = 0,
+						EnvironmentSpecularScale = 0,
+						Ambient = Color3.new(1,1,1),
+						OutdoorAmbient = Color3.new(1,1,1)
+					} do
+						Service"Lighting"[Name] = Value
+					end
+					Variables.Check(Service"Lighting")
+					Variables.Check(workspace.CurrentCamera)
+				end)
+				AddConnections{Variables.Connection}
+			else
+				RemoveConnections{Variables.Connection}
+			end
+		end,
+		Variables = {
+			Check = function(Parent)
+				for _,Object in Parent:GetChildren() do
+					if Valid.Instance(Object,"PostEffect") then
+						Object.Enabled = false
+					elseif Object.ClassName == "Atmosphere" then
+						Object.Density = 0
+					end
+				end
+			end
+		},
+		Toggles = "NoBrightness_unfullbrightness_nofullbrightness_nofullbright_unfullbright_unfb_unnightvision_nonightvision_novision_nonightvis_unnightvis_nonightv_unnightv_nonvision_unnvision_unnv_nonv_nov",
+		ToggleCheck = true,
+		Description = "Removes all lighting effects/properties that can possibly affect your visibility"
 	}
 }
