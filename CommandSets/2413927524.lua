@@ -125,13 +125,6 @@ return {
 				Variables.Path:ComputeAsync(Variables.Position,Position)
 				if Variables.Path.Status == Enum.PathStatus.Success then
 					Variables.Waypoints,Variables.Index = Variables.Path:GetWaypoints(),2
-					Variables.Blocked = Connect(Variables.Path.Blocked,function(BlockedIndex)
-						if Variables.Index <= BlockedIndex then
-							Variables.Waypoints,Variables.Index = {},2
-							RemoveConnections{Variables.Blocked}
-						end
-					end)
-					AddConnections{Variables.Blocked}
 				end
 			end,
 			FireHeartbeat = function(Variables,DistanceLeft)
