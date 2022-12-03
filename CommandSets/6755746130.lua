@@ -9,7 +9,6 @@ return {
 					if not Character then
 						return
 					end
-					Character:PivotTo(Variables.Position)
 					for _,BasePart in Character:GetChildren() do
 						if Valid.Instance(BasePart,"BasePart") then
 							BasePart.AssemblyLinearVelocity = Vector3.zero
@@ -25,6 +24,7 @@ return {
 					end
 					if not Variables.Debounce then
 						Variables.Debounce = true
+						Character:PivotTo(Variables.Position)
 						if not Valid.Instance(Variables.OwnedTycoon.Value,"Model") then
 							for _,Tycoon in Variables.Tycoons:GetChildren() do
 								if not Valid.Instance(Tycoon:WaitForChild"Owner".Value,"Player") then
