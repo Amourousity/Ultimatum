@@ -154,14 +154,14 @@ return {
 							BasePart.AssemblyLinearVelocity = Vector3.zero
 						end
 					end
-					if 0 < DistanceLeft then
-						Variables.Index += 1
-						Variables:FireHeartbeat(DistanceLeft)
-					end
 					Variables.RayParams.FilterDescendantsInstances = {Character}
 					local Ceiling = workspace:Raycast(Variables.Position,Vector3.yAxis*1e3,Variables.RayParams)
 					local Floor = workspace:Raycast(Ceiling and Ceiling.Position or Variables.Position+Vector3.yAxis*1e3,-Vector3.yAxis*5e3,Variables.RayParams)
 					Character:PivotTo(CFrame.new(Floor and Floor.Position+Vector3.yAxis*4.5 or Variables.Position)*CFrame.new(-Character:GetPivot().Position)*Character:GetPivot())
+					if 0 < DistanceLeft then
+						Variables.Index += 1
+						Variables:FireHeartbeat(DistanceLeft)
+					end
 				elseif not Variables.Debounce then
 					Variables.Debounce = true
 					Variables.Position = Character:GetPivot().Position
@@ -185,6 +185,21 @@ return {
 						Variables:MoveTo(Closest.Position)
 					end
 					Variables.Debounce = false
+				end
+				if workspace:FindFirstChild"Rake" and (workspace.Rake:GetPivot().Position-Variables.Position).Magnitude < 50 and (not Variables.Target or Variables.Target.Parent ~= Variables.ScrapSpawns) then
+					Variables.Waypoints,Variables.Index = {},0
+					local Rake = workspace.Rake:GetPivot().Position
+					local Closest,Distance = nil,math.huge
+					for _,Spawn in Variables.Scraps:GetChildren() do
+						local Magnitude = (Spawn.Position-Rake).Magnitude
+						if Magnitude > Distance then
+							Closest,Distance = Spawn,Magnitude
+						end
+					end
+					if Closest then
+						Variables.Target = Closest
+						Variables:MoveTo(Closest.Position)
+					end
 				end
 			end
 		},
