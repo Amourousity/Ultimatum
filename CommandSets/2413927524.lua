@@ -207,7 +207,7 @@ return {
 					Variables.SoldScraps = true
 					Variables.Debounce = false
 				end
-				if workspace:FindFirstChild"Rake" and workspace.Rake:FindFirstChild"TargetVal" and workspace.Rake.TargetVal.Value and workspace.Rake.TargetVal.Value:IsDescendantOf(Character) and (not Variables.Target or Variables.Target.Parent ~= Variables.ScrapSpawns) then
+				if workspace:FindFirstChild"Rake" and (workspace.Rake:FindFirstChild"TargetVal" and workspace.Rake.TargetVal.Value and workspace.Rake.TargetVal.Value:IsDescendantOf(Character) or (Variables.Position-workspace.Rake:GetPivot().Position).Magnitude < 75) and (not Variables.Target or Variables.Target.Parent ~= Variables.ScrapSpawns) then
 					Variables.Debounce = true
 					local Rake = workspace.Rake:GetPivot().Position
 					local Farthest,Distance = nil,0
