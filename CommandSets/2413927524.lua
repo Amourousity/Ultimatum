@@ -1,3 +1,6 @@
+local print = function(String)
+	rconsoleprint(String.."\n")
+end
 return {
 	ExtrasensoryPerception_extrasensoryp_esensoryperception_esperception_extrasp_esp = {
 		Function = function(Variables,Enabled)
@@ -121,10 +124,14 @@ return {
 				AgentCanClimb = true
 			},
 			MoveTo = function(Variables,Position)
-				RemoveConnections{Variables.Blocked}
+				print"Calculating path..."
 				Variables.Path:ComputeAsync(Variables.Position,Position)
+				print"Calculated"
 				if Variables.Path.Status == Enum.PathStatus.Success then
+					print"Found a path"
 					Variables.Waypoints,Variables.Index = Variables.Path:GetWaypoints(),2
+				else
+					print"No path found"
 				end
 			end,
 			FireHeartbeat = function(Variables,DistanceLeft)
@@ -132,10 +139,12 @@ return {
 					Variables.Delta,Variables.LastFrame = math.min(os.clock()-Variables.LastFrame,1/15)*60,os.clock()
 				end
 				if not Character then
+					print"No character found"
 					return
 				end
 				local Position = Character:GetPivot().Position
 				if 3 < ((Variables.Position-Character:GetPivot().Position)*Vector3.new(1,0,1)).Magnitude then
+					print"Anti-Cheat possibly moved you back"
 					Variables.Position = Character:GetPivot().Position
 					Variables.Waypoints,Variables.Index = {},2
 				end
@@ -154,8 +163,9 @@ return {
 					Variables.RayParams.FilterDescendantsInstances = {Character}
 					local Ceiling = workspace:Raycast(Variables.Position,Vector3.yAxis*1e3,Variables.RayParams)
 					local Floor = workspace:Raycast(Ceiling and Ceiling.Position or Variables.Position+Vector3.yAxis*1e3,-Vector3.yAxis*5e3,Variables.RayParams)
-					Character:PivotTo(CFrame.new(Floor and Floor.Position+Vector3.yAxis*4.5 or Variables.Position)*CFrame.new(-Character:GetPivot().Position)*Character:GetPivot())
+					Character:PivotTo(Valid.CFrame(CFrame.new(Floor and Floor.Position+Vector3.yAxis*4.5 or Variables.Position)*CFrame.new(-Character:GetPivot().Position)*Character:GetPivot(),Character:GetPivot()))
 					if 100 < (Character:GetPivot().Position-Position).Magnitude then
+						print"Most likely void glitch, teleporting back"
 						Variables.Position = Position
 						Character:PivotTo(Position)
 						Variables.Waypoints,Variables.Index = {},2
@@ -183,24 +193,27 @@ return {
 						end
 					end
 					if Closest then
+						print"Scrap found"
 						Variables.Target = Closest
 						Variables:MoveTo(Closest.Position)
 					end
 					Variables.Debounce = false
 				end
 				if workspace:FindFirstChild"Rake" and (workspace.Rake:GetPivot().Position-Variables.Position).Magnitude < 50 and (not Variables.Target or Variables.Target.Parent ~= Variables.ScrapSpawns) then
+					print"Rake is too close, changing trajectory"
 					Variables.Waypoints,Variables.Index = {},2
 					local Rake = workspace.Rake:GetPivot().Position
-					local Closest,Distance = nil,math.huge
+					local Farthest,Distance = nil,0
 					for _,Spawn in Variables.ScrapSpawns:GetChildren() do
 						local Magnitude = (Spawn.Position-Rake).Magnitude
-						if Magnitude > Distance then
-							Closest,Distance = Spawn,Magnitude
+						if Distance < Magnitude then
+							Farthest,Distance = Spawn,Magnitude
 						end
 					end
-					if Closest then
-						Variables.Target = Closest
-						Variables:MoveTo(Closest.Position)
+					if Farthest then
+						print"Found a far point to walk to"
+						Variables.Target = Farthest
+						Variables:MoveTo(Farthest.Position)
 					end
 				end
 			end
