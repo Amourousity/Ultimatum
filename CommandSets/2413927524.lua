@@ -92,10 +92,14 @@ return {
 				Variables.Debounce = false
 				workspace.FallenPartsDestroyHeight = 0/0
 				Variables.Waypoints,Variables.Index = {},2
+				Variables.SoldScraps = Variables.Night.Value
 				Variables.Delta,Variables.LastFrame = 0,os.clock()
 				Variables.Position = workspace.CurrentCamera.Focus.Position
 				Variables.Connection = Connect(Service"Run".Heartbeat,function()
 					Variables:FireHeartbeat()
+				end)
+				Variables.NightChanged = Connect(Variables.Night:GetPropertyChangedSignal"Value",function()
+					Variables.SoldScraps = Variables.Night.Value
 				end)
 				AddConnections{Variables.Connection}
 			else
@@ -124,9 +128,11 @@ return {
 				Variables.Path:ComputeAsync(Variables.Position,Position)
 				if Variables.Path.Status == Enum.PathStatus.Success then
 					Variables.Waypoints,Variables.Index = Variables.Path:GetWaypoints(),2
-				else
 				end
 			end,
+			Night = Service"ReplicatedStorage":WaitForChild"Night",
+			ShopPart = WaitForSequence(workspace,"Map","Shack","ShopPart"),
+			ShopEvent = Service"ReplicatedStorage":WaitForChild"ShopEvent",
 			FireHeartbeat = function(Variables,DistanceLeft)
 				if not DistanceLeft then
 					Variables.Delta,Variables.LastFrame = math.min(os.clock()-Variables.LastFrame,1/15)*60,os.clock()
@@ -134,13 +140,12 @@ return {
 				if not Character then
 					return
 				end
-				local Position = Character:GetPivot().Position
 				if 3 < ((Variables.Position-Character:GetPivot().Position)*Vector3.new(1,0,1)).Magnitude then
 					Variables.Position = Character:GetPivot().Position
 					Variables.Waypoints,Variables.Index = {},2
 				end
 				local Waypoint = Variables.Waypoints[Variables.Index]
-				if Waypoint and Variables.Target and Variables.Target:IsDescendantOf(Variables.ScrapSpawns) then
+				if Waypoint and Variables.Target and Variables.Target:IsDescendantOf(workspace) then
 					Waypoint = Waypoint.Position
 					DistanceLeft = DistanceLeft or Variables.Delta*(25/60)
 					local Travel = math.min(DistanceLeft,((Variables.Position-Waypoint)*Vector3.new(1,0,1)).Magnitude)
@@ -155,11 +160,6 @@ return {
 					local Ceiling = workspace:Raycast(Variables.Position,Vector3.yAxis*1e3,Variables.RayParams)
 					local Floor = workspace:Raycast(Ceiling and Ceiling.Position or Variables.Position+Vector3.yAxis*1e3,-Vector3.yAxis*5e3,Variables.RayParams)
 					Character:PivotTo(Valid.CFrame(CFrame.new(Floor and Floor.Position+Vector3.yAxis*4.5 or Variables.Position)*CFrame.new(-Character:GetPivot().Position)*Character:GetPivot(),Character:GetPivot()))
-					if 100 < (Character:GetPivot().Position-Position).Magnitude then
-						Variables.Position = Position
-						Character:PivotTo(Position)
-						Variables.Waypoints,Variables.Index = {},2
-					end
 					if 0 < DistanceLeft then
 						Variables.Index += 1
 						Variables:FireHeartbeat(DistanceLeft)
@@ -188,8 +188,27 @@ return {
 					end
 					Variables.Debounce = false
 				end
-				if workspace:FindFirstChild"Rake" and (workspace.Rake:GetPivot().Position-Variables.Position).Magnitude < 50 and (not Variables.Target or Variables.Target.Parent ~= Variables.ScrapSpawns) then
-					Variables.Waypoints,Variables.Index = {},2
+				if not Variables.SoldScraps and Variables.Target ~= Variables.ShopPart and Backpack and Backpack:IsDescendantOf(Owner) and Backpack:FindFirstChild"ScrapFolder" and Backpack.ScrapFolder:FindFirstChild"Points" and 0 < Backpack.ScrapFolder.Points.Value then
+					Variables.Debounce = true
+					Variables.Target = Variables.ShopPart
+					Variables:MoveTo(Variables.ShopPart.Position)
+					Variables.Debounce = false
+				end
+				if not Variables.SoldScraps and (Variables.Position-Variables.ShopPart.Position).Magnitude < 7 then
+					Variables.Debounce = true
+					for _,Values in {
+						{"Open"},
+						{"SellScraps","Scraps"},
+						{"Close"}
+					} do
+						Variables.ShopEvent:FireServer(unpack(Values))
+						Wait(.5)
+					end
+					Variables.SoldScraps = true
+					Variables.Debounce = false
+				end
+				if workspace:FindFirstChild"Rake" and workspace.Rake:FindFirstChild"TargetVal" and workspace.Rake.TargetVal.Value and workspace.Rake.TargetVal.Value:IsDescendantOf(Character) and (not Variables.Target or Variables.Target.Parent ~= Variables.ScrapSpawns) then
+					Variables.Debounce = true
 					local Rake = workspace.Rake:GetPivot().Position
 					local Farthest,Distance = nil,0
 					for _,Spawn in Variables.ScrapSpawns:GetChildren() do
@@ -202,6 +221,7 @@ return {
 						Variables.Target = Farthest
 						Variables:MoveTo(Farthest.Position)
 					end
+					Variables.Debounce = false
 				end
 			end
 		},
