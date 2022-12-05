@@ -22,9 +22,8 @@ local function Load(Name)
 	end
 end
 Load"Conversio"()
-local Utilitas = Load"Utilitas""All"
-for Index,Name in ("Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass"):split() do
-	getfenv()[Name] = Utilitas[Index]
+for Name,Function in Load"Utilitas"{} do
+	getfenv()[Name] = Function
 end
 local GlobalEnvironment = getgenv and getgenv() or shared
 pcall(GlobalEnvironment.CloseUltimatum)
@@ -888,9 +887,9 @@ Connections = {
 	Connect(Gui.CommandBar:GetPropertyChangedSignal"Text",UpdateSuggestions)
 }
 local function LoadCommands(Lua,Name)
-	for CommandName,Info in loadstring(([[
-		local Utilitas,ReceiveValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = ...
-		local Owner,Nil,Connect,Destroy,Wait,Service,Valid,WaitForSequence,RandomString,RandomBool,NilConvert,NewInstance,Create,DecodeJSON,WaitForSignal,Animate,Assert,GetCharacter,GetHumanoid,ConvertTime,GetContentText,WaitForChildOfClass = unpack(Utilitas)
+	Name = Valid.String(Name,"Custom Command Set")
+	local CommandSet,ErrorMessage = loadstring(([[
+		local ReceiveValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = ...
 		AddConnections{
 			Connect(ReceiveValue.Event,function(Type,Object)
 				if Type == "Character" then
@@ -902,7 +901,17 @@ local function LoadCommands(Lua,Name)
 				end
 			end)
 		}
-	%s]]):gsub("\n\t*"," "):format(Lua),Valid.String(Name,"Custom Command Set"))(Utilitas,SendValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,GetCharacter(Owner,.5),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")) do
+	%s]]):gsub("\n\t*"," "):format(Lua),Name)
+	if not CommandSet then
+		warn(ErrorMessage)
+		Notify{
+			Title = ("%s Failed"):format(Name),
+			Text = "The command set failed to load. Check the Developer Console for any error messages"
+		}
+		return
+	end
+	setfenv(CommandSet,getfenv())
+	for CommandName,Info in CommandSet(SendValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,GetCharacter(Owner,.5),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")) do
 		if Commands[CommandName] and Commands[CommandName].ToggleCheck and Commands[CommandName].Enabled then
 			RunCommand(Commands[CommandName].Toggles:split"_"[1])
 		end
@@ -910,25 +919,6 @@ local function LoadCommands(Lua,Name)
 	end
 end
 GlobalEnvironment.AddUltimatumCommands = LoadCommands
-local function GetCommandSet(ID)
-	ID = Valid.Number(ID,0)
-	local Success,Result = pcall(game.HttpGet,game,("https://raw.githubusercontent.com/Amourousity/Ultimatum/main/CommandSets/%d.lua"):format(ID),true)
-	if isfolder and not isfolder"UltimatumCommandSets" then
-		makefolder"UltimatumCommandSets"
-	end
-	if Success then
-		if isfolder then
-			writefile(("UltimatumCommandSets/%d.lua"):format(ID),Result)
-		end
-	elseif isfolder and isfile and isfile(("UltimatumCommandSets/%d.lua"):format(ID)) then
-		Success,Result = true,readfile(("UltimatumCommandSets/%d.lua"):format(ID))
-	end
-	if Success then
-		LoadCommands(Result,("Command Set %d"):format(ID))
-	end
-end
-GetCommandSet()
-GetCommandSet(game.PlaceId)
 pcall(GlobalEnvironment.CloseUltimatum)
 GlobalEnvironment.CloseUltimatum = function()
 	local Unfinished = 0
@@ -948,6 +938,30 @@ GlobalEnvironment.CloseUltimatum = function()
 	Destroy(Connections,Gui)
 	GlobalEnvironment.CloseUltimatum = nil
 end
+local function GetCommandSet(ID)
+	ID = Valid.Number(ID,0)
+	local Success,Result = pcall(game.HttpGet,game,("https://raw.githubusercontent.com/Amourousity/Ultimatum/main/CommandSets/%d.lua"):format(ID),true)
+	if isfolder and not isfolder"UltimatumCommandSets" then
+		makefolder"UltimatumCommandSets"
+	end
+	if Success then
+		if isfolder then
+			writefile(("UltimatumCommandSets/%d.lua"):format(ID),Result)
+		end
+	elseif isfolder and isfile and isfile(("UltimatumCommandSets/%d.lua"):format(ID)) then
+		Success,Result = true,readfile(("UltimatumCommandSets/%d.lua"):format(ID))
+	end
+	if Success then
+		LoadCommands(Result,("Command Set %d"):format(ID))
+	elseif not Result:find("404",1,true) then
+		Notify{
+			Title = "Failed to Load",
+			Text = ("Command set %d failed to download; is GitHub down?"):format(ID)
+		}
+	end
+end
+GetCommandSet()
+GetCommandSet(game.PlaceId)
 EnableDrag(Gui.Main,true)
 if Settings.PlayIntro == "Always" or Settings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
 	GlobalEnvironment.UltimatumLoaded = true
