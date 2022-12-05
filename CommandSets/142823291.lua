@@ -2,21 +2,18 @@ return {
 	ExtrasensoryPerception_extrasensoryp_esensoryperception_esperception_extrasp_esp = {
 		Function = function(Variables,Enabled)
 			if Enabled then
-				Variables.Time,Variables.Connection = os.clock(),Connect(Service"Run".Heartbeat,function()
+				Variables.Time,Variables.Connection = 0,Connect(Service"Run".Heartbeat,function()
 					if not Variables.Calculating and 1 < os.clock()-Variables.Time or 5 < os.clock()-Variables.Time then
 						Variables.Time,Variables.Calculating = os.clock(),true
 						local PlayerData = Variables.PlayerDataRemote:InvokeServer()
-						if not Variables.Enabled then
-							return
-						end
 						Destroy(Variables.ESPs)
 						if workspace:FindFirstChild"GunDrop" then
-							Variables:CreatESP(workspace.GunDrop,"Gun")
+							Variables:CreateESP(workspace.GunDrop,"Gun")
 						end
 						for _,Player in Service"Players":GetPlayers() do
 							local Data = PlayerData[Player.Name]
 							if Data and not Data.Dead and Player.Name ~= Owner.Name then
-								Variables:CreatESP(Player.Character:FindFirstChild"HumanoidRootPart" or Player.Character:FindFirstChildWhichIsA"BasePart",Data.Role)
+								Variables:CreateESP(Player.Character:FindFirstChild"HumanoidRootPart" or Player.Character:FindFirstChildWhichIsA"BasePart",Data.Role)
 							end
 						end
 						Variables.Calculating = false
