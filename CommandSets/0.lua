@@ -100,26 +100,26 @@ return {
 			Notify{
 				Title = "Magic 8 Ball",
 				Text = ({
-					"Yes.",
-					"Most likely.",
-					"Outlook good.",
-					"It is certain.",
-					"Very doubtful.",
-					"My reply is no.",
-					"Yes definitely.",
-					"Ask again later.",
-					"Without a doubt.",
-					"As I see it, yes.",
-					"Don't count on it.",
-					"My sources say no.",
-					"Cannot predict now.",
-					"It is decidedly so.",
-					"Signs point to yes.",
-					"You may rely on it.",
-					"Outlook not so good.",
-					"Reply hazy, try again.",
-					"Better not tell you now.",
-					"Concentrate and ask again."
+					"Yes",
+					"Most likely",
+					"Outlook good",
+					"It is certain",
+					"Very doubtful",
+					"My reply is no",
+					"Yes definitely",
+					"Ask again later",
+					"Without a doubt",
+					"As I see it, yes",
+					"Don't count on it",
+					"My sources say no",
+					"Cannot predict now",
+					"It is decidedly so",
+					"Signs point to yes",
+					"You may rely on it",
+					"Outlook not so good",
+					"Reply hazy, try again",
+					"Better not tell you now",
+					"Concentrate and ask again"
 				})[math.random(20)]
 			}
 		end,
@@ -134,7 +134,8 @@ return {
 			local Page,UnfilteredServers,Servers,Start,ServerCount,ViableServerCount = "",{},{},os.clock(),0,0
 			while #Servers < 1 do
 				local Success,Result = pcall(game.HttpGet,game,("https://games.roblox.com/v1/games/%s/servers/Public?limit=100%s%s"):format(game.PlaceId,0 < #Page and "&cursor=" or "",Page),true)
-				if not Assert(Success,Valid.String(Result,"An unknown error has occurred")) then
+				if not Success then
+					warn(Valid.String(Result,"An unknown error has occurred"))
 					return
 				end
 				Result = Service"Http":JSONDecode(Result)
@@ -175,19 +176,15 @@ return {
 					return
 				end
 				local HumanoidRootPart = Character:FindFirstChild"HumanoidRootPart"
-				if not Assert(HumanoidRootPart,"Player does not have a HumanoidRootPart") then
-					return
-				end
-				local R6 = Humanoid.RigType.Name == "R6"
-				if not Assert(not R6,"R6 invisibility is not supported yet") then
+				if not HumanoidRootPart or Humanoid.RigType.Name == "R6" then
 					return
 				end
 				local LowerTorso = Character:FindFirstChild"LowerTorso"
-				if not Assert(LowerTorso,"Player does not have a LowerTorso") then
+				if not LowerTorso then
 					return
 				end
 				local Root = LowerTorso:FindFirstChild"Root"
-				if not Assert(Root,"Player does not have a Root") then
+				if not Root then
 					return
 				end
 				local OldCFrame,NewRoot = HumanoidRootPart.CFrame,Root:Clone()
@@ -292,5 +289,25 @@ return {
 		Toggles = "NoBrightness_unfullbrightness_nofullbrightness_nofullbright_unfullbright_unfb_unnightvision_nonightvision_novision_nonightvis_unnightvis_nonightv_unnightv_nonvision_unnvision_unnv_nonv_nov",
 		ToggleCheck = true,
 		Description = "Removes all lighting effects/properties that can possibly affect your visibility"
+	},
+	SpoofWalkDirection_antishiftlock_antisl_asl_noshiftlock_nosl_nsl_spoofwd_swd = {
+		Function = function(Variables)
+			Variables.Delta,Variables.LastFrame = 0,os.clock()
+			Variables.Connection = Connect(Service"Run".Heartbeat,function()
+				Variables.Delta,Variables.LastFrame = math.min(os.clock()-Variables.LastFrame,1/15)*60,os.clock()
+				if Character then
+					local Humanoid = GetHumanoid(Character,.1)
+					if 0 < Humanoid.MoveDirection.Magnitude then
+						Humanoid.AutoRotate = false
+						local Pivot = Character:GetPivot()
+						Character:PivotTo(DeltaLerp(Pivot,CFrame.lookAt(Pivot.Position,Pivot.Position+Humanoid.MoveDirection),math.pi/20,Variables.Delta))
+					end
+				end
+			end)
+		end,
+		Variables = {},
+		Toggles = "UnspoofWalkDirection_unspoofwd_allowwd_awd_uwd_unwd",
+		ToggleCheck = true,
+		Description = "Your character will always face the direction you're walking. Useful for ESP, so that it doesn't look like you're staring at/through walls"
 	}
 }
