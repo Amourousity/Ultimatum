@@ -291,19 +291,24 @@ return {
 		Description = "Removes all lighting effects/properties that can possibly affect your visibility"
 	},
 	SpoofWalkDirection_antishiftlock_antisl_asl_noshiftlock_nosl_nsl_spoofwd_swd = {
-		Function = function(Variables)
-			Variables.Delta,Variables.LastFrame = 0,os.clock()
-			Variables.Connection = Connect(Service"Run".Heartbeat,function()
-				Variables.Delta,Variables.LastFrame = math.min(os.clock()-Variables.LastFrame,1/15)*60,os.clock()
-				if Character then
-					local Humanoid = GetHumanoid(Character,.1)
-					if 0 < Humanoid.MoveDirection.Magnitude then
-						Humanoid.AutoRotate = false
-						local Pivot = Character:GetPivot()
-						Character:PivotTo(DeltaLerp(Pivot,CFrame.lookAt(Pivot.Position,Pivot.Position+Humanoid.MoveDirection),math.pi/20,Variables.Delta))
+		Function = function(Variables,Enabled)
+			if Enabled then
+				Variables.Delta,Variables.LastFrame = 0,os.clock()
+				Variables.Connection = Connect(Service"Run".Heartbeat,function()
+					Variables.Delta,Variables.LastFrame = math.min(os.clock()-Variables.LastFrame,1/15)*60,os.clock()
+					if Character then
+						local Humanoid = GetHumanoid(Character,.1)
+						if 0 < Humanoid.MoveDirection.Magnitude then
+							Humanoid.AutoRotate = false
+							local Pivot = Character:GetPivot()
+							Character:PivotTo(DeltaLerp(Pivot,CFrame.lookAt(Pivot.Position,Pivot.Position+Humanoid.MoveDirection),math.pi/20,Variables.Delta))
+						end
 					end
-				end
-			end)
+				end)
+			else
+				RemoveConnections{Variables.Connection}
+				Variables.Connection = nil
+			end
 		end,
 		Variables = {},
 		Toggles = "UnspoofWalkDirection_unspoofwd_allowwd_awd_uwd_unwd",
