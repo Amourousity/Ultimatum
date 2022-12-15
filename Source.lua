@@ -748,16 +748,13 @@ local function UpdateSuggestions()
 		end
 		local CommandDisplays = {}
 		for CommandNames,CommandInfo in Commands do
-			if CommandInfo.Toggles then
-				CommandNames = ("%s_%s"):format(CommandNames,CommandInfo.Toggles)
-			end
-			CommandNames = CommandNames:split"_"
+			CommandNames = (CommandInfo.Toggles and ("%s_%s"):format(CommandNames,CommandInfo.Toggles) or CommandNames):split"_"
 			for _,CommandName in CommandNames do
 				if CommandName:lower():find(Command,1,true) then
-					table.insert(CommandDisplays,("<font color = '#FFFFFF'>%s</font>%s%s"):format(CommandNames[1],CommandInfo.Arguments and (function()
+					table.insert(CommandDisplays,("<font color = '#FFFFFF'>%s</font>%s%s"):format(CommandInfo.Toggles and CommandInfo.Enabled and CommandInfo.Toggles:split"_"[1] or CommandNames[1],CommandInfo.Arguments and (function()
 						local Arguments = {}
 						for _,ArgumentInfo in CommandInfo.Arguments do
-							table.insert(Arguments,("%s:%s"):format(ArgumentInfo.Name,ArgumentInfo.Type))
+							table.insert(Arguments,("%s:%s%s"):format(ArgumentInfo.Name,ArgumentInfo.Type,ArgumentInfo.Required and "" or "?"))
 						end
 						return (" <i>%s</i>"):format(table.concat(Arguments," "))
 					end)() or "",CommandInfo.Toggles and " [Toggles]" or ""))
