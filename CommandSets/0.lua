@@ -12,29 +12,59 @@ return {
 		end,
 		Description = "Leaves the current Roblox server"
 	},
-	CopyJoinScript_copyjoincode_copyjoin_copyjcode_copyjscript_copyj_cjoin_copyjs_cj_cjs_cjc = {
-		Function = function()
-			local JoinScript = ('javascript:Roblox.GameLauncher.joinGameInstance(%d,"%s")'):format(game.PlaceId,game.JobId)
-			if setclipboard then
-				setclipboard(JoinScript)
-				Notify{
-					Title = "Successfully Copied",
-					Text = "Paste the copied script into your brower's URL bar and press Enter"
-				}
-			else
-				Notify{
-					Title = "Copy to Clipboard",
-					Text = ("%s\nPaste the above script into your brower's URL bar and press Enter"):format(JoinScript)
-				}
+	Copy_setclipboard_copyclipboard_setclip_copyclip_settoclipboard_copytoclipboard_ctc_stc_sc_cc_position_teleportstring_copyname_copyusername_copyid_copyuserid_copyid_jobid_copyname_copyuser_copycreatorid_copycreator_copyposition_copypos = {
+		Function = function(Variables,Type)
+			local Content = ({
+				name = Owner.Name,
+				jobid = game.JobId,
+				userid = Owner.UserId,
+				placeid = game.PlaceId,
+				creatorid = game.CreatorId,
+				displayname = Owner.DisplayName,
+				creatorname = Variables.PlaceInfo.Creator.Name,
+				placeicon = Variables.PlaceInfo.IconImageAssetId,
+				cameraposition = function()
+					local Camera = Valid.CFrame(workspace.CurrentCamera.CFrame)
+					local Axiis = {}
+					for _,Axis in {"X","Y","Z"} do
+						table.insert(Axiis,math.round(Camera[Axis]*20)/20)
+					end
+					return ("%f %f %f"):format(unpack(Axiis))
+				end,
+				position = function()
+					local Character = GetCharacter(Owner,1)
+					if Character then
+						Character = Valid.CFrame(Character:GetPivot())
+						local Axiis = {}
+						for _,Axis in {"X","Y","Z"} do
+							table.insert(Axiis,math.round(Character[Axis]*20)/20)
+						end
+						return ("%f %f %f"):format(unpack(Axiis))
+					end
+				end,
+				javascriptrejoin = ('javascript:Roblox.GameLauncher.joinGameInstance(%d,"%s")'):format(game.PlaceId,game.JobId)
+			})[Type:lower()]
+			if Content and setclipboard then
+				setclipboard(type(Content) == "string" and Content() or Content)
 			end
 		end,
-		Description = setclipboard and "Copies JavaScript to your clipboard used to join the same server" or "Notifies JavaScript to be copied to your clipboard used to join the same server"
+		Arguments = {
+			{
+				Name = "Value",
+				Type = "String",
+				Required = true,
+				Concatenate = true
+			}
+		},
+		Variables = {PlaceInfo = Valid.Table(select(2,pcall(Service"Marketplace".GetProductInfo,Service"Marketplace",game.PlaceId)),{Creator = {}})},
+		Description = "Copies a value of your choice\nPossible values to copy:\n\u{2022} Name\n\u{2022} JobId\n\u{2022} UserId\n\u{2022} PlaceId\n\u{2022} Position\n\u{2022} CreatorId\n\u{2022} PlaceIcon\n\u{2022} CreatorName\n\u{2022} DisplayName\n\u{2022} CameraPosition\n\u{2022} JavaScriptRejoin"
 	},
 	EnableRendering_enablerender_erendering_erender_er_rendering_render = {
 		Function = function(Enabled)
 			Service"Run":Set3dRenderingEnabled(Enabled)
 		end,
-		Toggles = "disablerendering_disablerender_drendering_derender_drender_dr_norendering_norender",
+		Enabled = true,
+		Toggles = "DisableRendering_disablerender_drendering_derender_drender_dr_norendering_norender",
 		Description = "Enables/disables 3D rendering (everything except for GUIs are invisible), boosting FPS. Usually used with auto-farms to improve their efficiency"
 	},
 	Rejoin_rejoinserver_rejoingame_rej_rj = {
@@ -233,7 +263,7 @@ return {
 		Variables = {},
 		Description = "Makes you invisible to other players (R15 only)"
 	},
-	AntiAFK_noafk_unafk = {
+	AntiAFK_noafk_unafk_stopafk = {
 		Function = function(Variables,Enabled)
 			if Enabled then
 				Variables.Connection = Connect(Owner.Idled,function()
@@ -246,13 +276,26 @@ return {
 			end
 		end,
 		Variables = {},
-		Toggles = "unantiafk_allowafk_afk",
+		Toggles = "AllowAFK_unantiafk_afk_unstopafk_unnoafk",
 		ToggleCheck = true,
 		Description = "Stops Roblox from disconnecting you for being AFK"
 	},
 	FullBrightness_fullbright_bright_fb_nightvision_nightvis_nightv_nvision_nv_fullvision = {
 		Function = function(Variables,Enabled)
 			if Enabled then
+				for _,Name in {
+					"FogEnd",
+					"Ambient",
+					"FogStart",
+					"Brightness",
+					"GlobalShadows",
+					"OutdoorAmbient",
+					"ExposureCompensation",
+					"EnvironmentDiffuseScale",
+					"EnvironmentSpecularScale"
+				} do
+					Variables.Properties[Name] = Service"Lighting"[Name]
+				end
 				Variables.Connection = Connect(Service"Run".RenderStepped,function()
 					for Name,Value in {
 						Brightness = 0,
@@ -265,7 +308,10 @@ return {
 						Ambient = Color3.new(1,1,1),
 						OutdoorAmbient = Color3.new(1,1,1)
 					} do
-						Service"Lighting"[Name] = Value
+						if Service"Lighting"[Name] ~= Value then
+							Variables.Properties[Name] = Service"Lighting"[Name]
+							Service"Lighting"[Name] = Value
+						end
 					end
 					Variables.Check(Service"Lighting")
 					Variables.Check(workspace.CurrentCamera)
@@ -273,9 +319,13 @@ return {
 				AddConnections{Variables.Connection}
 			else
 				RemoveConnections{Variables.Connection}
+				for Name,Value in Variables.Properties do
+					Service"Lighting"[Name] = Value
+				end
 			end
 		end,
 		Variables = {
+			Properties = {},
 			Check = function(Parent)
 				for _,Object in Parent:GetChildren() do
 					if Valid.Instance(Object,"PostEffect") then
@@ -288,7 +338,7 @@ return {
 		},
 		Toggles = "NoBrightness_unfullbrightness_nofullbrightness_nofullbright_unfullbright_unfb_unnightvision_nonightvision_novision_nonightvis_unnightvis_nonightv_unnightv_nonvision_unnvision_unnv_nonv_nov",
 		ToggleCheck = true,
-		Description = "Removes all lighting effects/properties that can possibly affect your visibility"
+		Description = "Removes all lighting effects/properties that can possibly affect your vision"
 	},
 	SpoofWalkDirection_antishiftlock_antisl_asl_noshiftlock_nosl_nsl_spoofwd_swd = {
 		Function = function(Variables,Enabled)
@@ -298,20 +348,28 @@ return {
 					Variables.Delta,Variables.LastFrame = math.min(os.clock()-Variables.LastFrame,1/15)*60,os.clock()
 					if Character then
 						local Humanoid = GetHumanoid(Character,.1)
-						if 0 < Humanoid.MoveDirection.Magnitude then
+						if Humanoid and 0 < Humanoid.MoveDirection.Magnitude then
 							Humanoid.AutoRotate = false
-							local Pivot = Character:GetPivot()
-							Character:PivotTo(DeltaLerp(Pivot,CFrame.lookAt(Pivot.Position,Pivot.Position+Humanoid.MoveDirection),math.pi/20,Variables.Delta))
+							local HumanoidRootPart = Character:FindFirstChild"HumanoidRootPart"
+							local Pivot = HumanoidRootPart and HumanoidRootPart.CFrame or Character:GetPivot()
+							if HumanoidRootPart then
+								HumanoidRootPart.CFrame = DeltaLerp(Pivot,CFrame.lookAt(Pivot.Position,Pivot.Position+Humanoid.MoveDirection),math.pi/20,Variables.Delta)
+							else
+								Character:PivotTo(DeltaLerp(Pivot,CFrame.lookAt(Pivot.Position,Pivot.Position+Humanoid.MoveDirection),math.pi/20,Variables.Delta))
+							end
 						end
 					end
 				end)
 			else
 				RemoveConnections{Variables.Connection}
-				Variables.Connection = nil
+				local Humanoid = GetHumanoid(Character,1)
+				if Humanoid then
+					Humanoid.AutoRotate = true
+				end
 			end
 		end,
 		Variables = {},
-		Toggles = "UnspoofWalkDirection_unspoofwd_allowwd_awd_uwd_unwd",
+		Toggles = "UnspoofWalkDirection_unspoofwd_allowwd_awd_uwd_unwd_unswd_uswd",
 		ToggleCheck = true,
 		Description = "Your character will always face the direction you're walking. Useful for ESP, so that it doesn't look like you're staring at/through walls"
 	}
