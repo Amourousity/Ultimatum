@@ -27,9 +27,9 @@ return {
 					local Camera = Valid.CFrame(workspace.CurrentCamera.CFrame)
 					local Axiis = {}
 					for _,Axis in {"X","Y","Z"} do
-						table.insert(Axiis,math.round(Camera[Axis]*20)/20)
+						table.insert(Axiis,tostring(math.round(Camera[Axis]*20)/20))
 					end
-					return ("%f %f %f"):format(unpack(Axiis))
+					return ("%s %s %s"):format(unpack(Axiis))
 				end,
 				position = function()
 					local Character = GetCharacter(Owner,1)
@@ -37,15 +37,15 @@ return {
 						Character = Valid.CFrame(Character:GetPivot())
 						local Axiis = {}
 						for _,Axis in {"X","Y","Z"} do
-							table.insert(Axiis,math.round(Character[Axis]*20)/20)
+							table.insert(Axiis,tostring(math.round(Character[Axis]*20)/20))
 						end
-						return ("%f %f %f"):format(unpack(Axiis))
+						return ("%s %s %s"):format(unpack(Axiis))
 					end
 				end,
 				javascriptrejoin = ('javascript:Roblox.GameLauncher.joinGameInstance(%d,"%s")'):format(game.PlaceId,game.JobId)
 			})[Type:lower()]
 			if Content and setclipboard then
-				setclipboard(type(Content) == "string" and Content() or Content)
+				setclipboard(type(Content) == "function" and Content() or Content)
 			end
 		end,
 		Arguments = {
