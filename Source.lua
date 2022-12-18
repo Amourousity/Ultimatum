@@ -724,10 +724,10 @@ local function FireTouchInterest(Toucher,Touched,TouchTime)
 			end
 		end
 	else
-		local OldCFrame = Touched.CFrame
-		Touched.CFrame = Toucher.CFrame
+		local OldCanCollide,OldCanTouch,OldCFrame = Touched.CanCollide,Touched.CanTouch,Touched.CFrame
+		Touched.CanCollide,Touched.CanTouch,Touched.CFrame = true,true,Toucher.CFrame
 		Wait(TouchTime)
-		Touched.CFrame = OldCFrame
+		Touched.CFrame,Touched.CanTouch,Touched.CanCollide = OldCFrame,OldCanTouch,OldCanCollide
 	end
 end
 local IgnoreUpdate
@@ -821,7 +821,7 @@ Connections = {
 	end),
 	queue_on_teleport and Connect(Owner.OnTeleport,isfile and function(TeleportState)
 		if Settings.LoadOnRejoin and TeleportState.Name == "Started" then
-			queue_on_teleport(isfile"Source.Ultimatum" and readfile"Source.Ultimatum" or "warn'Source.Ultimatum missing from workspace folder (Ultimatum cannot run)'")
+			queue_on_teleport(isfile"Ultimatum.lua" and readfile"Ultimatum.lua" or "warn'Ultimatum.lua missing from workspace folder (Ultimatum cannot run)'")
 		end
 	end or function(TeleportState)
 		if Settings.LoadOnRejoin and TeleportState.Name == "Started" then
