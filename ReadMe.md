@@ -12,7 +12,7 @@
 - **Highly undetectable** - You won't be getting banned any time soon!
 - **High exploit support** - Practically any exploit can run it!
 
-*Keep in mind that the effectiveness of these features is dependent on the quality of your exploit. Exploits like [Script-Ware](https://script-ware.com) ($20) or [Krnl](https://krnl.place) (free) are recommended.*
+*Keep in mind that the effectiveness of these features is dependent on the quality of your exploit. Exploits like [Script-Ware](https://script-ware.com) ($20) or [Fluxus](https://fluxteam.net) (free) are recommended.*
 
 Note: will not work with Synapse v2 due to their interpreter being out-of-date (does not support some Luau syntax)
 
