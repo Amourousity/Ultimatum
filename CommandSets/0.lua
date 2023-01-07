@@ -1,5 +1,5 @@
 return {
-	Close = {
+	Close_unload_uninject = {
 		Function = function()
 			--- @diagnostic disable-next-line undefined-global
 			pcall(CloseUltimatum)
@@ -10,7 +10,7 @@ return {
 		Function = function()
 			game:Shutdown()
 		end,
-		Description = "Leaves the current Roblox server"
+		Description = "Closes the game"
 	},
 	Copy_setclipboard_copyclipboard_setclip_copyclip_settoclipboard_copytoclipboard_ctc_stc_sc_cc_position_teleportstring_copyname_copyusername_copyid_copyuserid_copyid_jobid_copyname_copyuser_copycreatorid_copycreator_copyposition_copypos = {
 		Function = function(Variables,Type)
