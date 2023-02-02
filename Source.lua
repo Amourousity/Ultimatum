@@ -130,7 +130,6 @@ local Gui = Create{
 		Properties = {
 			ZIndex = -1,
 			Modal = true,
-			Active = true,
 			TextTransparency = 1,
 			AutoButtonColor = false,
 			Size = UDim2.new(1,0,1,0),
@@ -1001,6 +1000,7 @@ if Settings.PlayIntro == "Always" or Settings.PlayIntro == "Once" and not Global
 	end)
 	Service"Run":SetRobloxGuiFocused(true)
 	task.delay(1.5,Service"Run".SetRobloxGuiFocused,Service"Run",false)
+	Gui.ScreenCover.Active = true
 	Animate(Gui.ScreenCover,{
 		Time = .25,
 		EasingStyle = Enum.EasingStyle.Linear,
