@@ -126,12 +126,9 @@ local Gui = Create{
 	{
 		Name = "ScreenCover",
 		Parent = "Holder",
-		ClassName = "TextButton",
+		ClassName = "Frame",
 		Properties = {
 			ZIndex = -1,
-			Modal = true,
-			TextTransparency = 1,
-			AutoButtonColor = false,
 			Size = UDim2.new(1,0,1,0),
 			BackgroundTransparency = 1,
 			BackgroundColor3 = Color3.new()
@@ -265,6 +262,7 @@ local Gui = Create{
 		Properties = {
 			BorderSizePixel = 0,
 			ScrollBarThickness = 0,
+			ScrollingEnabled = false,
 			BackgroundTransparency = 1,
 			Size = UDim2.new(1,-8,1,-8),
 			Position = UDim2.new(0,4,0,4)
@@ -278,6 +276,30 @@ local Gui = Create{
 			CellPadding = UDim2.new(),
 			CellSize = UDim2.new(1,0,0,20),
 			SortOrder = Enum.SortOrder.LayoutOrder
+		}
+	},
+	{
+		Name = "SuggestionSelector",
+		Parent = "SuggestionsSection",
+		ClassName = "Frame",
+		Properties = {
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-2,0,20)
+		}
+	},
+	{
+		Name = "SelectorCorner",
+		Parent = "SuggestionSelector",
+		ClassName = "UICorner",
+		Properties = {CornerRadius = UDim.new(0,2)}
+	},
+	{
+		Name = "SelectorBorder",
+		Parent = "SuggestionSelector",
+		ClassName = "UIStroke",
+		Properties = {
+			Enabled = false,
+			Color = Color3.new(1,1,1)
 		}
 	},
 	{
@@ -490,8 +512,8 @@ local function RunCommand(Text)
 								}
 								return
 							end
-							CommandInfo.Enabled = Enabled
 						end
+						CommandInfo.Enabled = Enabled
 						table.insert(Arguments,1,Enabled)
 					end
 					if CommandInfo.Variables then
@@ -731,6 +753,24 @@ local function FireTouchInterest(Toucher,Touched,TouchTime)
 end
 local IgnoreUpdate,Selected
 local Suggestions = {}
+local function ScrollSuggestions(Input)
+	if 0 < #Suggestions then
+		Suggestions[Selected].UI.BackgroundTransparency = 1
+		Selected = (Selected+(Input == "Up" and -1 or Input == "Down" and 1 or 0)-1)%#Suggestions+1
+		local OldCanvasPosition = Gui.SuggestionsScroll.CanvasPosition
+		Gui.SuggestionsScroll.CanvasPosition = Vector2.new(0,20*(Selected-3))
+		Animate(Gui.SuggestionSelector,{
+			Time = .25,
+			Properties = {Position = UDim2.new(0,1,0,4+Suggestions[Selected].UI.AbsolutePosition.Y-Gui.SuggestionsScroll.AbsolutePosition.Y)}
+		})
+		local CanvasPosition = Gui.SuggestionsScroll.CanvasPosition
+		Gui.SuggestionsScroll.CanvasPosition = OldCanvasPosition
+		Animate(Gui.SuggestionsScroll,{
+			Time = .25,
+			Properties = {CanvasPosition = CanvasPosition}
+		})
+	end
+end
 local function UpdateSuggestions()
 	if Service"UserInput":GetFocusedTextBox() == Gui.CommandBar and not IgnoreUpdate then
 		IgnoreUpdate = true
@@ -783,13 +823,16 @@ local function UpdateSuggestions()
 		end
 		if 0 < #Suggestions then
 			Selected = CheckAxis"Y" and 1 or #Suggestions
-			Suggestions[Selected].UI.BackgroundTransparency = .75
+			Gui.SelectorBorder.Enabled = true
 		else
 			Selected = nil
+			Gui.SelectorBorder.Enabled = false
 		end
 		Gui.SuggestionsGridLayout.Parent = Gui.SuggestionsScroll
 		local CommandNumber = #Gui.SuggestionsScroll:GetChildren()-1
 		Gui.SuggestionsScroll.CanvasSize = UDim2.new(0,0,0,20*CommandNumber)
+		Gui.SuggestionsScroll.CanvasPosition = Vector2.yAxis*(CheckAxis"Y" and 0 or 20*CommandNumber)
+		Gui.SuggestionSelector.Position = CheckAxis"Y" and UDim2.new(0,1,0,4) or UDim2.new(0,1,1,-24)
 		ResizeMain(nil,0 < CommandNumber and 48+20*math.min(CommandNumber,5) or 40)
 	end
 end
@@ -826,13 +869,12 @@ Connections = {
 			end
 		end
 	end),
-	queue_on_teleport and Connect(Owner.OnTeleport,isfile and function(TeleportState)
-		if Settings.LoadOnRejoin and TeleportState.Name == "Started" then
-			setclipboard"Getting ready for teleport"
+	queue_on_teleport and Connect(Owner.OnTeleport,isfile and function()
+		if Settings.LoadOnRejoin then
 			queue_on_teleport(isfile"Ultimatum.lua" and readfile"Ultimatum.lua" or "warn'Ultimatum.lua missing from workspace folder (Ultimatum cannot run)'")
 		end
-	end or function(TeleportState)
-		if Settings.LoadOnRejoin and TeleportState.Name == "Started" then
+	end or function()
+		if Settings.LoadOnRejoin then
 			local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua",true)
 			queue_on_teleport(Success and Result or ("warn'HttpGet failed: %s (Ultimatum cannot run)'"):format(Result))
 		end
@@ -889,20 +931,14 @@ Connections = {
 				task.defer(Gui.CommandBar.CaptureFocus,Gui.CommandBar)
 			elseif Service"UserInput":GetFocusedTextBox() == Gui.CommandBar and 0 < #Suggestions then
 				if Input == "Up" or Input == "Down" then
-					local function Move()
-						Suggestions[Selected].UI.BackgroundTransparency = 1
-						Selected = (Selected+(Input == "Up" and -1 or 1)-1)%#Suggestions+1
-						Suggestions[Selected].UI.BackgroundTransparency = .75
-						Gui.SuggestionsScroll.CanvasPosition = Vector2.new(0,20*(Selected-3))
-					end
-					Move()
+					ScrollSuggestions(Input)
 					local Start = os.clock()
 					while Service"UserInput":IsKeyDown(Enum.KeyCode[Input]) and os.clock()-Start < .5 do
 						Wait()
 					end
 					if .25 < os.clock()-Start then
 						repeat
-							Move()
+							ScrollSuggestions(Input)
 							Wait(1/30)
 						until not Service"UserInput":IsKeyDown(Enum.KeyCode[Input])
 					end
@@ -989,8 +1025,6 @@ local function GetCommandSet(ID)
 		}
 	end
 end
-GetCommandSet()
-GetCommandSet(game.PlaceId)
 EnableDrag(Gui.Main,true)
 if Settings.PlayIntro == "Always" or Settings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
 	GlobalEnvironment.UltimatumLoaded = true
@@ -1000,7 +1034,6 @@ if Settings.PlayIntro == "Always" or Settings.PlayIntro == "Once" and not Global
 	end)
 	Service"Run":SetRobloxGuiFocused(true)
 	task.delay(1.5,Service"Run".SetRobloxGuiFocused,Service"Run",false)
-	Gui.ScreenCover.Active = true
 	Animate(Gui.ScreenCover,{
 		Time = .25,
 		EasingStyle = Enum.EasingStyle.Linear,
@@ -1042,6 +1075,7 @@ else
 end
 Wait()
 Destroy(Gui.ScreenCover)
+Gui.ScreenCover = nil
 for Name,Properties in {
 	Logo = {
 		Rotation = 0,
@@ -1075,3 +1109,5 @@ Animate(Gui.Main,{
 	Properties = {Position = UDim2.new(0,0,1,-40)}
 })
 Debounce = false
+GetCommandSet()
+GetCommandSet(game.PlaceId)
