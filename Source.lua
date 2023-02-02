@@ -53,7 +53,7 @@ do
 			if writefile then
 				local FormattedSettings = {}
 				for SettingName,SettingValue in SettingsTable do
-					table.insert(FormattedSettings,("\t%s : %s,"):format(("%q"):format(SettingName),type(SettingValue) == "string" and ("%q"):format(SettingValue) or tostring(SettingValue)))
+					table.insert(FormattedSettings,("\t%s: %s,"):format(("%q"):format(SettingName),type(SettingValue) == "string" and ("%q"):format(SettingValue) or tostring(SettingValue)))
 				end
 				table.sort(FormattedSettings,function(String1,String2)
 					if #String1 < #String2 then
@@ -730,55 +730,63 @@ local function FireTouchInterest(Toucher,Touched,TouchTime)
 		Touched.CFrame,Touched.CanTouch,Touched.CanCollide = OldCFrame,OldCanTouch,OldCanCollide
 	end
 end
-local IgnoreUpdate
+local IgnoreUpdate,Selected
+local Suggestions = {}
 local function UpdateSuggestions()
 	if Service"UserInput":GetFocusedTextBox() == Gui.CommandBar and not IgnoreUpdate then
 		IgnoreUpdate = true
-		Gui.CommandBar.Text = Gui.CommandBar.Text:gsub("^%W+","")
+		Gui.CommandBar.Text = Gui.CommandBar.Text:gsub("^%W+",""):gsub("\t","")
 		IgnoreUpdate = false
 		Gui.CommandBar.TextXAlignment = Enum.TextXAlignment[Gui.CommandBar.TextFits and "Left" or "Right"]
 		local Command = Gui.CommandBar.Text:split"/"
 		Command = ((Command[#Command] or ""):split" "[1] or ""):lower()
 		Gui.SuggestionsScroll.CanvasSize = UDim2.new()
 		Gui.SuggestionsGridLayout.Parent = nil
-		for _,TextLabel in Gui.SuggestionsScroll:GetChildren() do
-			if Valid.Instance(TextLabel,"TextLabel") then
-				Destroy(TextLabel)
-			end
-		end
-		local CommandDisplays = {}
+		Destroy(Suggestions)
 		for CommandNames,CommandInfo in Commands do
 			CommandNames = (CommandInfo.Toggles and ("%s_%s"):format(CommandNames,CommandInfo.Toggles) or CommandNames):split"_"
 			for _,CommandName in CommandNames do
 				if CommandName:lower():find(Command,1,true) then
-					table.insert(CommandDisplays,("<font color = '#FFFFFF'>%s</font>%s%s"):format(CommandInfo.Toggles and CommandInfo.Enabled and CommandInfo.Toggles:split"_"[1] or CommandNames[1],CommandInfo.Arguments and (function()
-						local Arguments = {}
-						for _,ArgumentInfo in CommandInfo.Arguments do
-							table.insert(Arguments,("%s:%s%s"):format(ArgumentInfo.Name,ArgumentInfo.Type,ArgumentInfo.Required and "" or "?"))
-						end
-						return (" <i>%s</i>"):format(table.concat(Arguments," "))
-					end)() or "",CommandInfo.Toggles and " [Toggles]" or ""))
+					local DisplayName = CommandInfo.Toggles and CommandInfo.Enabled and CommandInfo.Toggles:split"_"[1] or CommandNames[1]
+					table.insert(Suggestions,{
+						Command = DisplayName,
+						Display = ("<font color = '#FFFFFF'>%s</font>%s%s"):format(DisplayName,CommandInfo.Arguments and (function()
+							local Arguments = {}
+							for _,ArgumentInfo in CommandInfo.Arguments do
+								table.insert(Arguments,("%s:%s%s"):format(ArgumentInfo.Name,ArgumentInfo.Type,ArgumentInfo.Required and "" or "?"))
+							end
+							return (" <i>%s</i>"):format(table.concat(Arguments," "))
+						end)() or "",CommandInfo.Toggles and " [Toggles]" or "")
+					})
 					break
 				end
 			end
 		end
-		table.sort(CommandDisplays,function(String1,String2)
-			String1 = Service"Text":GetTextSize(GetContentText(String1):split" "[1],14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X
-			String2 = Service"Text":GetTextSize(GetContentText(String2):split" "[1],14,Enum.Font.Arial,Vector2.new(1e6,1e6)).X
-			return if CheckAxis"Y" then String1 < String2 else String2 < String1
+		table.sort(Suggestions,function(Suggestion1,Suggestion2)
+			Suggestion1 = Service"Text":GetTextSize(Suggestion1.Command,14,Enum.Font.Arial,Vector2.one*1e6).X
+			Suggestion2 = Service"Text":GetTextSize(Suggestion2.Command,14,Enum.Font.Arial,Vector2.one*1e6).X
+			return if CheckAxis"Y" then Suggestion1 < Suggestion2 else Suggestion2 < Suggestion1
 		end)
-		for Index,Text in CommandDisplays do
-			NewInstance("TextLabel",Gui.SuggestionsScroll,{
-				Text = Text,
+		for Index,Suggestion in Suggestions do
+			Suggestion.UI = NewInstance("TextLabel",Gui.SuggestionsScroll,{
 				TextSize = 14,
 				RichText = true,
+				BorderSizePixel = 0,
 				LayoutOrder = Index,
 				Font = Enum.Font.Arial,
+				Text = Suggestion.Display,
 				BackgroundTransparency = 1,
 				TextStrokeTransparency = .8,
+				BackgroundColor3 = Color3.new(1,1,1),
 				TextColor3 = Color3.fromHex"A0A0A0",
 				TextXAlignment = Enum.TextXAlignment.Left
 			})
+		end
+		if 0 < #Suggestions then
+			Selected = CheckAxis"Y" and 1 or #Suggestions
+			Suggestions[Selected].UI.BackgroundTransparency = .75
+		else
+			Selected = nil
 		end
 		Gui.SuggestionsGridLayout.Parent = Gui.SuggestionsScroll
 		local CommandNumber = #Gui.SuggestionsScroll:GetChildren()-1
@@ -821,6 +829,7 @@ Connections = {
 	end),
 	queue_on_teleport and Connect(Owner.OnTeleport,isfile and function(TeleportState)
 		if Settings.LoadOnRejoin and TeleportState.Name == "Started" then
+			setclipboard"Getting ready for teleport"
 			queue_on_teleport(isfile"Ultimatum.lua" and readfile"Ultimatum.lua" or "warn'Ultimatum.lua missing from workspace folder (Ultimatum cannot run)'")
 		end
 	end or function(TeleportState)
@@ -860,10 +869,8 @@ Connections = {
 		Gui.CommandBar.PlaceholderText = "Enter a command"
 		if Sent and 0 < #Gui.CommandBar.Text then
 			task.spawn(RunCommand,Gui.CommandBar.Text)
-			Gui.CommandBar.Text = ""
-		elseif Service"UserInput":IsKeyDown(Enum.KeyCode.Escape) then
-			Gui.CommandBar.Text = ""
 		end
+		Gui.CommandBar.Text = ""
 		Gui.CommandBar.TextXAlignment = Enum.TextXAlignment[Gui.CommandBar.TextFits and "Left" or "Right"]
 		Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 		ResizeMain()
@@ -877,8 +884,34 @@ Connections = {
 		Debounce = false
 	end),
 	Connect(Service"UserInput".InputBegan,function(Input,Ignore)
-		if not Ignore and Input.UserInputType.Name == "Keyboard" and Input.KeyCode.Name == Settings.Keybind and not Debounce then
-			task.defer(Gui.CommandBar.CaptureFocus,Gui.CommandBar)
+		if Input.UserInputType.Name == "Keyboard" then
+			Input = Input.KeyCode.Name
+			if not Ignore and Input == Settings.Keybind and not Debounce then
+				task.defer(Gui.CommandBar.CaptureFocus,Gui.CommandBar)
+			elseif Service"UserInput":GetFocusedTextBox() == Gui.CommandBar and 0 < #Suggestions then
+				if Input == "Up" or Input == "Down" then
+					local function Move()
+						Suggestions[Selected].UI.BackgroundTransparency = 1
+						Selected = (Selected+(Input == "Up" and -1 or 1)-1)%#Suggestions+1
+						Suggestions[Selected].UI.BackgroundTransparency = .75
+						Gui.SuggestionsScroll.CanvasPosition = Vector2.new(0,20*(Selected-3))
+					end
+					Move()
+					local Start = os.clock()
+					while Service"UserInput":IsKeyDown(Enum.KeyCode[Input]) and os.clock()-Start < .5 do
+						Wait()
+					end
+					if .25 < os.clock()-Start then
+						repeat
+							Move()
+							Wait(1/30)
+						until not Service"UserInput":IsKeyDown(Enum.KeyCode[Input])
+					end
+				elseif Input == "Tab" then
+					Gui.CommandBar.Text = ("%s "):format(Suggestions[Selected].Command)
+					Gui.CommandBar.CursorPosition = #Gui.CommandBar.Text
+				end
+			end
 		end
 	end),
 	Connect(Gui.CommandBar:GetPropertyChangedSignal"Text",UpdateSuggestions)
@@ -950,7 +983,7 @@ local function GetCommandSet(ID)
 	end
 	if Success then
 		LoadCommands(Result,("Command Set %d"):format(ID))
-	elseif not Result:find("404",1,true) then
+	elseif Result ~= "HTTP 404 (Not Found)" then
 		Notify{
 			Title = "Failed to Load",
 			Text = ("Command set %d failed to download; is GitHub down?"):format(ID)
