@@ -1037,6 +1037,9 @@ pcall(function()
 	HiddenUI.Parent = nil
 	HiddenUI.Parent = HiddenUIParent
 end)
+while Service"CoreGui":FindFirstChild"RobloxLoadingGUI" do
+	Service"CoreGui".ChildRemoved:Wait()
+end
 pcall(function()
 	if Settings.PlayIntro == "Always" or Settings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
 		GlobalEnvironment.UltimatumLoaded = true
