@@ -29,6 +29,7 @@ local HiddenUI = gethui and WaitForSignal(function()
 	Wait()
 	return gethui()
 end) or Service"CoreGui"
+local HiddenUIParent = HiddenUI.Parent
 local GlobalEnvironment = getgenv and getgenv() or shared
 local Settings
 do
@@ -896,7 +897,7 @@ Connections = {
 	Connect(Gui.CommandBar.Focused,function()
 		pcall(function()
 			HiddenUI.Parent = nil
-			HiddenUI.Parent = Service"CoreGui"
+			HiddenUI.Parent = HiddenUIParent
 		end)
 		if not Debounce then
 			Debounce = true
@@ -1034,7 +1035,7 @@ end
 EnableDrag(Gui.Main,true)
 pcall(function()
 	HiddenUI.Parent = nil
-	HiddenUI.Parent = Service"CoreGui"
+	HiddenUI.Parent = HiddenUIParent
 end)
 if Settings.PlayIntro == "Always" or Settings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
 	GlobalEnvironment.UltimatumLoaded = true
