@@ -25,8 +25,11 @@ Load"Conversio"()
 for Name,Function in Load"Utilitas"{} do
 	getfenv()[Name] = Function
 end
+local HiddenUI = gethui and WaitForSignal(function()
+	Wait()
+	return gethui()
+end) or Service"CoreGui"
 local GlobalEnvironment = getgenv and getgenv() or shared
-pcall(GlobalEnvironment.CloseUltimatum)
 local Settings
 do
 	local DefaultSettings = {
@@ -79,11 +82,6 @@ do
 	})
 end
 Settings._ = nil
-if Service"CoreGui":FindFirstChild"RobloxLoadingGui" and Service"CoreGui".RobloxLoadingGui:FindFirstChild"BlackFrame" and Service"CoreGui".RobloxLoadingGui.BlackFrame.BackgroundTransparency <= 0 then
-	WaitForSignal(Service"CoreGui".RobloxLoadingGui.BlackFrame:GetPropertyChangedSignal"BackgroundTransparency",3)
-	Wait(math.random())
-end
-pcall(GlobalEnvironment.CloseUltimatum)
 local function Holiday(String)
 	local Emoji = os.date"%m%w" == "114" and math.clamp(tonumber(os.date"%d"),22,28) == tonumber(os.date"%d") and "\u{1F983}" or ({
 		_0101 = "\u{1F386}",
@@ -113,7 +111,6 @@ end
 local Gui = Create{
 	{
 		Name = "Holder",
-		Parent = gethui(),
 		ClassName = "ScreenGui",
 		Properties = {
 			ResetOnSpawn = false,
@@ -584,7 +581,7 @@ local function EnableDrag(Frame,IsMain)
 		end
 	end)
 	Removed = Connect(Frame.AncestryChanged,function()
-		if not Frame:IsDescendantOf(gethui()) then
+		if not Frame:IsDescendantOf(HiddenUI) then
 			RemoveConnections{
 				Removed,
 				InputBegan,
@@ -755,7 +752,6 @@ local IgnoreUpdate,Selected
 local Suggestions = {}
 local function ScrollSuggestions(Input)
 	if 0 < #Suggestions then
-		Suggestions[Selected].UI.BackgroundTransparency = 1
 		Selected = (Selected+(Input == "Up" and -1 or Input == "Down" and 1 or 0)-1)%#Suggestions+1
 		local OldCanvasPosition = Gui.SuggestionsScroll.CanvasPosition
 		Gui.SuggestionsScroll.CanvasPosition = Vector2.new(0,20*(Selected-3))
@@ -836,6 +832,7 @@ local function UpdateSuggestions()
 		ResizeMain(nil,0 < CommandNumber and 48+20*math.min(CommandNumber,5) or 40)
 	end
 end
+Gui.Main.Parent = HiddenUI
 local SendValue = NewInstance"BindableEvent"
 Connections = {
 	Connect(Owner.CharacterAdded,function(NewCharacter)
@@ -897,6 +894,10 @@ Connections = {
 		end
 	end),
 	Connect(Gui.CommandBar.Focused,function()
+		pcall(function()
+			HiddenUI.Parent = nil
+			HiddenUI.Parent = Service"CoreGui"
+		end)
 		if not Debounce then
 			Debounce = true
 			Gui.CommandBar.PlaceholderText = "Enter a command..."
@@ -949,8 +950,32 @@ Connections = {
 			end
 		end
 	end),
-	Connect(Gui.CommandBar:GetPropertyChangedSignal"Text",UpdateSuggestions)
+	Connect(Gui.CommandBar:GetPropertyChangedSignal"Text",UpdateSuggestions),
+	Connect(Gui.Holder.AncestryChanged,function()
+		if not Gui.Holder:IsDescendantOf(HiddenUI) then
+			local Unfinished = 0
+			for _,Info in Commands do
+				if Info.ToggleCheck and Info.Enabled then
+					task.spawn(function()
+						Unfinished += 1
+						RunCommand(Info.Toggles:split"_"[1])
+						Unfinished -= 1
+					end)
+				end
+			end
+			WaitForSignal(function()
+				Wait()
+				return Unfinished < 1
+			end,10)
+			Destroy(Connections,Gui,SendValue)
+		end
+	end)
 }
+if not GlobalEnvironment.UltimatumUIs then
+	GlobalEnvironment.UltimatumUIs = {}
+end
+Destroy(GlobalEnvironment.UltimatumUIs)
+table.insert(GlobalEnvironment.UltimatumUIs,Gui)
 local function LoadCommands(Lua,Name)
 	Name = Valid.String(Name,"Custom Command Set")
 	local CommandSet,ErrorMessage = loadstring(([[
@@ -984,25 +1009,6 @@ local function LoadCommands(Lua,Name)
 	end
 end
 GlobalEnvironment.AddUltimatumCommands = LoadCommands
-pcall(GlobalEnvironment.CloseUltimatum)
-GlobalEnvironment.CloseUltimatum = function()
-	local Unfinished = 0
-	for _,Info in Commands do
-		if Info.ToggleCheck and Info.Enabled then
-			task.spawn(function()
-				Unfinished += 1
-				RunCommand(Info.Toggles:split"_"[1])
-				Unfinished -= 1
-			end)
-		end
-	end
-	WaitForSignal(function()
-		Wait()
-		return Unfinished < 1
-	end,10)
-	Destroy(Connections,Gui)
-	GlobalEnvironment.CloseUltimatum = nil
-end
 local function GetCommandSet(ID)
 	ID = Valid.Number(ID,0)
 	local Success,Result = pcall(game.HttpGet,game,("https://raw.githubusercontent.com/Amourousity/Ultimatum/main/CommandSets/%d.lua"):format(ID),true)
@@ -1026,6 +1032,10 @@ local function GetCommandSet(ID)
 	end
 end
 EnableDrag(Gui.Main,true)
+pcall(function()
+	HiddenUI.Parent = nil
+	HiddenUI.Parent = Service"CoreGui"
+end)
 if Settings.PlayIntro == "Always" or Settings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
 	GlobalEnvironment.UltimatumLoaded = true
 	Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
@@ -1094,14 +1104,11 @@ for Name,Properties in {
 	CommandBarSection = {Size = UDim2.new(1,0,0,40)},
 	SuggestionsSection = {Size = UDim2.new(1,0,1,-40)}
 } do
-	if not Gui or not Gui[Name] then
-		pcall(GlobalEnvironment.CloseUltimatum)
-		error(not Gui and "Ultimatum's Gui was never instantiated!" or ("Gui object \"%s\" was deleted or never instantiated!"):format(Name))
-		return
-	end
-	for Property,Value in Properties do
-		Gui[Name][Property] = Value
-	end
+	pcall(function()
+		for Property,Value in Properties do
+			Gui[Name][Property] = Value
+		end
+	end)
 end
 ResizeMain(40)
 Animate(Gui.Main,{
