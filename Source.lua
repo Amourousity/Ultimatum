@@ -1119,4 +1119,3 @@ pcall(function()
 	GetCommandSet()
 	GetCommandSet(game.PlaceId)
 end)
-print"Finished loading"
