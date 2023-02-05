@@ -833,7 +833,7 @@ local function UpdateSuggestions()
 		ResizeMain(nil,0 < CommandNumber and 48+20*math.min(CommandNumber,5) or 40)
 	end
 end
-Gui.Main.Parent = HiddenUI
+Gui.Holder.Parent = HiddenUI
 local SendValue = NewInstance"BindableEvent"
 Connections = {
 	Connect(Owner.CharacterAdded,function(NewCharacter)
@@ -895,10 +895,6 @@ Connections = {
 		end
 	end),
 	Connect(Gui.CommandBar.Focused,function()
-		pcall(function()
-			HiddenUI.Parent = nil
-			HiddenUI.Parent = HiddenUIParent
-		end)
 		if not Debounce then
 			Debounce = true
 			Gui.CommandBar.PlaceholderText = "Enter a command..."
@@ -924,6 +920,10 @@ Connections = {
 				Gui.CommandBar.PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Service"UserInput":GetStringForKeyCode(Enum.KeyCode[Settings.Keybind]))
 			end
 		end)
+		pcall(function()
+			HiddenUI.Parent = nil
+			HiddenUI.Parent = HiddenUIParent
+		end)
 		Debounce = false
 	end),
 	Connect(Service"UserInput".InputBegan,function(Input,Ignore)
@@ -945,7 +945,7 @@ Connections = {
 						until not Service"UserInput":IsKeyDown(Enum.KeyCode[Input])
 					end
 				elseif Input == "Tab" then
-					Gui.CommandBar.Text = ("%s "):format(Suggestions[Selected].Command)
+					Gui.CommandBar.Text = Suggestions[Selected].Command
 					Gui.CommandBar.CursorPosition = #Gui.CommandBar.Text
 				end
 			end
@@ -953,7 +953,7 @@ Connections = {
 	end),
 	Connect(Gui.CommandBar:GetPropertyChangedSignal"Text",UpdateSuggestions),
 	Connect(Gui.Holder.AncestryChanged,function()
-		if not Gui.Holder:IsDescendantOf(HiddenUI) then
+		if not Valid.Instance(Gui.Holder,"ScreenGui") or not Gui.Holder:IsDescendantOf(HiddenUI) then
 			local Unfinished = 0
 			for _,Info in Commands do
 				if Info.ToggleCheck and Info.Enabled then
@@ -1037,85 +1037,86 @@ pcall(function()
 	HiddenUI.Parent = nil
 	HiddenUI.Parent = HiddenUIParent
 end)
-if Settings.PlayIntro == "Always" or Settings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
-	GlobalEnvironment.UltimatumLoaded = true
-	Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
-	task.delay(1.5,function()
-		Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
-	end)
-	Service"Run":SetRobloxGuiFocused(true)
-	task.delay(1.5,Service"Run".SetRobloxGuiFocused,Service"Run",false)
-	Animate(Gui.ScreenCover,{
-		Time = .25,
-		EasingStyle = Enum.EasingStyle.Linear,
-		Properties = {BackgroundTransparency = .2}
-	},Gui.Main,{
-		Yields = true,
-		Properties = {
-			BackgroundTransparency = 0,
-			Position = UDim2.new(.5,0,.5,0)
-		}
-	},Gui.Logo,{
-		Properties = {
+pcall(function()
+	if Settings.PlayIntro == "Always" or Settings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
+		GlobalEnvironment.UltimatumLoaded = true
+		Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
+		task.delay(1.5,function()
+			Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+		end)
+		Service"Run":SetRobloxGuiFocused(true)
+		task.delay(1.5,Service"Run".SetRobloxGuiFocused,Service"Run",false)
+		Animate(Gui.ScreenCover,{
+			Time = .25,
+			EasingStyle = Enum.EasingStyle.Linear,
+			Properties = {BackgroundTransparency = .2}
+		},Gui.Main,{
+			Yields = true,
+			Properties = {
+				BackgroundTransparency = 0,
+				Position = UDim2.new(.5,0,.5,0)
+			}
+		},Gui.Logo,{
+			Properties = {
+				Rotation = 0,
+				ImageTransparency = 0
+			}
+		},Gui.MainCorner,{
+			Yields = true,
+			FinishDelay = .5,
+			Properties = {CornerRadius = UDim.new(0,4)}
+		},Gui.ScreenCover,{
+			Time = .25,
+			EasingStyle = Enum.EasingStyle.Linear,
+			Properties = {BackgroundTransparency = 1}
+		},Gui.Main,{
+			Properties = {
+				Rotation = 180,
+				Size = UDim2.new()
+			},
+			EasingStyle = Enum.EasingStyle.Back,
+			EasingDirection = Enum.EasingDirection.In
+		},Gui.MainCorner,{
+			Properties = {CornerRadius = UDim.new(.5,0)}
+		},Gui.Logo,{
+			Yields = true,
+			Properties = {ImageTransparency = 1}
+		})
+	else
+		GlobalEnvironment.UltimatumLoaded = true
+	end
+	Wait()
+	Destroy(Gui.ScreenCover)
+	Gui.ScreenCover = nil
+	for Name,Properties in {
+		Logo = {
 			Rotation = 0,
 			ImageTransparency = 0
-		}
-	},Gui.MainCorner,{
-		Yields = true,
-		FinishDelay = .5,
-		Properties = {CornerRadius = UDim.new(0,4)}
-	},Gui.ScreenCover,{
-		Time = .25,
-		EasingStyle = Enum.EasingStyle.Linear,
-		Properties = {BackgroundTransparency = 1}
-	},Gui.Main,{
-		Properties = {
-			Rotation = 180,
-			Size = UDim2.new()
 		},
-		EasingStyle = Enum.EasingStyle.Back,
-		EasingDirection = Enum.EasingDirection.In
-	},Gui.MainCorner,{
-		Properties = {CornerRadius = UDim.new(.5,0)}
-	},Gui.Logo,{
-		Yields = true,
-		Properties = {ImageTransparency = 1}
-	})
-else
-	GlobalEnvironment.UltimatumLoaded = true
-end
-Wait()
-Destroy(Gui.ScreenCover)
-Gui.ScreenCover = nil
-for Name,Properties in {
-	Logo = {
-		Rotation = 0,
-		ImageTransparency = 0
-	},
-	Main = {
-		Rotation = 0,
-		AnchorPoint = Vector2.zero,
-		BackgroundTransparency = 0,
-		Size = UDim2.new(0,40,0,40),
-		Position = UDim2.new(0,0,1,0)
-	},
-	MainListLayout = {Parent = Gui.MainSection},
-	MainCorner = {CornerRadius = UDim.new(0,4)},
-	MainAspectRatioConstraint = {Parent = Gui.Logo},
-	CommandBarSection = {Size = UDim2.new(1,0,0,40)},
-	SuggestionsSection = {Size = UDim2.new(1,0,1,-40)}
-} do
-	pcall(function()
+		Main = {
+			Rotation = 0,
+			AnchorPoint = Vector2.zero,
+			BackgroundTransparency = 0,
+			Size = UDim2.new(0,40,0,40),
+			Position = UDim2.new(0,0,1,0)
+		},
+		MainListLayout = {Parent = Gui.MainSection},
+		MainCorner = {CornerRadius = UDim.new(0,4)},
+		MainAspectRatioConstraint = {Parent = Gui.Logo},
+		CommandBarSection = {Size = UDim2.new(1,0,0,40)},
+		SuggestionsSection = {Size = UDim2.new(1,0,1,-40)}
+	} do
 		for Property,Value in Properties do
 			Gui[Name][Property] = Value
 		end
-	end)
-end
-ResizeMain(40)
-Animate(Gui.Main,{
-	Yields = true,
-	Properties = {Position = UDim2.new(0,0,1,-40)}
-})
-Debounce = false
-GetCommandSet()
-GetCommandSet(game.PlaceId)
+	end
+	ResizeMain(40)
+	Animate(Gui.Main,{
+		Yields = true,
+		Properties = {Position = UDim2.new(0,0,1,-40)}
+	})
+	Debounce = false
+	GetCommandSet()
+	GetCommandSet(game.PlaceId)
+end)
+print"Finished loading"
