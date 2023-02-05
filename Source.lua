@@ -835,6 +835,7 @@ local function UpdateSuggestions()
 end
 Gui.Holder.Parent = HiddenUI
 local SendValue = NewInstance"BindableEvent"
+local Removing
 Connections = {
 	Connect(Owner.CharacterAdded,function(NewCharacter)
 		SendValue:Fire("Character",NewCharacter)
@@ -847,6 +848,24 @@ Connections = {
 		end
 	end),
 	isfile and Connect(Service"Run".Heartbeat,function()
+		if not Valid.Instance(Gui.Holder,"ScreenGui") or not Gui.Holder:IsDescendantOf(HiddenUI) and not Removing then
+			Removing = true
+			local Unfinished = 0
+			for _,Info in Commands do
+				if Info.ToggleCheck and Info.Enabled then
+					task.spawn(function()
+						Unfinished += 1
+						RunCommand(Info.Toggles:split"_"[1])
+						Unfinished -= 1
+					end)
+				end
+			end
+			WaitForSignal(function()
+				Wait()
+				return Unfinished < 1
+			end,10)
+			Destroy(Connections,Gui,SendValue)
+		end
 		if Settings.AutoUpdate and 60 < os.clock()-LastCheck then
 			LastCheck = os.clock()
 			local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua",true)
@@ -951,26 +970,7 @@ Connections = {
 			end
 		end
 	end),
-	Connect(Gui.CommandBar:GetPropertyChangedSignal"Text",UpdateSuggestions),
-	Connect(Gui.Holder.AncestryChanged,function()
-		if not Valid.Instance(Gui.Holder,"ScreenGui") or not Gui.Holder:IsDescendantOf(HiddenUI) then
-			local Unfinished = 0
-			for _,Info in Commands do
-				if Info.ToggleCheck and Info.Enabled then
-					task.spawn(function()
-						Unfinished += 1
-						RunCommand(Info.Toggles:split"_"[1])
-						Unfinished -= 1
-					end)
-				end
-			end
-			WaitForSignal(function()
-				Wait()
-				return Unfinished < 1
-			end,10)
-			Destroy(Connections,Gui,SendValue)
-		end
-	end)
+	Connect(Gui.CommandBar:GetPropertyChangedSignal"Text",UpdateSuggestions)
 }
 if not GlobalEnvironment.UltimatumUIs then
 	GlobalEnvironment.UltimatumUIs = {}
