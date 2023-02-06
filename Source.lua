@@ -786,6 +786,7 @@ local function UpdateSuggestions()
 					local DisplayName = CommandInfo.Toggles and CommandInfo.Enabled and CommandInfo.Toggles:split"_"[1] or CommandNames[1]
 					table.insert(Suggestions,{
 						Command = DisplayName,
+						CommandNames = CommandNames,
 						Display = ("<font color = '#FFFFFF'>%s</font>%s%s"):format(DisplayName,CommandInfo.Arguments and (function()
 							local Arguments = {}
 							for _,ArgumentInfo in CommandInfo.Arguments do
@@ -798,11 +799,27 @@ local function UpdateSuggestions()
 				end
 			end
 		end
-		table.sort(Suggestions,function(Suggestion1,Suggestion2)
-			Suggestion1 = Service"Text":GetTextSize(Suggestion1.Command,14,Enum.Font.Arial,Vector2.one*1e6).X
-			Suggestion2 = Service"Text":GetTextSize(Suggestion2.Command,14,Enum.Font.Arial,Vector2.one*1e6).X
-			return if CheckAxis"Y" then Suggestion1 < Suggestion2 else Suggestion2 < Suggestion1
-		end)
+		if #Command < 2 then
+			table.sort(Suggestions,function(Suggestion1,Suggestion2)
+				Suggestion1 = Service"Text":GetTextSize(Suggestion1.Command,14,Enum.Font.Arial,Vector2.one*1e6).X
+				Suggestion2 = Service"Text":GetTextSize(Suggestion2.Command,14,Enum.Font.Arial,Vector2.one*1e6).X
+				return if CheckAxis"Y" then Suggestion1 < Suggestion2 else Suggestion2 < Suggestion1
+			end)
+		else
+			local function MatchRate(Suggestion)
+				local HighestMatch = 0
+				for _,Name in Suggestion.CommandNames do
+					local MatchPercent = 1-#Name:lower():gsub(Command,"")/#Name
+					if HighestMatch < MatchPercent then
+						HighestMatch = MatchPercent
+					end
+				end
+				return HighestMatch
+			end
+			table.sort(Suggestions,function(Suggestion1,Suggestion2)
+				return if CheckAxis"Y" then MatchRate(Suggestion2) < MatchRate(Suggestion1) else MatchRate(Suggestion1) < MatchRate(Suggestion2)
+			end)
+		end
 		for Index,Suggestion in Suggestions do
 			Suggestion.UI = NewInstance("TextLabel",Gui.SuggestionsScroll,{
 				TextSize = 14,
