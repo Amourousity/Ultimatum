@@ -1,7 +1,7 @@
 return {
 	Close = {
 		Function = function()
-			--- @diagnostic disable-next-line undefined-global
+			--- @diagnostic disable-next-line: undefined-global
 			pcall(CloseUltimatum)
 		end,
 		Decription = "Closes Ultimatum (\u{2639})"
@@ -155,7 +155,7 @@ return {
 		end,
 		Description = "Notifies the Magic 8 Ball's response to your yes-or-no question"
 	},
-	ServerHop_serverh_sh_hopserver_hops_hserver_newserver_nserver_ns_news_shop = {
+	ServerHop_serverh_sh_hopserver_hops_hserver_shop = {
 		Function = function()
 			Notify{
 				Title = "Searching for Servers",
@@ -173,7 +173,7 @@ return {
 				Servers = {}
 				for _,ServerInfo in UnfilteredServers do
 					ServerCount += 1
-					if ServerInfo.playing < ServerInfo.maxPlayers and 0 < ServerInfo.playing and ServerInfo.id ~= game.JobId then
+					if (ServerInfo.playing or 0) < (ServerInfo.maxPlayers or 0) and 0 < (ServerInfo.playing or 0) and ServerInfo.id ~= game.JobId then
 						table.insert(Servers,ServerInfo)
 						ViableServerCount += 1
 					end
