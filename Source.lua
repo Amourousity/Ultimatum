@@ -1,72 +1,93 @@
-  --[[]    [|] [|]    [|||||||||] [|||||||||] [||]    [||]      [|] [|||||||||] [|]    [|] [||]    [||]
+--[[]    [|] [|]    [|||||||||] [|||||||||] [||]    [||]      [|] [|||||||||] [|]    [|] [||]    [||]
    [|]    [|] [|]        [|]         [|]     [||||] [||||]   [|] [|]   [|]     [|]    [|] [||||] [||||]
   [|]    [|] [|]        [|]         [|]     [|] [|||] [|]  [|]   [|]  [|]     [|]    [|] [|] [|||] [|]
  [|]    [|] [|]        [|]         [|]     [|]  [|]  [|] [|||||||||] [|]     [|]    [|] [|]  [|]  [|]
 [|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]
 [|]  [|]  [|]        [|]         [|]     [|]       [|] [|]     [|] [|]      [|]  [|]  [|]       [|]
 [||||]   [||||||||] [|]     [|||||||||] [|]       [|] [|]     [|] [|]       [||||]   [|]       []]
+
 if not game:IsLoaded() then
 	game.Loaded:Wait()
 end
-local function Load(Name)
-	local SourceName,Success,Result = ("%s.lua"):format(Name),pcall(game.HttpGet,game,("https://raw.githubusercontent.com/Amourousity/%s/main/Source.lua"):format(Name),true)
-	if Success then
+local function load(name: string)
+	local sourceName, success, result =
+		`{name}.lua`,
+		pcall(game.HttpGet, game, `https://raw.githubusercontent.com/Amourousity/{name}/main/Source.lua`, true)
+	if success then
 		if writefile then
-			writefile(SourceName,Result)
+			writefile(sourceName, result)
 		else
-			return loadstring(Result,Name)
+			return loadstring(result, name)
 		end
 	end
-	if isfile and isfile(SourceName) then
-		return loadstring(readfile(SourceName),Name)
+	if isfile and isfile(sourceName) then
+		return loadstring(readfile(sourceName), name)
 	end
 end
-Load"Conversio"()
-for Name,Function in Load"Utilitas"{} do
-	getfenv()[Name] = Function
+load("Conversio")()
+for name: string, func: (...any) -> ...any in load("Utilitas")({}) do
+	getfenv()[name] = func
 end
-local HiddenUI = gethui and WaitForSignal(function()
-	Wait()
-	return gethui()
-end) or Service"CoreGui"
-local HiddenUIParent = HiddenUI.Parent
-local GlobalEnvironment = getgenv and getgenv() or shared
-local Settings
+local hiddenGui: Folder | CoreGui = if gethui
+	then waitForSignal(function()
+		wait()
+		return gethui()
+	end)
+	else service("CoreGui")
+local hiddenUiParent = hiddenGui.Parent
+local globalEnvironment = if getgenv then getgenv() else shared
+local settings: {
+	scale: number,
+	keybind: string,
+	stayOpen: boolean,
+	autoUpdate: boolean,
+	loadOnRejoin: boolean,
+	playIntro: "Always" | "Once" | "Never",
+	notifications: "All" | "Important" | "None",
+}
 do
-	local DefaultSettings = {
-		Scale = 1,
-		StayOpen = false,
-		AutoUpdate = true,
-		LoadOnRejoin = true,
-		PlayIntro = "Always",
-		Notifications = "All",
-		Keybind = "LeftBracket"
+	local defaultSettings = {
+		scale = 1,
+		stayOpen = false,
+		autoUpdate = true,
+		loadOnRejoin = true,
+		playIntro = "Always",
+		notifications = "All",
+		keybind = "LeftBracket",
 	}
-	local SettingsTable = DecodeJSON(isfile and isfile"UltimatumSettings.json" and readfile"UltimatumSettings.json":gsub("^%bA{","{"),DefaultSettings)
+	local SettingsTable = jsonDecode(
+		isfile and isfile("UltimatumSettings.json") and readfile("UltimatumSettings.json"):gsub("^%bA{", "{"),
+		defaultSettings
+	)
 	for SettingName in SettingsTable do
-		if DefaultSettings[SettingName] == nil then
+		if defaultSettings[SettingName] == nil then
 			SettingsTable[SettingName] = nil
 		end
 	end
-	Settings = setmetatable({},{
-		__index = function(_,Index)
+	settings = setmetatable({}, {
+		__index = function(_, Index)
 			return SettingsTable[Index]
 		end,
-		__newindex = function(_,Index,Value)
+		__newindex = function(_, Index, Value)
 			SettingsTable[Index] = Value
 			if writefile then
 				local FormattedSettings = {}
-				for SettingName,SettingValue in SettingsTable do
-					table.insert(FormattedSettings,("\t%s: %s,"):format(("%q"):format(SettingName),type(SettingValue) == "string" and ("%q"):format(SettingValue) or tostring(SettingValue)))
+				for SettingName, SettingValue in SettingsTable do
+					table.insert(
+						FormattedSettings,
+						`\t{("%q"):format(SettingName)}: {if type(SettingValue) == "string"
+							then ("%q"):format(SettingValue)
+							else tostring(SettingValue)},`
+					)
 				end
-				table.sort(FormattedSettings,function(String1,String2)
+				table.sort(FormattedSettings, function(String1, String2)
 					if #String1 < #String2 then
 						return true
 					elseif #String2 < #String1 then
 						return false
 					end
-					String1,String2 = {String1:byte(1,-2)},{String2:byte(1,-2)}
-					for Integer = 1,math.max(#String1,#String2) do
+					String1, String2 = { String1:byte(1, -2) }, { String2:byte(1, -2) }
+					for Integer = 1, math.max(#String1, #String2) do
 						if (String1[Integer] or -1) < (String2[Integer] or -1) then
 							return true
 						elseif (String2[Integer] or -1) < (String1[Integer] or -1) then
@@ -75,41 +96,20 @@ do
 					end
 					return false
 				end)
-				FormattedSettings[#FormattedSettings] = FormattedSettings[#FormattedSettings]:sub(1,-2)
-				writefile("UltimatumSettings.json",("All settings for Ultimatum.\nDo not edit this file unless you know what you're doing.\nEvery setting can be changed in-game using the \"Settings\" command.\n{\n%s\n}"):format(table.concat(FormattedSettings,"\n")))
+				FormattedSettings[#FormattedSettings] = FormattedSettings[#FormattedSettings]:sub(1, -2)
+				writefile(
+					"UltimatumSettings.json",
+					`All settings for Ultimatum.\nDo not edit this file unless you know what you're doing.\nEvery setting can be changed in-game using the "Settings" command.\n\x7B\n{table.concat(
+						FormattedSettings,
+						"\n"
+					)}\n\x7D`
+				)
 			end
 		end,
-		__metatable = "nil"
 	})
 end
-Settings._ = nil
-local function Holiday(String)
-	local Emoji = os.date"%m%w" == "114" and math.clamp(tonumber(os.date"%d"),22,28) == tonumber(os.date"%d") and "\u{1F983}" or ({
-		_0101 = "\u{1F386}",
-		_0214 = "\u{1F495}",
-		_0317 = "\u{1F340}",
-		[(function(Year)
-			local A = math.floor(Year/100)
-			local B = math.floor((13+8*A)/25)
-			local C = (15-B+A-math.floor(A/4))%30
-			local D = (4+A-math.floor(A/4))%7
-			local E = (19*(Year%19)+C)%30
-			local F = (2*(Year%4)+4*(Year%7)+6*E+D)%7
-			local G = (22+E+F)
-			if F == 6 and (E == 29 or E == 28) then
-				return ("_041%s"):format(tostring(E):sub(2))
-			elseif 31 < G then
-				return ("_04%02d"):format(G-31)
-			end
-			return ("_03%02d"):format(G)
-		end)(tonumber(os.date"%Y"))] = "\u{1F95A}",
-		_0704 = "\u{1F1FA}\u{1F1F8}",
-		_0931 = "\u{1F383}",
-		_1225 = "\u{1F384}"
-	})[os.date"_%m%d"]
-	return Emoji and ("%s %s %s"):format(Emoji,String,Emoji) or String
-end
-local Gui = Create{
+settings._ = nil
+local Gui = create({
 	{
 		Name = "Holder",
 		ClassName = "ScreenGui",
@@ -118,8 +118,8 @@ local Gui = Create{
 			IgnoreGuiInset = true,
 			OnTopOfCoreBlur = true,
 			DisplayOrder = 0x7FFFFFFF,
-			ZIndexBehavior = Enum.ZIndexBehavior.Global
-		}
+			ZIndexBehavior = Enum.ZIndexBehavior.Global,
+		},
 	},
 	{
 		Name = "ScreenCover",
@@ -127,10 +127,10 @@ local Gui = Create{
 		ClassName = "Frame",
 		Properties = {
 			ZIndex = -1,
-			Size = UDim2.new(1,0,1,0),
 			BackgroundTransparency = 1,
-			BackgroundColor3 = Color3.new()
-		}
+			Size = UDim2.new(1, 0, 1, 0),
+			BackgroundColor3 = Color3.new(),
+		},
 	},
 	{
 		Name = "Main",
@@ -140,17 +140,17 @@ local Gui = Create{
 			ZIndex = 1,
 			ClipsDescendants = true,
 			BackgroundTransparency = 1,
-			Size = UDim2.new(.25,0,.25,0),
-			Position = UDim2.new(.5,0,.4,0),
-			AnchorPoint = Vector2.new(.5,.5),
-			BackgroundColor3 = Color3.fromHex"505064"
-		}
+			Size = UDim2.new(0.25, 0, 0.25, 0),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(0.5, 0, 0.4, 0),
+			BackgroundColor3 = Color3.fromHex("505064"),
+		},
 	},
 	{
 		Name = "MainCorner",
 		Parent = "Main",
 		ClassName = "UICorner",
-		Properties = {CornerRadius = UDim.new(.5,0)}
+		Properties = { CornerRadius = UDim.new(0.5, 0) },
 	},
 	{
 		Name = "MainGradient",
@@ -158,20 +158,20 @@ local Gui = Create{
 		ClassName = "UIGradient",
 		Properties = {
 			Rotation = 90,
-			Color = ColorSequence.new(Color3.new(1,1,1),Color3.new(.5,.5,.5))
-		}
+			Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.new(0.5, 0.5, 0.5)),
+		},
 	},
 	{
 		Name = "MainAspectRatioConstraint",
 		Parent = "Main",
 		ClassName = "UIAspectRatioConstraint",
-		Properties = {DominantAxis = Enum.DominantAxis.Height}
+		Properties = { DominantAxis = Enum.DominantAxis.Height },
 	},
 	{
 		Name = "MainListLayout",
 		Parent = "Main",
 		ClassName = "UIListLayout",
-		Properties = {SortOrder = Enum.SortOrder.LayoutOrder}
+		Properties = { SortOrder = Enum.SortOrder.LayoutOrder },
 	},
 	{
 		Name = "CommandBarSection",
@@ -180,20 +180,20 @@ local Gui = Create{
 		Properties = {
 			LayoutOrder = 1,
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1,0,1,0)
-		}
+			Size = UDim2.new(1, 0, 1, 0),
+		},
 	},
 	{
 		Name = "CommandBarListLayout",
 		Parent = "CommandBarSection",
 		ClassName = "UIListLayout",
 		Properties = {
-			Padding = UDim.new(0,4),
+			Padding = UDim.new(0, 4),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 			FillDirection = Enum.FillDirection.Horizontal,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
-			HorizontalAlignment = Enum.HorizontalAlignment.Center
-		}
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		},
 	},
 	{
 		Name = "Logo",
@@ -203,9 +203,9 @@ local Gui = Create{
 			Rotation = 90,
 			ImageTransparency = 1,
 			BackgroundTransparency = 1,
-			Size = UDim2.new(.8,0,.8,0),
-			Image = "rbxassetid://9666094136"
-		}
+			Size = UDim2.new(0.8, 0, 0.8, 0),
+			Image = "rbxassetid://0X24024E438",
+		},
 	},
 	{
 		Name = "CommandBarBackground",
@@ -216,9 +216,9 @@ local Gui = Create{
 			Visible = false,
 			ClipsDescendants = true,
 			AnchorPoint = Vector2.xAxis,
-			BackgroundColor3 = Color3.fromHex"191932",
-			Size = UDim2.new(1,-44,.8,0)
-		}
+			Size = UDim2.new(1, -44, 0.8, 0),
+			BackgroundColor3 = Color3.fromHex("191932"),
+		},
 	},
 	{
 		Name = "CommandBar",
@@ -230,19 +230,21 @@ local Gui = Create{
 			Font = Enum.Font.Arial,
 			ClearTextOnFocus = false,
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1,-20,1,0),
-			Position = UDim2.new(0,10,0,0),
-			TextColor3 = Color3.new(1,1,1),
+			Size = UDim2.new(1, -20, 1, 0),
+			Position = UDim2.new(0, 10, 0, 0),
+			TextColor3 = Color3.new(1, 1, 1),
 			TextXAlignment = Enum.TextXAlignment.Left,
-			PlaceholderColor3 = Color3.fromHex"A0A0A0",
-			PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Service"UserInput":GetStringForKeyCode(Enum.KeyCode[Settings.Keybind]))
-		}
+			PlaceholderColor3 = Color3.fromHex("A0A0A0"),
+			PlaceholderText = `Enter a command (Keybind:\u{200A}{service("UserInput"):GetStringForKeyCode(
+				Enum.KeyCode[settings.Keybind]
+			)}\u{200A})`,
+		},
 	},
 	{
 		Name = "CommandBarCorner",
 		Parent = "CommandBarBackground",
 		ClassName = "UICorner",
-		Properties = {CornerRadius = UDim.new(0,4)}
+		Properties = { CornerRadius = UDim.new(0, 4) },
 	},
 	{
 		Name = "SuggestionsSection",
@@ -250,8 +252,8 @@ local Gui = Create{
 		ClassName = "Frame",
 		Properties = {
 			ClipsDescendants = true,
-			BackgroundTransparency = 1
-		}
+			BackgroundTransparency = 1,
+		},
 	},
 	{
 		Name = "SuggestionsScroll",
@@ -262,9 +264,9 @@ local Gui = Create{
 			ScrollBarThickness = 0,
 			ScrollingEnabled = false,
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1,-8,1,-8),
-			Position = UDim2.new(0,4,0,4)
-		}
+			Size = UDim2.new(1, -8, 1, -8),
+			Position = UDim2.new(0, 4, 0, 4),
+		},
 	},
 	{
 		Name = "SuggestionsGridLayout",
@@ -272,9 +274,9 @@ local Gui = Create{
 		ClassName = "UIGridLayout",
 		Properties = {
 			CellPadding = UDim2.new(),
-			CellSize = UDim2.new(1,0,0,20),
-			SortOrder = Enum.SortOrder.LayoutOrder
-		}
+			CellSize = UDim2.new(1, 0, 0, 20),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		},
 	},
 	{
 		Name = "SuggestionSelector",
@@ -282,14 +284,14 @@ local Gui = Create{
 		ClassName = "Frame",
 		Properties = {
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1,-2,0,20)
-		}
+			Size = UDim2.new(1, -2, 0, 20),
+		},
 	},
 	{
 		Name = "SelectorCorner",
 		Parent = "SuggestionSelector",
 		ClassName = "UICorner",
-		Properties = {CornerRadius = UDim.new(0,2)}
+		Properties = { CornerRadius = UDim.new(0, 2) },
 	},
 	{
 		Name = "SelectorBorder",
@@ -297,8 +299,8 @@ local Gui = Create{
 		ClassName = "UIStroke",
 		Properties = {
 			Enabled = false,
-			Color = Color3.new(1,1,1)
-		}
+			Color = Color3.new(1, 1, 1),
+		},
 	},
 	{
 		Name = "NotificationHolder",
@@ -307,45 +309,45 @@ local Gui = Create{
 		Properties = {
 			AnchorPoint = Vector2.one,
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1/3,0,1,-20),
-			Position = UDim2.new(1,-10,1,-10)
-		}
+			Size = UDim2.new(1 / 3, 0, 1, -20),
+			Position = UDim2.new(1, -10, 1, -10),
+		},
 	},
 	{
 		Name = "NotificationlistLayout",
 		Parent = "NotificationHolder",
 		ClassName = "UIListLayout",
 		Properties = {
-			Padding = UDim.new(0,10),
+			Padding = UDim.new(0, 10),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 			VerticalAlignment = Enum.VerticalAlignment.Bottom,
-			HorizontalAlignment = Enum.HorizontalAlignment.Right
-		}
-	}
-}
+			HorizontalAlignment = Enum.HorizontalAlignment.Right,
+		},
+	},
+})
 local NotificationIDs = {}
 local function Notify(Options)
-	Options = Valid.Table(Options,{
+	Options = valid.Table(Options, {
 		Duration = 5,
-		Urgent = false,
+		Important = false,
 		Yields = false,
 		Text = "(no text)",
 		Title = "Ultimatum",
-		CalculateDuration = true
+		CalculateDuration = true,
 	})
-	Options.Text = ("<b>%s</b>\n%s"):format(Options.Title,Options.Text)
-	if Settings.Notifications == "Off" or Settings.Notifications == "Urgent" and not Options.Urgent then
+	Options.Text = `<b>{Options.Title}</b>\n{Options.Text}`
+	if settings.Notifications == "None" or settings.Notifications == "Important" and not Options.Important then
 		return
 	end
 	local ID
 	repeat
-		ID = RandomString{
+		ID = randomString({
 			Length = 5,
-			Format = "%s"
-		}
-	until not table.find(NotificationIDs,ID)
-	table.insert(NotificationIDs,ID)
-	local Notification = Create{
+			Format = "%s",
+		})
+	until not table.find(NotificationIDs, ID)
+	table.insert(NotificationIDs, ID)
+	local Notification = create({
 		{
 			Name = "Main",
 			Parent = Gui.NotificationHolder,
@@ -354,14 +356,14 @@ local function Notify(Options)
 				ClipsDescendants = true,
 				AnchorPoint = Vector2.one,
 				BackgroundTransparency = 1,
-				BackgroundColor3 = Color3.fromHex"505064"
-			}
+				BackgroundColor3 = Color3.fromHex("505064"),
+			},
 		},
 		{
 			Name = "MainCorner",
 			Parent = "Main",
 			ClassName = "UICorner",
-			Properties = {CornerRadius = UDim.new(0,4)}
+			Properties = { CornerRadius = UDim.new(0, 4) },
 		},
 		{
 			Name = "MainGradient",
@@ -369,10 +371,10 @@ local function Notify(Options)
 			ClassName = "UIGradient",
 			Properties = {
 				Rotation = 90,
-				Color = ColorSequence.new(Color3.new(1,1,1),Color3.new(.5,.5,.5))
-			}
+				Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.new(0.5, 0.5, 0.5)),
+			},
 		},
-			{
+		{
 			Name = "Content",
 			Parent = "Main",
 			ClassName = "TextLabel",
@@ -384,118 +386,149 @@ local function Notify(Options)
 				TextTransparency = 1,
 				Font = Enum.Font.Arial,
 				BackgroundTransparency = 1,
-				Size = UDim2.new(1,-20,1,-20),
-				TextColor3 = Color3.new(1,1,1),
-				Position = UDim2.new(0,10,0,10),
-				TextXAlignment = Enum.TextXAlignment.Left
-			}
-		}
-	}
+				Size = UDim2.new(1, -20, 1, -20),
+				Position = UDim2.new(0, 10, 0, 10),
+				TextColor3 = Color3.new(1, 1, 1),
+				TextXAlignment = Enum.TextXAlignment.Left,
+			},
+		},
+	})
 	if Options.CalculateDuration then
 		for _ in utf8.graphemes(Notification.Content.ContentText) do
-			Options.Duration += .06
+			Options.Duration += 0.06
 		end
 	end
-	Options.Duration += .25
-	local Size = Service"Text":GetTextSize(Notification.Content.ContentText,14,Enum.Font.Arial,Vector2.new(Gui.NotificationHolder.AbsoluteSize.X,Gui.NotificationHolder.AbsoluteSize.Y))
-	Notification.Main.Size = UDim2.new(0,Size.X+22,0,Size.Y+20)
+	Options.Duration += 0.25
+	local Size = service("Text"):GetTextSize(
+		Notification.Content.ContentText,
+		14,
+		Enum.Font.Arial,
+		Vector2.new(Gui.NotificationHolder.AbsoluteSize.X, Gui.NotificationHolder.AbsoluteSize.Y)
+	)
+	Notification.Main.Size = UDim2.new(0, Size.X + 22, 0, Size.Y + 20)
 	Size = Notification.Main.Size
-	Notification.Main.Size = UDim2.new(Size.X.Scale,Size.X.Offset,0,0)
-	Animate(Notification.Main,{
-		Time = .25,
-		Properties = {
-			Size = Size,
-			BackgroundTransparency = 0
+	Notification.Main.Size = UDim2.new(Size.X.Scale, Size.X.Offset, 0, 0)
+	animate(
+		Notification.Main,
+		{
+			secondsTime = 0.25,
+			properties = {
+				Size = Size,
+				BackgroundTransparency = 0,
+			},
+		},
+		Notification.Content,
+		{
+			secondsTime = 0.25,
+			properties = { TextTransparency = 0 },
+			easingStyle = Enum.EasingStyle.Linear,
 		}
-	},Notification.Content,{
-		Time = .25,
-		Properties = {TextTransparency = 0},
-		EasingStyle = Enum.EasingStyle.Linear
-	})
-	task.delay(Options.Duration,Animate,Notification.Main,{
-		Time = 1,
-		Properties = {BackgroundTransparency = 1}
-	},Notification.Content,{
-		Time = 1,
-		Yields = true,
-		Properties = {TextTransparency = 1},
-		EasingStyle = Enum.EasingStyle.Linear
-	},Notification.Main,{
-		Time = .25,
-		Properties = {Size = UDim2.new(Size.X.Scale,Size.X.Offset,0,0)}
-	})
+	)
+	task.delay(
+		Options.Duration,
+		animate,
+		Notification.Main,
+		{
+			secondsTime = 1,
+			properties = { BackgroundTransparency = 1 },
+		},
+		Notification.Content,
+		{
+			secondsTime = 1,
+			yields = true,
+			properties = { TextTransparency = 1 },
+			easingStyle = Enum.EasingStyle.Linear,
+		},
+		Notification.Main,
+		{
+			secondsTime = 0.25,
+			properties = { Size = UDim2.new(Size.X.Scale, Size.X.Offset, 0, 0) },
+		}
+	)
 	Options.Duration += 1.25
 	task.spawn(function()
 		local Start = os.clock()
 		repeat
-			Notification.Main.LayoutOrder = table.find(NotificationIDs,ID)
-			Wait()
-		until Options.Duration < os.clock()-Start
-		table.remove(NotificationIDs,table.find(NotificationIDs,ID))
+			Notification.Main.LayoutOrder = table.find(NotificationIDs, ID)
+			wait()
+		until Options.Duration < os.clock() - Start
+		table.remove(NotificationIDs, table.find(NotificationIDs, ID))
 	end)
 	if Options.Yields then
-		Wait(Options.Duration)
-		Destroy(Notification)
+		wait(Options.Duration)
+		destroy(Notification)
 	else
-		task.delay(Options.Duration,Destroy,Notification)
+		task.delay(Options.Duration, destroy, Notification)
 	end
 end
 local function CheckAxis(Axis)
-	return workspace.CurrentCamera.ViewportSize[Axis]/2 < Gui.Logo.AbsolutePosition[Axis]+Gui.Logo.AbsoluteSize[Axis]/2
+	return workspace.CurrentCamera.ViewportSize[Axis] / 2
+		< Gui.Logo.AbsolutePosition[Axis] + Gui.Logo.AbsoluteSize[Axis] / 2
 end
-local LastCheck,Debounce,LastLeft = 0,true,0
-local function ResizeMain(X,Y)
-	X = Settings.StayOpen and 400 or Valid.Number(X,400)
-	Y = Valid.Number(Y,40)
-	Gui.CommandBarBackground.LayoutOrder = CheckAxis"X" and -1 or 1
-	Gui.CommandBarSection.LayoutOrder = CheckAxis"Y" and 1 or -1
-	Animate(Gui.Main,{
-		Time = .25,
-		Properties = {
-			Size = UDim2.new(0,X,0,Y),
-			Position = Gui.Main.Position+UDim2.new(0,CheckAxis"X" and Gui.Main.AbsoluteSize.X-X or 0,0,CheckAxis"Y" and Gui.Main.AbsoluteSize.Y-Y or 0)
+local LastCheck, Debounce, LastLeft = 0, true, 0
+local function ResizeMain(X, Y)
+	X = if settings.StayOpen then 400 else valid.Number(X, 400)
+	Y = valid.Number(Y, 40)
+	Gui.CommandBarBackground.LayoutOrder = if CheckAxis("X") then -1 else 1
+	Gui.CommandBarSection.LayoutOrder = if CheckAxis("Y") then 1 else -1
+	animate(
+		Gui.Main,
+		{
+			secondsTime = 0.25,
+			properties = {
+				Size = UDim2.new(0, X, 0, Y),
+				Position = Gui.Main.Position + UDim2.new(
+					0,
+					if CheckAxis("X") then Gui.Main.AbsoluteSize.X - X else 0,
+					0,
+					if CheckAxis("Y") then Gui.Main.AbsoluteSize.Y - Y else 0
+				),
+			},
+		},
+		Gui.CommandBarBackground,
+		{
+			secondsTime = 0.25,
+			properties = { Visible = 40 < X },
 		}
-	},Gui.CommandBarBackground,{
-		Time = .25,
-		Properties = {Visible = 40 < X}
-	})
+	)
 end
 local Commands = {}
 local Connections
 local function RunCommand(Text)
-	for _,Input in Text:split"/" do
-		local Arguments = Input:split" "
+	for _, Input in Text:split("/") do
+		local Arguments = Input:split(" ")
 		local Command = Arguments[1]
-		table.remove(Arguments,1)
+		table.remove(Arguments, 1)
 		local RanCommand
-		for CommandNames,CommandInfo in Commands do
+		for CommandNames, CommandInfo in Commands do
 			if CommandInfo.Toggles then
-				CommandNames = ("%s_%s"):format(CommandNames,CommandInfo.Toggles)
+				CommandNames = `{CommandNames}_{CommandInfo.Toggles}`
 			end
-			CommandNames = CommandNames:split"_"
+			CommandNames = CommandNames:split("_")
 			local Continue
-			for _,CommandName in CommandNames do
+			for _, CommandName in CommandNames do
 				if CommandName:lower() == Command:lower() then
-					CommandInfo.Arguments = Valid.Table(CommandInfo.Arguments)
-					for ArgumentNumber,ArgumentProperties in CommandInfo.Arguments do
+					CommandInfo.Arguments = valid.Table(CommandInfo.Arguments)
+					for ArgumentNumber, ArgumentProperties in CommandInfo.Arguments do
 						if ArgumentProperties.Required and not Arguments[ArgumentNumber] then
-							Notify{
+							Notify({
 								Title = "Missing Argument",
-								Text = ('The command "%s" requires you to enter the argument "%s"'):format(CommandNames[1],ArgumentProperties.Name)
-							}
+								Text = `The command "{CommandNames[1]}" requires you to enter the argument "{ArgumentProperties.Name}"`,
+							})
 							break
 						end
 						if ArgumentProperties.Concatenate then
-							Arguments[ArgumentNumber] = table.concat(Arguments," ",ArgumentNumber)
-							for Index = ArgumentNumber+1,#Arguments do
+							Arguments[ArgumentNumber] = table.concat(Arguments, " ", ArgumentNumber)
+							for Index = ArgumentNumber + 1, #Arguments do
 								Arguments[Index] = nil
 							end
 						end
-						Arguments[ArgumentNumber] = Valid[ArgumentProperties.Type](Arguments[ArgumentNumber],ArgumentProperties.Substitute)
+						Arguments[ArgumentNumber] =
+							valid[ArgumentProperties.Type](Arguments[ArgumentNumber], ArgumentProperties.Substitute)
 					end
 					if CommandInfo.Toggles then
 						local Enabled = true
-						for _,Toggle in CommandInfo.Toggles:lower():split"_" do
+						for _, Toggle in CommandInfo.Toggles:lower():split("_") do
 							if Toggle == Command:lower() then
 								Enabled = false
 								break
@@ -503,22 +536,22 @@ local function RunCommand(Text)
 						end
 						if CommandInfo.ToggleCheck then
 							if (CommandInfo.Enabled or false) == Enabled then
-								Enabled = Enabled and "En" or "Dis"
-								Notify{
-									Title = ("Already %sabled"):format(Enabled),
-									Text = ("The command is already %sabled"):format(Enabled:lower())
-								}
+								Enabled = if Enabled then "En" else "Dis"
+								Notify({
+									Title = `Already {Enabled}sabled`,
+									Text = `The command is already {Enabled:lower()}abled`,
+								})
 								return
 							end
 						end
 						CommandInfo.Enabled = Enabled
-						table.insert(Arguments,1,Enabled)
+						table.insert(Arguments, 1, Enabled)
 					end
 					if CommandInfo.Variables then
-						table.insert(Arguments,1,CommandInfo.Variables)
+						table.insert(Arguments, 1, CommandInfo.Variables)
 					end
 					CommandInfo.Function(unpack(Arguments))
-					Continue,RanCommand = true,true
+					Continue, RanCommand = true, true
 					break
 				end
 			end
@@ -527,78 +560,79 @@ local function RunCommand(Text)
 			end
 		end
 		if not RanCommand then
-			Notify{
+			Notify({
 				Title = "Not a Command",
-				Text = ('There are not any commands named "%s"'):format(Command)
-			}
+				Text = `There are not any commands named "{Command}"`,
+			})
 		end
 	end
 end
 local function AddConnections(GivenConnections)
-	for Name,Connection in Valid.Table(GivenConnections) do
+	for Name, Connection in valid.Table(GivenConnections) do
 		if typeof(Connection) == "RBXScriptConnection" and Connection.Connected then
-			Connections[if type(Name) ~= "number" then Name else #Connections+1] = Connection
-			table.insert(Connections,Connection)
+			Connections[if type(Name) ~= "number" then Name else #Connections + 1] = Connection
+			table.insert(Connections, Connection)
 		end
 	end
 end
 local function RemoveConnections(GivenConnections)
-	for _,Connection in Valid.Table(GivenConnections) do
+	for _, Connection in valid.Table(GivenConnections) do
 		if typeof(Connection) == "RBXScriptConnection" then
-			Destroy(Connection)
-			pcall(table.remove,Connections,table.find(Connections,Connection))
+			destroy(Connection)
+			pcall(table.remove, Connections, table.find(Connections, Connection))
 		end
 	end
 end
-local function EnableDrag(Frame,IsMain)
+local function EnableDrag(Frame, IsMain)
 	local DragConnection
-	local InputBegan,InputEnded,Removed = Connect(Frame.InputBegan,function(Input,Ignore)
-		if not Ignore and not Debounce and Input.UserInputType.Name == "MouseButton1" then
-			if IsMain then
-				ResizeMain(40)
+	local InputBegan, InputEnded, Removed =
+		connect(Frame.InputBegan, function(Input, Ignore)
+			if not Ignore and not Debounce and Input.UserInputType.Name == "MouseButton1" then
+				if IsMain then
+					ResizeMain(40)
+				end
+				Debounce = true
+				DragConnection = connect(service("Run").RenderStepped, function()
+					service("UserInput").OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
+					local MousePosition = service("UserInput"):GetMouseLocation()
+					local ScreenSize, FrameSize, AnchorPoint = Gui.Holder.AbsoluteSize, Frame.AbsoluteSize, Frame.AnchorPoint
+					MousePosition = UDim2.new(math.round(math.clamp(MousePosition.X - FrameSize.X / 2 + FrameSize.X * AnchorPoint.X, FrameSize.X * AnchorPoint.X, ScreenSize.X - FrameSize.X * (1 - AnchorPoint.X))) / ScreenSize.X, 0, math.round(math.clamp(MousePosition.Y - FrameSize.Y / 2 + FrameSize.Y * AnchorPoint.Y, FrameSize.Y * AnchorPoint.Y, ScreenSize.Y - FrameSize.Y * (1 - AnchorPoint.Y))) / ScreenSize.Y, 0)
+					animate(Frame, {
+						secondsTime = 0,
+						properties = { Position = MousePosition },
+					})
+				end)
+				AddConnections({ DragConnection })
 			end
-			Debounce = true
-			DragConnection = Connect(Service"Run".RenderStepped,function()
-				Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
-				local MousePosition = Service"UserInput":GetMouseLocation()
-				local ScreenSize,FrameSize,AnchorPoint = Gui.Holder.AbsoluteSize,Frame.AbsoluteSize,Frame.AnchorPoint
-				MousePosition = UDim2.new(math.round(math.clamp(MousePosition.X-FrameSize.X/2+FrameSize.X*AnchorPoint.X,FrameSize.X*AnchorPoint.X,ScreenSize.X-FrameSize.X*(1-AnchorPoint.X)))/ScreenSize.X,0,math.round(math.clamp(MousePosition.Y-FrameSize.Y/2+FrameSize.Y*AnchorPoint.Y,FrameSize.Y*AnchorPoint.Y,ScreenSize.Y-FrameSize.Y*(1-AnchorPoint.Y)))/ScreenSize.Y,0)
-				Animate(Frame,{
-					Time = 0,
-					Properties = {Position = MousePosition}
-				})
-			end)
-			AddConnections{DragConnection}
-		end
-	end),Connect(Service"UserInput".InputEnded,function(Input)
-		if DragConnection and Input.UserInputType.Name == "MouseButton1" then
-			Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
-			RemoveConnections{DragConnection}
-			DragConnection = nil
-			Debounce = false
-			if IsMain then
-				ResizeMain()
+		end), connect(service("UserInput").InputEnded, function(Input)
+			if DragConnection and Input.UserInputType.Name == "MouseButton1" then
+				service("UserInput").OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+				RemoveConnections({ DragConnection })
+				DragConnection = nil
+				Debounce = false
+				if IsMain then
+					ResizeMain()
+				end
 			end
-		end
-	end)
-	Removed = Connect(Frame.AncestryChanged,function()
-		if not Frame:IsDescendantOf(HiddenUI) then
-			RemoveConnections{
+		end)
+	Removed = connect(Frame.AncestryChanged, function()
+		if not Frame:IsDescendantOf(hiddenGui) then
+			RemoveConnections({
 				Removed,
 				InputBegan,
 				InputEnded,
-				DragConnection
-			}
+				DragConnection,
+			})
 		end
 	end)
-	AddConnections{
+	AddConnections({
 		Removed,
 		InputBegan,
-		InputEnded
-	}
+		InputEnded,
+	})
 end
-local function CreateWindow(Title,DataList)
-	local Window = Create{
+local function CreateWindow(Title, DataList)
+	local Window = create({
 		{
 			Name = "Main",
 			Parent = Gui.Holder,
@@ -606,17 +640,17 @@ local function CreateWindow(Title,DataList)
 			Properties = {
 				Active = true,
 				ClipsDescendants = true,
-				Size = UDim2.new(0,500,0,250),
-				Position = UDim2.new(.5,0,1,125),
-				AnchorPoint = Vector2.new(.5,.5),
-				BackgroundColor3 = Color3.fromHex"505064"
-			}
+				Size = UDim2.new(0, 500, 0, 250),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.new(0.5, 0, 1, 125),
+				BackgroundColor3 = Color3.fromHex("505064"),
+			},
 		},
 		{
 			Name = "MainCorner",
 			Parent = "Main",
 			ClassName = "UICorner",
-			Properties = {CornerRadius = UDim.new(0,4)}
+			Properties = { CornerRadius = UDim.new(0, 4) },
 		},
 		{
 			Name = "MainGradient",
@@ -624,8 +658,8 @@ local function CreateWindow(Title,DataList)
 			ClassName = "UIGradient",
 			Properties = {
 				Rotation = 90,
-				Color = ColorSequence.new(Color3.new(1,1,1),Color3.new(.5,.5,.5))
-			}
+				Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.new(0.5, 0.5, 0.5)),
+			},
 		},
 		{
 			Name = "Title",
@@ -635,24 +669,24 @@ local function CreateWindow(Title,DataList)
 				TextSize = 14,
 				Font = Enum.Font.Arial,
 				BackgroundTransparency = 1,
-				Size = UDim2.new(1,-45,0,20),
-				Position = UDim2.new(0,5,0,0),
-				TextColor3 = Color3.new(1,1,1),
-				Text = Valid.String(Title,"Ultimatum"),
-				TextXAlignment = Enum.TextXAlignment.Left
-			}
+				Size = UDim2.new(1, -45, 0, 20),
+				Position = UDim2.new(0, 5, 0, 0),
+				TextColor3 = Color3.new(1, 1, 1),
+				Text = valid.String(Title, "Ultimatum"),
+				TextXAlignment = Enum.TextXAlignment.Left,
+			},
 		},
 		{
 			Name = "TitleGradient",
 			Parent = "Title",
 			ClassName = "UIGradient",
 			Properties = {
-				Transparency = NumberSequence.new{
-					NumberSequenceKeypoint.new(0,0),
-					NumberSequenceKeypoint.new(.95,0),
-					NumberSequenceKeypoint.new(1,1)
-				}
-			}
+				Transparency = NumberSequence.new({
+					NumberSequenceKeypoint.new(0, 0),
+					NumberSequenceKeypoint.new(0.95, 0),
+					NumberSequenceKeypoint.new(1, 1),
+				}),
+			},
 		},
 		{
 			Name = "Close",
@@ -662,10 +696,10 @@ local function CreateWindow(Title,DataList)
 				Modal = true,
 				AutoButtonColor = false,
 				BackgroundTransparency = 1,
-				Size = UDim2.new(0,14,0,14),
-				Position = UDim2.new(1,-17,0,3),
-				Image = "rbxasset://textures/DevConsole/Close.png"
-			}
+				Size = UDim2.new(0, 14, 0, 14),
+				Position = UDim2.new(1, -17, 0, 3),
+				Image = "rbxasset://textures/DevConsole/Close.png",
+			},
 		},
 		{
 			Name = "Minimize",
@@ -675,10 +709,10 @@ local function CreateWindow(Title,DataList)
 				Modal = true,
 				AutoButtonColor = false,
 				BackgroundTransparency = 1,
-				Size = UDim2.new(0,14,0,14),
-				Position = UDim2.new(1,-37,0,3),
-				Image = "rbxasset://textures/DevConsole/Minimize.png"
-			}
+				Size = UDim2.new(0, 14, 0, 14),
+				Position = UDim2.new(1, -37, 0, 3),
+				Image = "rbxasset://textures/DevConsole/Minimize.png",
+			},
 		},
 		{
 			Name = "Display",
@@ -688,140 +722,164 @@ local function CreateWindow(Title,DataList)
 				BorderSizePixel = 0,
 				ScrollBarThickness = 0,
 				BackgroundTransparency = 1,
-				Size = UDim2.new(1,-8,1,-24),
-				Position = UDim2.new(0,4,0,20)
-			}
+				Size = UDim2.new(1, -8, 1, -24),
+				Position = UDim2.new(0, 4, 0, 20),
+			},
 		},
 		{
 			Name = "DisplayListLayout",
 			Parent = "Display",
 			ClassName = "UIListLayout",
-			Properties = {SortOrder = Enum.SortOrder.LayoutOrder}
-		}
-	}
+			Properties = { SortOrder = Enum.SortOrder.LayoutOrder },
+		},
+	})
 	local WindowConnections = {}
-	for Index,Data in DataList do
-		local Main = NewInstance("TextLabel",nil,{
+	for Index, Data in DataList do
+		local Main = newInstance("TextLabel", nil, {
 			LayoutOrder = Index,
 			Font = Enum.Font.Arial,
+			Text = `  {Data.Text}`,
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1,0,0,20),
-			TextStrokeTransparency = .8,
-			Text = ("  %s"):format(Data.Text),
-			TextXAlignment = Enum.TextXAlignment.Left
+			TextStrokeTransparency = 0.8,
+			Size = UDim2.new(1, 0, 0, 20),
+			TextXAlignment = Enum.TextXAlignment.Left,
 		});
 		({
-			Slider = function()
-			end
+			Slider = function() end,
 		})[Data.Type]()
 	end
-	Animate(Window.Main,{
-		Yields = true,
-		Properties = {Position = UDim2.new(.5,0,.5,0)}
+	animate(Window.Main, {
+		yields = true,
+		properties = { Position = UDim2.new(0.5, 0, 0.5, 0) },
 	})
 	EnableDrag(Window.Main)
-	table.insert(WindowConnections,Connect(Window.Minimize.MouseButton1Click,function()
-	end))
-	table.insert(WindowConnections,Connect(Window.Close.MouseButton1Click,function()
-		RemoveConnections(WindowConnections)
-		Animate(Window.Main,{
-			Yields = true,
-			EasingDirection = Enum.EasingDirection.In,
-			Properties = {Position = UDim2.new(Window.Main.Position.X.Scale,0,1,125)}
-		})
-		Destroy(Window)
-	end))
+	table.insert(WindowConnections, connect(Window.Minimize.MouseButton1Click, function() end))
+	table.insert(
+		WindowConnections,
+		connect(Window.Close.MouseButton1Click, function()
+			RemoveConnections(WindowConnections)
+			animate(Window.Main, {
+				yields = true,
+				easingDirection = Enum.EasingDirection.In,
+				properties = { Position = UDim2.new(Window.Main.Position.X.Scale, 0, 1, 125) },
+			})
+			destroy(Window)
+		end)
+	)
 	return Window
 end
-local function FireTouchInterest(Toucher,Touched,TouchTime)
-	TouchTime = Valid.Number(TouchTime,0)
+local function FireTouchInterest(Toucher, Touched, TouchTime)
+	TouchTime = valid.Number(TouchTime, 0)
 	if firetouchinterest then
-		for On = 0,1 do
-			firetouchinterest(Toucher,Touched,On)
+		for On = 0, 1 do
+			firetouchinterest(Toucher, Touched, On)
 			if On == 0 then
-				Wait(TouchTime)
+				wait(TouchTime)
 			end
 		end
 	else
-		local OldCanCollide,OldCanTouch,OldCFrame = Touched.CanCollide,Touched.CanTouch,Touched.CFrame
-		Touched.CanCollide,Touched.CanTouch,Touched.CFrame = true,true,Toucher.CFrame
-		Wait(TouchTime)
-		Touched.CFrame,Touched.CanTouch,Touched.CanCollide = OldCFrame,OldCanTouch,OldCanCollide
+		local OldCanCollide, OldCanTouch, OldCFrame = Touched.CanCollide, Touched.CanTouch, Touched.CFrame
+		Touched.CanCollide, Touched.CanTouch, Touched.CFrame = true, true, Toucher.CFrame
+		wait(TouchTime)
+		Touched.CFrame, Touched.CanTouch, Touched.CanCollide = OldCFrame, OldCanTouch, OldCanCollide
 	end
 end
-local IgnoreUpdate,Selected
+local IgnoreUpdate, Selected
 local Suggestions = {}
 local function ScrollSuggestions(Input)
 	if 0 < #Suggestions then
-		Selected = (Selected+(Input == "Up" and -1 or Input == "Down" and 1 or 0)-1)%#Suggestions+1
+		Selected = (Selected + (if Input == "Up" then -1 elseif Input == "Down" then 1 else 0) - 1) % #Suggestions + 1
 		local OldCanvasPosition = Gui.SuggestionsScroll.CanvasPosition
-		Gui.SuggestionsScroll.CanvasPosition = Vector2.new(0,20*(Selected-3))
-		Animate(Gui.SuggestionSelector,{
-			Time = .25,
-			Properties = {Position = UDim2.new(0,1,0,4+Suggestions[Selected].UI.AbsolutePosition.Y-Gui.SuggestionsScroll.AbsolutePosition.Y)}
+		Gui.SuggestionsScroll.CanvasPosition = Vector2.new(0, 20 * (Selected - 3))
+		animate(Gui.SuggestionSelector, {
+			time = 0.25,
+			properties = {
+				Position = UDim2.new(
+					0,
+					1,
+					0,
+					4 + Suggestions[Selected].UI.AbsolutePosition.Y - Gui.SuggestionsScroll.AbsolutePosition.Y
+				),
+			},
 		})
 		local CanvasPosition = Gui.SuggestionsScroll.CanvasPosition
 		Gui.SuggestionsScroll.CanvasPosition = OldCanvasPosition
-		Animate(Gui.SuggestionsScroll,{
-			Time = .25,
-			Properties = {CanvasPosition = CanvasPosition}
+		animate(Gui.SuggestionsScroll, {
+			time = 0.25,
+			properties = { CanvasPosition = CanvasPosition },
 		})
 	end
 end
 local function UpdateSuggestions()
-	if Service"UserInput":GetFocusedTextBox() == Gui.CommandBar and not IgnoreUpdate then
+	if service("UserInput"):GetFocusedTextBox() == Gui.CommandBar and not IgnoreUpdate then
 		IgnoreUpdate = true
-		Gui.CommandBar.Text = Gui.CommandBar.Text:gsub("^%W+",""):gsub("\t","")
+		Gui.CommandBar.Text = Gui.CommandBar.Text:gsub("^%W+", ""):gsub("\t", "")
 		IgnoreUpdate = false
-		Gui.CommandBar.TextXAlignment = Enum.TextXAlignment[Gui.CommandBar.TextFits and "Left" or "Right"]
-		local Command = Gui.CommandBar.Text:split"/"
-		Command = ((Command[#Command] or ""):split" "[1] or ""):lower()
+		Gui.CommandBar.TextXAlignment = Enum.TextXAlignment[if Gui.CommandBar.TextFits then "Left" else "Right"]
+		local Command = Gui.CommandBar.Text:split("/")
+		Command = ((Command[#Command] or ""):split(" ")[1] or ""):lower()
 		Gui.SuggestionsScroll.CanvasSize = UDim2.new()
 		Gui.SuggestionsGridLayout.Parent = nil
-		Destroy(Suggestions)
-		for CommandNames,CommandInfo in Commands do
-			CommandNames = (CommandInfo.Toggles and ("%s_%s"):format(CommandNames,CommandInfo.Toggles) or CommandNames):split"_"
-			for _,CommandName in CommandNames do
-				if CommandName:lower():find(Command,1,true) then
-					local DisplayName = CommandInfo.Toggles and CommandInfo.Enabled and CommandInfo.Toggles:split"_"[1] or CommandNames[1]
-					table.insert(Suggestions,{
+		destroy(Suggestions)
+		for CommandNames, CommandInfo in Commands do
+			CommandNames = (if CommandInfo.Toggles then `{CommandNames}_{CommandInfo.Toggles}` else CommandNames):split(
+				"_"
+			)
+			for _, CommandName in CommandNames do
+				if CommandName:lower():find(Command, 1, true) then
+					local DisplayName = CommandInfo.Toggles
+							and CommandInfo.Enabled
+							and CommandInfo.Toggles:split("_")[1]
+						or CommandNames[1]
+					table.insert(Suggestions, {
 						Command = DisplayName,
 						CommandNames = CommandNames,
-						Display = ("<font color = '#FFFFFF'>%s</font>%s%s"):format(DisplayName,CommandInfo.Arguments and (function()
-							local Arguments = {}
-							for _,ArgumentInfo in CommandInfo.Arguments do
-								table.insert(Arguments,("%s:%s%s"):format(ArgumentInfo.Name,ArgumentInfo.Type,ArgumentInfo.Required and "" or "?"))
-							end
-							return (" <i>%s</i>"):format(table.concat(Arguments," "))
-						end)() or "",CommandInfo.Toggles and " [Toggles]" or "")
+						Display = ("<font color = '#FFFFFF'>%s</font>%s%s"):format(
+							DisplayName,
+							if CommandInfo.Arguments
+								then (function()
+									local Arguments = {}
+									for _, ArgumentInfo in CommandInfo.Arguments do
+										table.insert(
+											Arguments,
+											`{ArgumentInfo.Name}: {ArgumentInfo.Type}{if ArgumentInfo.Required then "" else "?"}`
+										)
+									end
+									return ` <i>{table.concat(Arguments, " ")}</i>`
+								end)()
+								else "",
+							if CommandInfo.Toggles then " [Toggles]" else ""
+						),
 					})
 					break
 				end
 			end
 		end
 		if #Command < 2 then
-			table.sort(Suggestions,function(Suggestion1,Suggestion2)
-				Suggestion1 = Service"Text":GetTextSize(Suggestion1.Command,14,Enum.Font.Arial,Vector2.one*1e6).X
-				Suggestion2 = Service"Text":GetTextSize(Suggestion2.Command,14,Enum.Font.Arial,Vector2.one*1e6).X
-				return if CheckAxis"Y" then Suggestion1 < Suggestion2 else Suggestion2 < Suggestion1
+			table.sort(Suggestions, function(Suggestion1, Suggestion2)
+				Suggestion1 = service("Text"):GetTextSize(Suggestion1.Command, 14, Enum.Font.Arial, Vector2.one * 1e6).X
+				Suggestion2 = service("Text"):GetTextSize(Suggestion2.Command, 14, Enum.Font.Arial, Vector2.one * 1e6).X
+				return if CheckAxis("Y") then Suggestion1 < Suggestion2 else Suggestion2 < Suggestion1
 			end)
 		else
 			local function MatchRate(Suggestion)
 				local HighestMatch = 0
-				for _,Name in Suggestion.CommandNames do
-					local MatchPercent = 1-#Name:lower():gsub(Command,"")/#Name
+				for _, Name in Suggestion.CommandNames do
+					local MatchPercent = 1 - #Name:lower():gsub(Command, "") / #Name
 					if HighestMatch < MatchPercent then
 						HighestMatch = MatchPercent
 					end
 				end
 				return HighestMatch
 			end
-			table.sort(Suggestions,function(Suggestion1,Suggestion2)
-				return if CheckAxis"Y" then MatchRate(Suggestion2) < MatchRate(Suggestion1) else MatchRate(Suggestion1) < MatchRate(Suggestion2)
+			table.sort(Suggestions, function(Suggestion1, Suggestion2)
+				return if CheckAxis("Y")
+					then MatchRate(Suggestion2) < MatchRate(Suggestion1)
+					else MatchRate(Suggestion1) < MatchRate(Suggestion2)
 			end)
 		end
-		for Index,Suggestion in Suggestions do
-			Suggestion.UI = NewInstance("TextLabel",Gui.SuggestionsScroll,{
+		for Index, Suggestion in Suggestions do
+			Suggestion.UI = newInstance("TextLabel", Gui.SuggestionsScroll, {
 				TextSize = 14,
 				RichText = true,
 				BorderSizePixel = 0,
@@ -829,156 +887,180 @@ local function UpdateSuggestions()
 				Font = Enum.Font.Arial,
 				Text = Suggestion.Display,
 				BackgroundTransparency = 1,
-				TextStrokeTransparency = .8,
-				BackgroundColor3 = Color3.new(1,1,1),
-				TextColor3 = Color3.fromHex"A0A0A0",
-				TextXAlignment = Enum.TextXAlignment.Left
+				TextStrokeTransparency = 0.8,
+				BackgroundColor3 = Color3.new(1, 1, 1),
+				TextColor3 = Color3.fromHex("A0A0A0"),
+				TextXAlignment = Enum.TextXAlignment.Left,
 			})
 		end
 		if 0 < #Suggestions then
-			Selected = CheckAxis"Y" and 1 or #Suggestions
+			Selected = if CheckAxis("Y") then 1 else #Suggestions
 			Gui.SelectorBorder.Enabled = true
 		else
 			Selected = nil
 			Gui.SelectorBorder.Enabled = false
 		end
 		Gui.SuggestionsGridLayout.Parent = Gui.SuggestionsScroll
-		local CommandNumber = #Gui.SuggestionsScroll:GetChildren()-1
-		Gui.SuggestionsScroll.CanvasSize = UDim2.new(0,0,0,20*CommandNumber)
-		Gui.SuggestionsScroll.CanvasPosition = Vector2.yAxis*(CheckAxis"Y" and 0 or 20*CommandNumber)
-		Gui.SuggestionSelector.Position = CheckAxis"Y" and UDim2.new(0,1,0,4) or UDim2.new(0,1,1,-24)
-		ResizeMain(nil,0 < CommandNumber and 48+20*math.min(CommandNumber,5) or 40)
+		local CommandNumber = #Gui.SuggestionsScroll:GetChildren() - 1
+		Gui.SuggestionsScroll.CanvasSize = UDim2.new(0, 0, 0, 20 * CommandNumber)
+		Gui.SuggestionsScroll.CanvasPosition = Vector2.yAxis * (if CheckAxis("Y") then 0 else 20 * CommandNumber)
+		Gui.SuggestionSelector.Position = if CheckAxis("Y") then UDim2.new(0, 1, 0, 4) else UDim2.new(0, 1, 1, -24)
+		ResizeMain(nil, if 0 < CommandNumber then 48 + 20 * math.min(CommandNumber, 5) else 40)
 	end
 end
-Gui.Holder.Parent = HiddenUI
-local SendValue = NewInstance"BindableEvent"
+Gui.Holder.Parent = hiddenGui
+local SendValue = newInstance("BindableEvent")
 local Removing
 Connections = {
-	Connect(Owner.CharacterAdded,function(NewCharacter)
-		SendValue:Fire("Character",NewCharacter)
+	connect(owner.CharacterAdded, function(NewCharacter)
+		SendValue:Fire("Character", NewCharacter)
 	end),
-	Connect(Owner.ChildAdded,function(Object)
-		if Valid.Instance(Object,"Backpack") then
-			SendValue:Fire("Backpack",Object)
-		elseif Valid.Instance(Object,"PlayerGui") then
-			SendValue:Fire("PlayerGui",Object)
+	connect(owner.ChildAdded, function(Object)
+		if valid.Instance(Object, "Backpack") then
+			SendValue:Fire("Backpack", Object)
+		elseif valid.Instance(Object, "PlayerGui") then
+			SendValue:Fire("PlayerGui", Object)
 		end
 	end),
-	isfile and Connect(Service"Run".Heartbeat,function()
-		if not Valid.Instance(Gui.Holder,"ScreenGui") or not Gui.Holder:IsDescendantOf(HiddenUI) and not Removing then
+	isfile and connect(service("Run").Heartbeat, function()
+		if not valid.Instance(Gui.Holder, "ScreenGui") or not Gui.Holder:IsDescendantOf(hiddenGui) and not Removing then
 			Removing = true
 			local Unfinished = 0
-			for _,Info in Commands do
+			for _, Info in Commands do
 				if Info.ToggleCheck and Info.Enabled then
 					task.spawn(function()
 						Unfinished += 1
-						RunCommand(Info.Toggles:split"_"[1])
+						RunCommand(Info.Toggles:split("_")[1])
 						Unfinished -= 1
 					end)
 				end
 			end
-			WaitForSignal(function()
-				Wait()
+			waitForSignal(function()
+				wait()
 				return Unfinished < 1
-			end,10)
-			Destroy(Connections,Gui,SendValue)
+			end, 10)
+			destroy(Connections, Gui, SendValue)
 		end
-		if Settings.AutoUpdate and 60 < os.clock()-LastCheck then
+		if settings.AutoUpdate and 60 < os.clock() - LastCheck then
 			LastCheck = os.clock()
-			local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua",true)
-			if Success and (not isfile"Ultimatum.lua" or Result ~= readfile"Ultimatum.lua") then
-				writefile("Ultimatum.lua",Result)
-				Notify{
+			local Success, Result = pcall(
+				game.HttpGet,
+				game,
+				"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua",
+				true
+			)
+			if Success and (not isfile("Ultimatum.lua") or Result ~= readfile("Ultimatum.lua")) then
+				writefile("Ultimatum.lua", Result)
+				Notify({
 					Yields = true,
 					Title = "Out of Date",
-					Text = "Your version of Ultimatum is outdated! Updating to newest version..."
-				}
-				loadstring(Result,"Ultimatum")()
-			elseif not Success and not isfile"Ultimatum.lua" then
-				Notify{
+					Text = "Your version of Ultimatum is outdated! Updating to newest version...",
+				})
+				loadstring(Result, "Ultimatum")()
+			elseif not Success and not isfile("Ultimatum.lua") then
+				Notify({
 					Text = Result,
-					Urgent = true,
-					Title = "Error"
-				}
+					Important = true,
+					Title = "Error",
+				})
 			end
 		end
 	end),
-	queue_on_teleport and Connect(Owner.OnTeleport,isfile and function()
-		if Settings.LoadOnRejoin then
-			queue_on_teleport(isfile"Ultimatum.lua" and readfile"Ultimatum.lua" or "warn'Ultimatum.lua missing from workspace folder (Ultimatum cannot run)'")
-		end
-	end or function()
-		if Settings.LoadOnRejoin then
-			local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua",true)
-			queue_on_teleport(Success and Result or ("warn'HttpGet failed: %s (Ultimatum cannot run)'"):format(Result))
-		end
-	end),
-	Connect(Gui.Main.MouseEnter,function()
+	queue_on_teleport and connect(
+		owner.OnTeleport,
+		if isfile
+			then function()
+				if settings.LoadOnRejoin then
+					queue_on_teleport(
+						if isfile("Ultimatum.lua")
+							then readfile("Ultimatum.lua")
+							else "warn('Ultimatum.lua missing from workspace folder (Ultimatum cannot run)')"
+					)
+				end
+			end
+			else function()
+				if settings.LoadOnRejoin then
+					local Success, Result = pcall(
+						game.HttpGet,
+						game,
+						"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua",
+						true
+					)
+					queue_on_teleport(
+						if Success then Result else `warn("HttpGet failed: {Result} (Ultimatum cannot run)")`
+					)
+				end
+			end
+	),
+	connect(Gui.Main.MouseEnter, function()
 		if not Debounce then
-			Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow
+			service("UserInput").OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow
 			LastLeft = os.clock()
 			ResizeMain()
 		end
 	end),
-	Connect(Gui.Main.MouseLeave,function()
+	connect(Gui.Main.MouseLeave, function()
 		if not Debounce then
 			LastLeft = os.clock()
-			Wait(1)
-			if 1 < os.clock()-LastLeft and not Debounce then
-				Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+			wait(1)
+			if 1 < os.clock() - LastLeft and not Debounce then
+				service("UserInput").OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 				ResizeMain(40)
 			end
 		end
 	end),
-	Connect(Gui.CommandBar.Focused,function()
+	connect(Gui.CommandBar.Focused, function()
 		if not Debounce then
 			Debounce = true
 			Gui.CommandBar.PlaceholderText = "Enter a command..."
-			Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow
+			service("UserInput").OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow
 			ResizeMain()
-			task.delay(.25,UpdateSuggestions)
+			task.delay(0.25, UpdateSuggestions)
 		end
 	end),
-	Connect(Gui.CommandBar.FocusLost,function(Sent)
-		Wait()
+	connect(Gui.CommandBar.FocusLost, function(Sent)
+		wait()
 		Gui.CommandBar.PlaceholderText = "Enter a command"
 		if Sent and 0 < #Gui.CommandBar.Text then
-			task.spawn(RunCommand,Gui.CommandBar.Text)
+			task.spawn(RunCommand, Gui.CommandBar.Text)
 		end
 		Gui.CommandBar.Text = ""
-		Gui.CommandBar.TextXAlignment = Enum.TextXAlignment[Gui.CommandBar.TextFits and "Left" or "Right"]
-		Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+		Gui.CommandBar.TextXAlignment = Enum.TextXAlignment[if Gui.CommandBar.TextFits then "Left" else "Right"]
+		service("UserInput").OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 		ResizeMain()
-		task.delay(.25,function()
-			if Service"UserInput":GetFocusedTextBox() ~= Gui.CommandBar then
+		task.delay(0.25, function()
+			if service("UserInput"):GetFocusedTextBox() ~= Gui.CommandBar then
 				ResizeMain(40)
-				Wait(.25)
-				Gui.CommandBar.PlaceholderText = ("Enter a command (Keybind:\u{200A}%s\u{200A})"):format(Service"UserInput":GetStringForKeyCode(Enum.KeyCode[Settings.Keybind]))
+				wait(0.25)
+				Gui.CommandBar.PlaceholderText =
+					`Enter a command (Keybind:\u{200A}{service("UserInput"):GetStringForKeyCode(
+						Enum.KeyCode[settings.Keybind]
+					)}\u{200A})`
 			end
 		end)
 		pcall(function()
-			HiddenUI.Parent = nil
-			HiddenUI.Parent = HiddenUIParent
+			hiddenGui.Parent = nil
+			hiddenGui.Parent = hiddenUiParent
 		end)
 		Debounce = false
 	end),
-	Connect(Service"UserInput".InputBegan,function(Input,Ignore)
+	connect(service("UserInput").InputBegan, function(Input, Ignore)
 		if Input.UserInputType.Name == "Keyboard" then
 			Input = Input.KeyCode.Name
-			if not Ignore and Input == Settings.Keybind and not Debounce then
-				task.defer(Gui.CommandBar.CaptureFocus,Gui.CommandBar)
-			elseif Service"UserInput":GetFocusedTextBox() == Gui.CommandBar and 0 < #Suggestions then
+			if not Ignore and Input == settings.Keybind and not Debounce then
+				task.defer(Gui.CommandBar.CaptureFocus, Gui.CommandBar)
+			elseif service("UserInput"):GetFocusedTextBox() == Gui.CommandBar and 0 < #Suggestions then
 				if Input == "Up" or Input == "Down" then
 					ScrollSuggestions(Input)
 					local Start = os.clock()
-					while Service"UserInput":IsKeyDown(Enum.KeyCode[Input]) and os.clock()-Start < .5 do
-						Wait()
+					while service("UserInput"):IsKeyDown(Enum.KeyCode[Input]) and os.clock() - Start < 0.5 do
+						wait()
 					end
-					if .25 < os.clock()-Start then
+					if 0.25 < os.clock() - Start then
 						repeat
 							ScrollSuggestions(Input)
-							Wait(1/30)
-						until not Service"UserInput":IsKeyDown(Enum.KeyCode[Input])
+							wait(1 / 30)
+						until not service("UserInput"):IsKeyDown(Enum.KeyCode[Input])
 					end
 				elseif Input == "Tab" then
 					Gui.CommandBar.Text = Suggestions[Selected].Command
@@ -987,153 +1069,206 @@ Connections = {
 			end
 		end
 	end),
-	Connect(Gui.CommandBar:GetPropertyChangedSignal"Text",UpdateSuggestions)
+	connect(Gui.CommandBar:GetPropertyChangedSignal("Text"), UpdateSuggestions),
 }
-if not GlobalEnvironment.UltimatumUIs then
-	GlobalEnvironment.UltimatumUIs = {}
+if not globalEnvironment.UltimatumUIs then
+	globalEnvironment.UltimatumUIs = {}
 end
-Destroy(GlobalEnvironment.UltimatumUIs)
-table.insert(GlobalEnvironment.UltimatumUIs,Gui)
-local function LoadCommands(Lua,Name)
-	Name = Valid.String(Name,"Custom Command Set")
-	local CommandSet,ErrorMessage = loadstring(([[
-		local ReceiveValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,Character,Backpack,PlayerGui = ...
-		AddConnections{
-			Connect(ReceiveValue.Event,function(Type,Object)
-				if Type == "Character" then
-					Character = Object
-				elseif Type == "Backpack" then
-					Backpack = Object
-				elseif Type == "PlayerGui" then
-					PlayerGui = Object
-				end
-			end)
-		}
-	%s]]):gsub("\n\t*"," "):format(Lua),Name)
+destroy(globalEnvironment.UltimatumUIs)
+table.insert(globalEnvironment.UltimatumUIs, Gui)
+local function LoadCommands(Lua, Name)
+	Name = valid.String(Name, "Custom Command Set")
+	local CommandSet, ErrorMessage = loadstring(
+		([[
+			local
+				ReceiveValue,
+				Notify,
+				RunCommand,
+				AddConnections,
+				RemoveConnections,
+				CreateWindow,
+				FireTouchInterest,
+				Gui,
+				Character,
+				Backpack,
+				PlayerGui
+			= ...
+			AddConnections({
+				Connect(ReceiveValue.Event, function(Type, Object)
+					if Type == "Character" then
+						Character = Object
+					elseif Type == "Backpack" then
+						Backpack = Object
+					elseif Type == "PlayerGui" then
+						PlayerGui = Object
+					end
+				end),
+			})
+		%s]]):gsub("\n\t*", " "):format(Lua),
+		Name
+	)
 	if not CommandSet then
 		warn(ErrorMessage)
-		Notify{
-			Title = ("%s Failed"):format(Name),
-			Text = "The command set failed to load. Check the Developer Console for any error messages"
-		}
+		Notify({
+			Title = `{Name} Failed`,
+			Text = "The command set failed to load. Check the Developer Console for any error messages",
+		})
 		return
 	end
-	setfenv(CommandSet,getfenv())
-	for CommandName,Info in CommandSet(SendValue,Notify,RunCommand,AddConnections,RemoveConnections,CreateWindow,FireTouchInterest,Gui,GetCharacter(Owner,.5),WaitForChildOfClass(Owner,"Backpack"),WaitForChildOfClass(Owner,"PlayerGui")) do
+	setfenv(CommandSet, getfenv())
+	for CommandName, Info in
+		CommandSet(
+			SendValue,
+			Notify,
+			RunCommand,
+			AddConnections,
+			RemoveConnections,
+			CreateWindow,
+			FireTouchInterest,
+			Gui,
+			getCharacter(owner, 0.5),
+			waitForChildOfClass(owner, "Backpack"),
+			waitForChildOfClass(owner, "PlayerGui")
+		)
+	do
 		if Commands[CommandName] and Commands[CommandName].ToggleCheck and Commands[CommandName].Enabled then
-			RunCommand(Commands[CommandName].Toggles:split"_"[1])
+			RunCommand(Commands[CommandName].Toggles:split("_")[1])
 		end
 		Commands[CommandName] = Info
 	end
 end
-GlobalEnvironment.AddUltimatumCommands = LoadCommands
+globalEnvironment.AddUltimatumCommands = LoadCommands
 local function GetCommandSet(ID)
-	ID = Valid.Number(ID,0)
-	local Success,Result = pcall(game.HttpGet,game,("https://raw.githubusercontent.com/Amourousity/Ultimatum/main/CommandSets/%d.lua"):format(ID),true)
-	if isfolder and not isfolder"UltimatumCommandSets" then
-		makefolder"UltimatumCommandSets"
+	ID = valid.Number(ID, 0)
+	local Success, Result = pcall(
+		game.HttpGet,
+		game,
+		`https://raw.githubusercontent.com/Amourousity/Ultimatum/main/CommandSets/{ID}.lua`,
+		true
+	)
+	if isfolder and not isfolder("UltimatumCommandSets") then
+		makefolder("UltimatumCommandSets")
 	end
 	if Success then
 		if isfolder then
-			writefile(("UltimatumCommandSets/%d.lua"):format(ID),Result)
+			writefile(`UltimatumCommandSets/{ID}.lua`, Result)
 		end
-	elseif isfolder and isfile and isfile(("UltimatumCommandSets/%d.lua"):format(ID)) then
-		Success,Result = true,readfile(("UltimatumCommandSets/%d.lua"):format(ID))
+	elseif isfolder and isfile and isfile(`UltimatumCommandSets/{ID}.lua`) then
+		Success, Result = true, readfile(`UltimatumCommandSets/{ID}.lua`)
 	end
 	if Success then
-		LoadCommands(Result,("Command Set %d"):format(ID))
+		LoadCommands(Result, `Command Set {ID}`)
 	elseif Result ~= "HTTP 404 (Not Found)" then
-		Notify{
+		Notify({
 			Title = "Failed to Load",
-			Text = ("Command set %d failed to download; is GitHub down?"):format(ID)
-		}
-	end
-end
-EnableDrag(Gui.Main,true)
-pcall(function()
-	HiddenUI.Parent = nil
-	HiddenUI.Parent = HiddenUIParent
-end)
-while Service"CoreGui":FindFirstChild"RobloxLoadingGUI" do
-	Service"CoreGui".ChildRemoved:Wait()
-end
-pcall(function()
-	if Settings.PlayIntro == "Always" or Settings.PlayIntro == "Once" and not GlobalEnvironment.UltimatumLoaded then
-		GlobalEnvironment.UltimatumLoaded = true
-		Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
-		task.delay(1.5,function()
-			Service"UserInput".OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
-		end)
-		Service"Run":SetRobloxGuiFocused(true)
-		task.delay(1.5,Service"Run".SetRobloxGuiFocused,Service"Run",false)
-		Animate(Gui.ScreenCover,{
-			Time = .25,
-			EasingStyle = Enum.EasingStyle.Linear,
-			Properties = {BackgroundTransparency = .2}
-		},Gui.Main,{
-			Yields = true,
-			Properties = {
-				BackgroundTransparency = 0,
-				Position = UDim2.new(.5,0,.5,0)
-			}
-		},Gui.Logo,{
-			Properties = {
-				Rotation = 0,
-				ImageTransparency = 0
-			}
-		},Gui.MainCorner,{
-			Yields = true,
-			FinishDelay = .5,
-			Properties = {CornerRadius = UDim.new(0,4)}
-		},Gui.ScreenCover,{
-			Time = .25,
-			EasingStyle = Enum.EasingStyle.Linear,
-			Properties = {BackgroundTransparency = 1}
-		},Gui.Main,{
-			Properties = {
-				Rotation = 180,
-				Size = UDim2.new()
-			},
-			EasingStyle = Enum.EasingStyle.Back,
-			EasingDirection = Enum.EasingDirection.In
-		},Gui.MainCorner,{
-			Properties = {CornerRadius = UDim.new(.5,0)}
-		},Gui.Logo,{
-			Yields = true,
-			Properties = {ImageTransparency = 1}
+			Text = `Command set {ID} failed to download; is GitHub down?`,
 		})
-	else
-		GlobalEnvironment.UltimatumLoaded = true
 	end
-	Wait()
-	Destroy(Gui.ScreenCover)
+end
+EnableDrag(Gui.Main, true)
+pcall(function()
+	hiddenGui.Parent = nil
+	hiddenGui.Parent = hiddenUiParent
+end)
+while service("CoreGui"):FindFirstChild("RobloxLoadingGUI") do
+	service("CoreGui").ChildRemoved:Wait()
+end
+pcall(function()
+	if settings.PlayIntro == "Always" or settings.PlayIntro == "Once" and not globalEnvironment.UltimatumLoaded then
+		globalEnvironment.UltimatumLoaded = true
+		service("UserInput").OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
+		task.delay(1.5, function()
+			service("UserInput").OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+		end)
+		service("Run"):SetRobloxGuiFocused(true)
+		task.delay(1.5, service("Run").SetRobloxGuiFocused, service("Run"), false)
+		animate(
+			Gui.ScreenCover,
+			{
+				time = 0.25,
+				easingStyle = Enum.EasingStyle.Linear,
+				properties = { BackgroundTransparency = 0.2 },
+			},
+			Gui.Main,
+			{
+				yields = true,
+				properties = {
+					BackgroundTransparency = 0,
+					Position = UDim2.new(0.5, 0, 0.5, 0),
+				},
+			},
+			Gui.Logo,
+			{
+				properties = {
+					Rotation = 0,
+					ImageTransparency = 0,
+				},
+			},
+			Gui.MainCorner,
+			{
+				yields = true,
+				finishDelay = 0.5,
+				properties = { CornerRadius = UDim.new(0, 4) },
+			},
+			Gui.ScreenCover,
+			{
+				time = 0.25,
+				easingStyle = Enum.EasingStyle.Linear,
+				properties = { BackgroundTransparency = 1 },
+			},
+			Gui.Main,
+			{
+				properties = {
+					Rotation = 180,
+					Size = UDim2.new(),
+				},
+				easingStyle = Enum.EasingStyle.Back,
+				easingDirection = Enum.EasingDirection.In,
+			},
+			Gui.MainCorner,
+			{
+				properties = { CornerRadius = UDim.new(0.5, 0) },
+			},
+			Gui.Logo,
+			{
+				yields = true,
+				properties = { ImageTransparency = 1 },
+			}
+		)
+	else
+		globalEnvironment.UltimatumLoaded = true
+	end
+	wait()
+	destroy(Gui.ScreenCover)
 	Gui.ScreenCover = nil
-	for Name,Properties in {
-		Logo = {
-			Rotation = 0,
-			ImageTransparency = 0
-		},
-		Main = {
-			Rotation = 0,
-			AnchorPoint = Vector2.zero,
-			BackgroundTransparency = 0,
-			Size = UDim2.new(0,40,0,40),
-			Position = UDim2.new(0,0,1,0)
-		},
-		MainListLayout = {Parent = Gui.MainSection},
-		MainCorner = {CornerRadius = UDim.new(0,4)},
-		MainAspectRatioConstraint = {Parent = Gui.Logo},
-		CommandBarSection = {Size = UDim2.new(1,0,0,40)},
-		SuggestionsSection = {Size = UDim2.new(1,0,1,-40)}
-	} do
-		for Property,Value in Properties do
+	for Name, Properties in
+		{
+			Logo = {
+				Rotation = 0,
+				ImageTransparency = 0,
+			},
+			Main = {
+				Rotation = 0,
+				AnchorPoint = Vector2.zero,
+				BackgroundTransparency = 0,
+				Size = UDim2.new(0, 40, 0, 40),
+				Position = UDim2.new(0, 0, 1, 0),
+			},
+			MainListLayout = { Parent = Gui.MainSection },
+			MainCorner = { CornerRadius = UDim.new(0, 4) },
+			MainAspectRatioConstraint = { Parent = Gui.Logo },
+			CommandBarSection = { Size = UDim2.new(1, 0, 0, 40) },
+			SuggestionsSection = { Size = UDim2.new(1, 0, 1, -40) },
+		}
+	do
+		for Property, Value in Properties do
 			Gui[Name][Property] = Value
 		end
 	end
 	ResizeMain(40)
-	Animate(Gui.Main,{
-		Yields = true,
-		Properties = {Position = UDim2.new(0,0,1,-40)}
+	animate(Gui.Main, {
+		yields = true,
+		properties = { Position = UDim2.new(0, 0, 1, -40) },
 	})
 	Debounce = false
 	GetCommandSet()
