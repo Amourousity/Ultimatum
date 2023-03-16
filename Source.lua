@@ -820,7 +820,7 @@ local function ScrollSuggestions(Input)
 		local OldCanvasPosition = gui.SuggestionsScroll.CanvasPosition
 		gui.SuggestionsScroll.CanvasPosition = Vector2.new(0, 20 * (Selected - 3))
 		animate(gui.SuggestionSelector, {
-			time = 0.25,
+			secondsTime = 0.25,
 			properties = {
 				Position = UDim2.new(
 					0,
@@ -833,7 +833,7 @@ local function ScrollSuggestions(Input)
 		local CanvasPosition = gui.SuggestionsScroll.CanvasPosition
 		gui.SuggestionsScroll.CanvasPosition = OldCanvasPosition
 		animate(gui.SuggestionsScroll, {
-			time = 0.25,
+			secondsTime = 0.25,
 			properties = { CanvasPosition = CanvasPosition },
 		})
 	end
@@ -1211,7 +1211,7 @@ pcall(function()
 		animate(
 			gui.ScreenCover,
 			{
-				time = 0.25,
+				secondsTime = 0.25,
 				easingStyle = Enum.EasingStyle.Linear,
 				properties = { BackgroundTransparency = 0.2 },
 			},
@@ -1238,7 +1238,7 @@ pcall(function()
 			},
 			gui.ScreenCover,
 			{
-				time = 0.25,
+				secondsTime = 0.25,
 				easingStyle = Enum.EasingStyle.Linear,
 				properties = { BackgroundTransparency = 1 },
 			},
