@@ -332,12 +332,12 @@ local gui = create({
 local notificationIds = {}
 local function notify(options)
 	options = valid.table(options, {
-		Duration = 5,
-		Yields = false,
-		Important = false,
-		Text = "(no text)",
-		Title = "Ultimatum",
-		CalculateDuration = true,
+		duration = 5,
+		yields = false,
+		important = false,
+		text = "(no text)",
+		title = "Ultimatum",
+		calculateDuration = true,
 	}) :: {
 		text: string,
 		title: string,
@@ -1208,6 +1208,7 @@ pcall(function()
 		end)
 		service("Run"):SetRobloxGuiFocused(true)
 		task.delay(1.5, service("Run").SetRobloxGuiFocused, service("Run"), false)
+		print("animatign")
 		animate(
 			gui.ScreenCover,
 			{
@@ -1261,6 +1262,7 @@ pcall(function()
 				properties = { ImageTransparency = 1 },
 			}
 		)
+		print("don animatign")
 	else
 		globalEnvironment.UltimatumLoaded = true
 	end
