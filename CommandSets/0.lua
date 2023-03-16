@@ -15,16 +15,16 @@ return {
 	Copy_setclipboard_copyclipboard_setclip_copyclip_settoclipboard_copytoclipboard_ctc_stc_sc_cc_position_teleportstring_copyname_copyusername_copyid_copyuserid_copyid_jobid_copyname_copyuser_copycreatorid_copycreator_copyposition_copypos = {
 		Function = function(Variables,Type)
 			local Content = ({
-				name = Owner.Name,
+				name = owner.Name,
 				jobid = game.JobId,
-				userid = Owner.UserId,
+				userid = owner.UserId,
 				placeid = game.PlaceId,
 				creatorid = game.CreatorId,
-				displayname = Owner.DisplayName,
+				displayname = owner.DisplayName,
 				creatorname = Variables.PlaceInfo.Creator.Name,
 				placeicon = Variables.PlaceInfo.IconImageAssetId,
 				cameraposition = function()
-					local Camera = Valid.CFrame(workspace.CurrentCamera.CFrame)
+					local Camera = valid.cframe(workspace.CurrentCamera.CFrame)
 					local Axiis = {}
 					for _,Axis in {"X","Y","Z"} do
 						table.insert(Axiis,tostring(math.round(Camera[Axis]*20)/20))
@@ -32,9 +32,9 @@ return {
 					return ("%s %s %s"):format(unpack(Axiis))
 				end,
 				position = function()
-					local Character = GetCharacter(Owner,1)
+					local Character = getCharacter(owner,1)
 					if Character then
-						Character = Valid.CFrame(Character:GetPivot())
+						Character = valid.cframe(Character:GetPivot())
 						local Axiis = {}
 						for _,Axis in {"X","Y","Z"} do
 							table.insert(Axiis,tostring(math.round(Character[Axis]*20)/20))
@@ -56,12 +56,12 @@ return {
 				Concatenate = true
 			}
 		},
-		Variables = {PlaceInfo = Valid.Table(select(2,pcall(Service"Marketplace".GetProductInfo,Service"Marketplace",game.PlaceId)),{Creator = {}})},
+		Variables = {PlaceInfo = valid.table(select(2,pcall(service"Marketplace".GetProductInfo,service"Marketplace",game.PlaceId)),{Creator = {}})},
 		Description = "Copies a value of your choice\nPossible values to copy:\n\u{2022} Name\n\u{2022} JobId\n\u{2022} UserId\n\u{2022} PlaceId\n\u{2022} Position\n\u{2022} CreatorId\n\u{2022} PlaceIcon\n\u{2022} CreatorName\n\u{2022} DisplayName\n\u{2022} CameraPosition\n\u{2022} JavaScriptRejoin"
 	},
 	EnableRendering_enablerender_erendering_erender_er_rendering_render = {
 		Function = function(Enabled)
-			Service"Run":Set3dRenderingEnabled(Enabled)
+			service"Run":Set3dRenderingEnabled(Enabled)
 		end,
 		Enabled = true,
 		Toggles = "DisableRendering_disablerender_drendering_derender_drender_dr_norendering_norender",
@@ -69,19 +69,19 @@ return {
 	},
 	Rejoin_rejoinserver_rejoingame_rej_rj = {
 		Function = function()
-			if 1 < #Service"Players":GetPlayers() then
-				pcall(Service"Teleport".TeleportToPlaceInstance,Service"Teleport",game.PlaceId,game.JobId)
+			if 1 < #service"Players":GetPlayers() then
+				pcall(service"Teleport".TeleportToPlaceInstance,service"Teleport",game.PlaceId,game.JobId)
 			else
-				Owner:Kick()
-				RunCommand"CloseRobloxMessage"
-				task.delay(2,pcall,Service"Teleport".Teleport,Service"Teleport",game.PlaceId)
+				owner:Kick()
+				runCommand"CloseRobloxMessage"
+				task.delay(2,pcall,service"Teleport".Teleport,service"Teleport",game.PlaceId)
 			end
 		end,
 		Description = "Rejoins the current server you're in"
 	},
 	CloseRobloxMessage_closerobloxerror_closemessage_closeerror_cmessage_cerror_closermessage_closererror_crobloxmessage_crobloxerror_clearrobloxmessage_clearrobloxerror_clearrerror_clearrmessage_clearmessage_clearerror_cm_crm_cre_ce_closekickmessage_clearkickmessage_clearkick_closekick_ckm_ck_closekickerror_clearkickerror_cke = {
 		Function = function()
-			Service"Gui":ClearError()
+			service"Gui":ClearError()
 		end,
 		Description = "Closes any messages/errors (the grey containers with the blurred background) displayed by Roblox"
 	},
@@ -89,16 +89,16 @@ return {
 		Function = function(Variables,Speed)
 			Variables.Speed = Speed
 			if not Variables.Enabled then
-				if not Character then
+				if not character then
 					return
 				end
-				local Humanoid = GetHumanoid(Character,5)
+				local Humanoid = getHumanoid(character,5)
 				if not Humanoid then
 					return
 				end
-				Variables.Connection = Connect(Service"Run".Heartbeat,function(Delta)
-					if not Character:IsDescendantOf(workspace) or Humanoid:GetState().Name == "Dead" then
-						RemoveConnections{Variables.Connection}
+				Variables.Connection = connect(service"Run".Heartbeat,function(Delta)
+					if not character:IsDescendantOf(workspace) or Humanoid:GetState().Name == "Dead" then
+						removeConnections{Variables.Connection}
 						Variables.Enabled,Variables.Connection = false,nil
 					end
 					if 0 < Humanoid.MoveDirection.Magnitude and table.find({
@@ -108,10 +108,10 @@ return {
 						"Freefall",
 						"Swimming"
 					},Humanoid:GetState().Name) then
-						Character:TranslateBy(Humanoid.MoveDirection*math.min(Delta,1/15)*(Variables.Speed-Humanoid.WalkSpeed))
+						character:TranslateBy(Humanoid.MoveDirection*math.min(Delta,1/15)*(Variables.Speed-Humanoid.WalkSpeed))
 					end
 				end)
-				AddConnections{Variables.Connection}
+				addConnections{Variables.Connection}
 				Variables.Enabled = true
 			end
 		end,
@@ -127,7 +127,7 @@ return {
 	},
 	Magic8Ball_8ball_magicball_magic8_8b_m8b_m8_8_magiceightball_eightball_meb_mb_eightballpu_eightballpr = {
 		Function = function()
-			Notify{
+			notify{
 				Title = "Magic 8 Ball",
 				Text = ({
 					"Yes",
@@ -157,7 +157,7 @@ return {
 	},
 	ServerHop_serverh_sh_hopserver_hops_hserver_shop = {
 		Function = function()
-			Notify{
+			notify{
 				Title = "Searching for Servers",
 				Text = "You will be teleported shortly..."
 			}
@@ -165,10 +165,10 @@ return {
 			while #Servers < 1 do
 				local Success,Result = pcall(game.HttpGet,game,("https://games.roblox.com/v1/games/%s/servers/Public?limit=100%s%s"):format(game.PlaceId,0 < #Page and "&cursor=" or "",Page),true)
 				if not Success then
-					warn(Valid.String(Result,"An unknown error has occurred"))
+					warn(valid.string(Result,"An unknown error has occurred"))
 					return
 				end
-				Result = Service"Http":JSONDecode(Result)
+				Result = service"Http":JSONDecode(Result)
 				Page,UnfilteredServers = Result.nextPageCursor,Result.data
 				Servers = {}
 				for _,ServerInfo in UnfilteredServers do
@@ -178,38 +178,38 @@ return {
 						ViableServerCount += 1
 					end
 				end
-				if #UnfilteredServers < 1 or #Servers < 1 and not Valid.String(Page) then
-					local Players = Service"Players":GetPlayers()
-					table.remove(Players,table.find(Players,Owner))
-					Destroy(Players)
-					RunCommand"Rejoin"
+				if #UnfilteredServers < 1 or #Servers < 1 and not valid.string(Page) then
+					local Players = service"Players":GetPlayers()
+					table.remove(Players,table.find(Players,owner))
+					destroy(Players)
+					runCommand"Rejoin"
 					return
 				end
 			end
 			local Server = Servers[math.random(#Servers)]
-			Notify{
+			notify{
 				Title = "Joining Server",
-				Text = ("Took %s to search %d servers (%d viable). Server <i>%s</i> has %d/%d players"):format(ConvertTime(os.clock()-Start),ServerCount,ViableServerCount,Server.id,Server.playing,Server.maxPlayers)
+				Text = ("Took %s to search %d servers (%d viable). Server <i>%s</i> has %d/%d players"):format(convertTime(os.clock()-Start),ServerCount,ViableServerCount,Server.id,Server.playing,Server.maxPlayers)
 			}
-			task.delay(2,Service"Teleport".TeleportToPlaceInstance,Service"Teleport",game.PlaceId,Server.id)
+			task.delay(2,service"Teleport".TeleportToPlaceInstance,service"Teleport",game.PlaceId,Server.id)
 		end,
 		Description = "Joins a random server that you weren't previously in"
 	},
 	Invisible_invis_iv = {
 		Function = function(Variables)
 			if not Variables.Enabled then
-				if not Character then
+				if not character then
 					return
 				end
-				local Humanoid = GetHumanoid(Character,5)
+				local Humanoid = getHumanoid(character,5)
 				if not Humanoid then
 					return
 				end
-				local HumanoidRootPart = Character:FindFirstChild"HumanoidRootPart"
+				local HumanoidRootPart = character:FindFirstChild"HumanoidRootPart"
 				if not HumanoidRootPart or Humanoid.RigType.Name == "R6" then
 					return
 				end
-				local LowerTorso = Character:FindFirstChild"LowerTorso"
+				local LowerTorso = character:FindFirstChild"LowerTorso"
 				if not LowerTorso then
 					return
 				end
@@ -218,19 +218,19 @@ return {
 					return
 				end
 				local OldCFrame,NewRoot = HumanoidRootPart.CFrame,Root:Clone()
-				HumanoidRootPart.Parent,Character.PrimaryPart = workspace,HumanoidRootPart
-				Character:MoveTo(Vector3.new(OldCFrame.X,9e9,OldCFrame.Z))
-				HumanoidRootPart.Parent = Character
+				HumanoidRootPart.Parent,character.PrimaryPart = workspace,HumanoidRootPart
+				character:MoveTo(Vector3.new(OldCFrame.X,9e9,OldCFrame.Z))
+				HumanoidRootPart.Parent = character
 				task.delay(.5,function()
 					NewRoot.Parent,HumanoidRootPart.CFrame = LowerTorso,OldCFrame
 				end)
-				Variables.Connection = Connect(Service"Run".RenderStepped,function()
-					if not Character:IsDescendantOf(workspace) or Humanoid:GetState().Name == "Dead" then
-						RemoveConnections{Variables.Connection}
+				Variables.Connection = connect(service"Run".RenderStepped,function()
+					if not character:IsDescendantOf(workspace) or Humanoid:GetState().Name == "Dead" then
+						removeConnections{Variables.Connection}
 						Variables.Enabled,Variables.Connection = false,nil
 						return
 					end
-					for _,Object in Character:GetDescendants() do
+					for _,Object in character:GetDescendants() do
 						if not Object:IsDescendantOf(HumanoidRootPart) then
 							for Types,Properties in {
 								BasePart_Decal = {LocalTransparencyModifier = 1},
@@ -256,7 +256,7 @@ return {
 						end
 					end
 				end)
-				AddConnections{Variables.Connection}
+				addConnections{Variables.Connection}
 				Variables.Enabled = true
 			end
 		end,
@@ -266,13 +266,13 @@ return {
 	AntiAFK_noafk_unafk_stopafk = {
 		Function = function(Variables,Enabled)
 			if Enabled then
-				Variables.Connection = Connect(Owner.Idled,function()
-					Service"VirtualUser":Button2Down(Vector2.zero,CFrame.new())
-					task.defer(Service"VirtualUser".Button2Up,Service"VirtualUser",Vector2.zero,CFrame.new())
+				Variables.Connection = connect(owner.Idled,function()
+					service"VirtualUser":Button2Down(Vector2.zero,CFrame.new())
+					task.defer(service"VirtualUser".Button2Up,service"VirtualUser",Vector2.zero,CFrame.new())
 				end)
-				AddConnections{Variables.Connection}
+				addConnections{Variables.Connection}
 			else
-				RemoveConnections{Variables.Connection}
+				removeConnections{Variables.Connection}
 			end
 		end,
 		Variables = {},
@@ -294,9 +294,9 @@ return {
 					"EnvironmentDiffuseScale",
 					"EnvironmentSpecularScale"
 				} do
-					Variables.Properties[Name] = Service"Lighting"[Name]
+					Variables.Properties[Name] = service"Lighting"[Name]
 				end
-				Variables.Connection = Connect(Service"Run".RenderStepped,function()
+				Variables.Connection = connect(service"Run".RenderStepped,function()
 					for Name,Value in {
 						Brightness = 0,
 						FogEnd = math.huge,
@@ -308,19 +308,19 @@ return {
 						Ambient = Color3.new(1,1,1),
 						OutdoorAmbient = Color3.new(1,1,1)
 					} do
-						if Service"Lighting"[Name] ~= Value then
-							Variables.Properties[Name] = Service"Lighting"[Name]
-							Service"Lighting"[Name] = Value
+						if service"Lighting"[Name] ~= Value then
+							Variables.Properties[Name] = service"Lighting"[Name]
+							service"Lighting"[Name] = Value
 						end
 					end
-					Variables.Check(Service"Lighting")
+					Variables.Check(service"Lighting")
 					Variables.Check(workspace.CurrentCamera)
 				end)
-				AddConnections{Variables.Connection}
+				addConnections{Variables.Connection}
 			else
-				RemoveConnections{Variables.Connection}
+				removeConnections{Variables.Connection}
 				for Name,Value in Variables.Properties do
-					Service"Lighting"[Name] = Value
+					service"Lighting"[Name] = Value
 				end
 			end
 		end,
@@ -328,7 +328,7 @@ return {
 			Properties = {},
 			Check = function(Parent)
 				for _,Object in Parent:GetChildren() do
-					if Valid.Instance(Object,"PostEffect") then
+					if valid.instance(Object,"PostEffect") then
 						Object.Enabled = false
 					elseif Object.ClassName == "Atmosphere" then
 						Object.Density = 0
@@ -344,25 +344,25 @@ return {
 		Function = function(Variables,Enabled)
 			if Enabled then
 				Variables.Delta,Variables.LastFrame = 0,os.clock()
-				Variables.Connection = Connect(Service"Run".Heartbeat,function()
+				Variables.Connection = connect(service"Run".Heartbeat,function()
 					Variables.Delta,Variables.LastFrame = math.min(os.clock()-Variables.LastFrame,1/15)*60,os.clock()
-					if Character then
-						local Humanoid = GetHumanoid(Character,.1)
+					if character then
+						local Humanoid = getHumanoid(character,.1)
 						if Humanoid and 0 < Humanoid.MoveDirection.Magnitude then
 							Humanoid.AutoRotate = false
-							local HumanoidRootPart = Character:FindFirstChild"HumanoidRootPart"
-							local Pivot = HumanoidRootPart and HumanoidRootPart.CFrame or Character:GetPivot()
+							local HumanoidRootPart = character:FindFirstChild"HumanoidRootPart"
+							local Pivot = HumanoidRootPart and HumanoidRootPart.CFrame or character:GetPivot()
 							if HumanoidRootPart then
-								HumanoidRootPart.CFrame = DeltaLerp(Pivot,CFrame.lookAt(Pivot.Position,Pivot.Position+Humanoid.MoveDirection),math.pi/20,Variables.Delta)
+								HumanoidRootPart.CFrame = deltaLerp(Pivot,CFrame.lookAt(Pivot.Position,Pivot.Position+Humanoid.MoveDirection),math.pi/20,Variables.Delta)
 							else
-								Character:PivotTo(DeltaLerp(Pivot,CFrame.lookAt(Pivot.Position,Pivot.Position+Humanoid.MoveDirection),math.pi/20,Variables.Delta))
+								character:PivotTo(deltaLerp(Pivot,CFrame.lookAt(Pivot.Position,Pivot.Position+Humanoid.MoveDirection),math.pi/20,Variables.Delta))
 							end
 						end
 					end
 				end)
 			else
-				RemoveConnections{Variables.Connection}
-				local Humanoid = GetHumanoid(Character,1)
+				removeConnections{Variables.Connection}
+				local Humanoid = getHumanoid(character,1)
 				if Humanoid then
 					Humanoid.AutoRotate = true
 				end
