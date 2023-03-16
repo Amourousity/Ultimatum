@@ -1208,7 +1208,6 @@ pcall(function()
 		end)
 		service("Run"):SetRobloxGuiFocused(true)
 		task.delay(1.5, service("Run").SetRobloxGuiFocused, service("Run"), false)
-		print("animatign")
 		animate(
 			gui.ScreenCover,
 			{
@@ -1262,7 +1261,6 @@ pcall(function()
 				properties = { ImageTransparency = 1 },
 			}
 		)
-		print("don animatign")
 	else
 		globalEnvironment.UltimatumLoaded = true
 	end
