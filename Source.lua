@@ -332,22 +332,22 @@ local gui = create({
 local notificationIds = {}
 local function notify(options)
 	options = valid.table(options, {
-		duration = 5,
-		yields = false,
-		important = false,
-		text = "(no text)",
-		title = "Ultimatum",
-		calculateDuration = true,
+		Duration = 5,
+		Yields = false,
+		Important = false,
+		Text = "(no text)",
+		Title = "Ultimatum",
+		CalculateDuration = true,
 	}) :: {
-		text: string,
-		title: string,
-		yields: boolean,
-		duration: number,
-		important: boolean,
-		calculateDuration: boolean,
+		Text: string,
+		Title: string,
+		Yields: boolean,
+		Duration: number,
+		Important: boolean,
+		CalculateDuration: boolean,
 	}
-	options.text = `<b>{options.title}</b>\n{options.text}`
-	if settings.notifications == "none" or settings.notifications == "important" and not options.important then
+	options.Text = `<b>{options.Title}</b>\n{options.Text}`
+	if settings.notifications == "none" or settings.notifications == "important" and not options.Important then
 		return
 	end
 	local id
@@ -393,7 +393,7 @@ local function notify(options)
 				TextSize = 14,
 				RichText = true,
 				TextWrapped = true,
-				Text = options.text,
+				Text = options.Text,
 				TextTransparency = 1,
 				Font = Enum.Font.Arial,
 				BackgroundTransparency = 1,
@@ -404,12 +404,12 @@ local function notify(options)
 			},
 		},
 	})
-	if options.calculateDuration then
+	if options.CalculateDuration then
 		for _ in utf8.graphemes(Notification.Content.ContentText) do
-			options.duration += 0.06
+			options.Duration += 0.06
 		end
 	end
-	options.duration += 0.25
+	options.Duration += 0.25
 	local Size = service("Text"):GetTextSize(
 		Notification.Content.ContentText,
 		14,
@@ -436,7 +436,7 @@ local function notify(options)
 		}
 	)
 	task.delay(
-		options.duration,
+		options.Duration,
 		animate,
 		Notification.Main,
 		{
@@ -456,20 +456,20 @@ local function notify(options)
 			properties = { Size = UDim2.new(Size.X.Scale, Size.X.Offset, 0, 0) },
 		}
 	)
-	options.duration += 1.25
+	options.Duration += 1.25
 	task.spawn(function()
 		local Start = os.clock()
 		repeat
 			Notification.Main.LayoutOrder = table.find(notificationIds, id)
 			wait()
-		until options.duration < os.clock() - Start
+		until options.Duration < os.clock() - Start
 		table.remove(notificationIds, table.find(notificationIds, id))
 	end)
-	if options.yields then
-		wait(options.duration)
+	if options.Yields then
+		wait(options.Duration)
 		destroy(Notification)
 	else
-		task.delay(options.duration, destroy, Notification)
+		task.delay(options.Duration, destroy, Notification)
 	end
 end
 local function checkAxis(axis)
