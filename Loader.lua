@@ -5,18 +5,20 @@
 [|]    [|] [|]        [|]         [|]     [|]       [|] [|]     [|] [|]     [|]    [|] [|]       [|]
 [|]  [|]  [|]        [|]         [|]     [|]       [|] [|]     [|] [|]      [|]  [|]  [|]       [|]
 [||||]   [||||||||] [|]     [|||||||||] [|]       [|] [|]     [|] [|]       [||||]   [|]       []]
-local function Set(Source)
-	loadstring(Source or readfile"Ultimatum.lua","Ultimatum")()
+
+local function set(source)
+	loadstring(source or readfile("Ultimatum.lua"), "Ultimatum")()
 end
-local Success,Result = pcall(game.HttpGet,game,"https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua",true)
-if Success then
+local success, result =
+	pcall(game.HttpGet, game, "https://raw.githubusercontent.com/Amourousity/Ultimatum/main/Source.lua", true)
+if success then
 	if isfile then
-		writefile("Ultimatum.lua",Result)
+		writefile("Ultimatum.lua", result)
 	else
-		Set(Result)
+		set(result)
 		return
 	end
 end
-if isfile and isfile"Ultimatum.lua" then
-	Set()
+if isfile and isfile("Ultimatum.lua") then
+	set()
 end
