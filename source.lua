@@ -1,4 +1,4 @@
---[[]    [|] [|]    [|||||||||] [|||||||||] [||]    [||]      [|] [|||||||||] [|]    [|] [||]    [||]
+  --[[]    [|] [|]    [|||||||||] [|||||||||] [||]    [||]      [|] [|||||||||] [|]    [|] [||]    [||]
    [|]    [|] [|]        [|]         [|]     [||||] [||||]   [|] [|]   [|]     [|]    [|] [||||] [||||]
   [|]    [|] [|]        [|]         [|]     [|] [|||] [|]  [|]   [|]  [|]     [|]    [|] [|] [|||] [|]
  [|]    [|] [|]        [|]         [|]     [|]  [|]  [|] [|||||||||] [|]     [|]    [|] [|]  [|]  [|]
@@ -1110,18 +1110,18 @@ local function getCommandSet(id)
 	local success, result = pcall(
 		game.HttpGet,
 		game,
-		`https://raw.githubusercontent.com/Amourousity/Ultimatum/main/CommandSets/{id}.lua`,
+		`https://raw.githubusercontent.com/Amourousity/Ultimatum/main/commandSets/{id}.lua`,
 		true
 	)
-	if isfolder and not isfolder("UltimatumCommandSets") then
-		makefolder("UltimatumCommandSets")
+	if isfolder and not isfolder("ultimatumCommandSets") then
+		makefolder("ultimatumCommandSets")
 	end
 	if success then
 		if isfolder then
-			writefile(`UltimatumCommandSets/{id}.lua`, result)
+			writefile(`ultimatumCommandSets/{id}.lua`, result)
 		end
-	elseif isfolder and isfile and isfile(`UltimatumCommandSets/{id}.lua`) then
-		success, result = true, readfile(`UltimatumCommandSets/{id}.lua`)
+	elseif isfolder and isfile and isfile(`ultimatumCommandSets/{id}.lua`) then
+		success, result = true, readfile(`ultimatumCommandSets/{id}.lua`)
 	end
 	if success then
 		loadCommands(result, `Command Set {id}`)
