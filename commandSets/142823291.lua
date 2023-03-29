@@ -43,9 +43,8 @@ return {
 				table.insert(
 					Variables.ESPs,
 					create({
-						{
-							Name = "ESPHolder",
-							Parent = gui.Holder,
+						espHolder = {
+							Parent = gui.holder,
 							ClassName = "BillboardGui",
 							Properties = {
 								Active = false,
@@ -56,9 +55,8 @@ return {
 								Size = UDim2.new(LargestAxis, 0, LargestAxis, 0),
 							},
 						},
-						{
-							Name = "Main",
-							Parent = "ESPHolder",
+						main = {
+							Parent = "espHolder",
 							ClassName = "Frame",
 							Properties = {
 								Size = UDim2.new(1, 0, 1, 0),
@@ -73,18 +71,16 @@ return {
 								})[Role],
 							},
 						},
-						{
-							Name = "Gradient",
-							Parent = "Main",
+						gradient = {
+							Parent = "main",
 							ClassName = "UIGradient",
 							Properties = {
 								Rotation = 90,
 								Transparency = NumberSequence.new(0, 1),
 							},
 						},
-						{
-							Name = "Corner",
-							Parent = "Main",
+						corner = {
+							Parent = "main",
 							ClassName = "UICorner",
 							Properties = { CornerRadius = UDim.new(0.5, 0) },
 						},
