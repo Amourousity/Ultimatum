@@ -1,6 +1,6 @@
 # Ultimatum
 
-[![Ultimatum Logo](https://raw.githubusercontent.com/Amourousity/Ultimatum/main/SmallLogo.png)](https://github.com/Amourousity/Ultimatum#Ultimatum)
+[![Ultimatum Logo](https://raw.githubusercontent.com/Amourousity/Ultimatum/main/smallLogo.png)](https://github.com/Amourousity/Ultimatum#Ultimatum)
 
 "*One Script to rule them all*"
 
@@ -20,4 +20,4 @@ Note: will not work with Synapse v2 due to their interpreter being out-of-date (
 
 In order for offline support to work, you ***MUST*** use the loader directly.
 
-Copy the [loader](/Loader.lua), paste it in your exploit's script editor, press Execute and enjoy!
+Copy the [loader](/loader.lua), paste it in your exploit's script editor, press Execute and enjoy!
