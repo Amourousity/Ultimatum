@@ -1,0 +1,25 @@
+name: Automatic Versioning
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Get Git Hash
+      run: echo "${{ github.sha }}" > version.ver
+
+    - name: Commit Changes
+      run: |
+        git config --local user.email "amourousity@gmail.com"
+        git config --local user.name "Amourousity"
+        git add version.ver
+        git commit -m "Update version hash [${{ github.sha }}]"
+        git push
