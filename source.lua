@@ -1206,8 +1206,8 @@ pcall(function()
 		globalEnvironment.ultimatumLoaded = true
 	end
 	wait()
-	destroy(gui.screenCover, gui.mainListLayout)
-	gui.screenCover, gui.mainListLayout = nil, nil
+	destroy(gui.screenCover)
+	gui.screenCover = nil
 	for objectName, properties in
 		{
 			logo = {
