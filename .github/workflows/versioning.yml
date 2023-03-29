@@ -21,5 +21,5 @@ jobs:
         git config --local user.email "amourousity@gmail.com"
         git config --local user.name "Amourousity"
         git add version.ver
-        git commit -m "Update version hash [${{ github.sha }}]"
+        git commit -m "Update version [${{ github.sha }}]"
         git push
