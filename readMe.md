@@ -1,6 +1,6 @@
 # Ultimatum
 
-[![Ultimatum Logo](https://raw.githubusercontent.com/Amourousity/Ultimatum/main/smallLogo.png)](https://github.com/Amourousity/Ultimatum#Ultimatum)
+[![Ultimatum Logo](https://raw.githubusercontent.com/Amourousity/Ultimatum/main/SmallLogo.png)](https://github.com/Amourousity/Ultimatum#Ultimatum)
 
 "*One Script to rule them all*"
 
