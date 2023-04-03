@@ -147,7 +147,7 @@ return {
 								and not NewCoin:FindFirstChildWhichIsA("Model")
 								and NewCoin:FindFirstChild("Coin")
 								and Magnitude < Distance
-								and NewCoin.CoinType ~= "Coin"
+								and NewCoin.CoinType.Value ~= "Coin"
 							then
 								Coin, Distance = NewCoin, Magnitude
 							end
