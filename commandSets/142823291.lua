@@ -169,6 +169,11 @@ return {
 								repeat
 									wait()
 									character:PivotTo(CFrame.new(Variables.Position) * CFrame.Angles(math.pi / 2, 0, 0))
+									for _, object in character:GetChildren() do
+										if object:IsA("BasePart") then
+											object.AssemblyLinearVelocity, object.AssemblyAngularVelocity = Vector3.zero, Vector3.zero
+										end
+									end
 								until 0.25 < os.clock() - Variables.IgnoreCoins[Coin]
 								Variables.Collecting = false
 							end
