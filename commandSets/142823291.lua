@@ -14,14 +14,7 @@ return {
 							for _, Player in service("Players"):GetPlayers() do
 								local Data = PlayerData[Player.Name]
 								if Data and not Data.Dead and Player.Name ~= owner.Name then
-									Variables:CreateESP(
-										Player.Character:FindFirstChild(
-											"HumanoidRootPart"
-										) or Player.Character:FindFirstChildWhichIsA(
-											"BasePart"
-										),
-										Data.Role
-									)
+									Variables:CreateESP(Player.Character:FindFirstChild("HumanoidRootPart") or Player.Character:FindFirstChildWhichIsA("BasePart"), Data.Role)
 								end
 							end
 							Variables.Calculating = false
@@ -116,7 +109,9 @@ return {
 					Variables.Collecting = false
 					runCommand("Invisible")
 					wait(
-						waitForSequence(playerGui, "MainGUI", "Game", "CashBag", "Full"):GetPropertyChangedSignal("Visible")
+						waitForSequence(playerGui, "MainGUI", "Game", "CashBag", "Full"):GetPropertyChangedSignal(
+							"Visible"
+						)
 					)
 					Character:BreakJoints()
 				end)
@@ -152,6 +147,7 @@ return {
 								and not NewCoin:FindFirstChildWhichIsA("Model")
 								and NewCoin:FindFirstChild("Coin")
 								and Magnitude < Distance
+								and NewCoin.CoinType ~= "Coin"
 							then
 								Coin, Distance = NewCoin, Magnitude
 							end
@@ -171,7 +167,8 @@ return {
 									character:PivotTo(CFrame.new(Variables.Position) * CFrame.Angles(math.pi / 2, 0, 0))
 									for _, object in character:GetChildren() do
 										if object:IsA("BasePart") then
-											object.AssemblyLinearVelocity, object.AssemblyAngularVelocity = Vector3.zero, Vector3.zero
+											object.AssemblyLinearVelocity, object.AssemblyAngularVelocity =
+												Vector3.zero, Vector3.zero
 										end
 									end
 								until 0.25 < os.clock() - Variables.IgnoreCoins[Coin]
