@@ -2,7 +2,7 @@ return {
 	Close = {
 		Function = function()
 			--- @diagnostic disable-next-line: undefined-global
-			pcall(CloseUltimatum)
+			destroy(ultimatumGuis)
 		end,
 		Decription = "Closes Ultimatum (\u{2639})",
 	},
@@ -97,12 +97,16 @@ return {
 				if not character then
 					return
 				end
-				local Humanoid = getHumanoid(character, 5)
+				local Humanoid = getHumanoid(character, 0)
 				if not Humanoid then
 					return
 				end
 				Variables.Connection = connect(service("Run").Heartbeat, function(Delta)
-					if not character:IsDescendantOf(workspace) or Humanoid:GetState().Name == "Dead" then
+					if
+						not character:IsDescendantOf(workspace)
+						or Humanoid:GetState().Name == "Dead"
+						or not Humanoid:IsDescendantOf(character)
+					then
 						removeConnections({ Variables.Connection })
 						Variables.Enabled, Variables.Connection = false, nil
 					end
