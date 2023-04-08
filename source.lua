@@ -294,27 +294,27 @@ local gui = create({
 		},
 	},
 }) :: {
+	main: Frame,
+	logo: ImageLabel,
 	holder: ScreenGui,
 	screenCover: Frame,
-	main: Frame,
-	mainCorner: UICorner,
-	mainGradient: UIGradient,
-	mainAspectRatioConstraint: UIAspectRatioConstraint,
-	mainListLayout: UIListLayout,
-	commandBarSection: Frame,
-	commandBarListLayout: UIListLayout,
-	logo: ImageLabel,
-	commandBarBackground: Frame,
 	commandBar: TextBox,
-	commandBarCorner: UICorner,
-	suggestionsSection: Frame,
-	suggestionsScroll: ScrollingFrame,
-	suggestionsGridLayout: UIGridLayout,
-	suggestionSelector: Frame,
-	selectorCorner: UICorner,
+	mainCorner: UICorner,
+	commandBarSection: Frame,
+	mainGradient: UIGradient,
 	selectorBorder: UIStroke,
+	selectorCorner: UICorner,
 	notificationHolder: Frame,
+	suggestionSelector: Frame,
+	suggestionsSection: Frame,
+	commandBarCorner: UICorner,
+	commandBarBackground: Frame,
+	mainListLayout: UIListLayout,
+	suggestionsScroll: ScrollingFrame,
+	commandBarListLayout: UIListLayout,
+	suggestionsGridLayout: UIGridLayout,
 	notificationListLayout: UIListLayout,
+	mainAspectRatioConstraint: UIAspectRatioConstraint,
 }
 local notificationIds = {}
 local function notify(options: {
@@ -465,7 +465,7 @@ local function checkAxis(axis)
 	return workspace.CurrentCamera.ViewportSize[axis] / 2
 		< gui.logo.AbsolutePosition[axis] + gui.logo.AbsoluteSize[axis] / 2
 end
-local lastCheck, debounce, lastLeft = 0, true, 0
+local debounce, lastLeft = true, 0
 local function resizeMain(x, y)
 	x = if settings.stayOpen then 400 else valid.number(x, 400)
 	y = valid.number(y, 40)
@@ -923,6 +923,11 @@ connections = {
 		end
 	end),
 	isfile and connect(service("Run").Heartbeat, function()
+		local newCharacter = getCharacter(owner, 0)
+		if newCharacter and newCharacter ~= character then
+			character = newCharacter
+			sendValue:Fire("Character", newCharacter)
+		end
 		if not valid.instance(gui.holder, "ScreenGui") or not gui.holder:IsDescendantOf(hiddenGui) and not removing then
 			removing = true
 			local unfinished = 0
@@ -938,7 +943,7 @@ connections = {
 			waitForSignal(function()
 				wait()
 				return unfinished < 1
-			end, 10)
+			end, 5)
 			destroy(connections, gui, sendValue)
 		end
 	end),
@@ -1015,7 +1020,7 @@ connections = {
 					while service("UserInput"):IsKeyDown(Enum.KeyCode[input]) and os.clock() - start < 0.5 do
 						wait()
 					end
-					if 0.25 < os.clock() - start then
+					if 0.5 < os.clock() - start then
 						repeat
 							scrollSuggestions(input)
 							wait(1 / 30)
