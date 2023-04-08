@@ -97,7 +97,7 @@ return {
 				if not character then
 					return
 				end
-				local Humanoid = getHumanoid(character, 0)
+				local Humanoid = getHumanoid(character, 5)
 				if not Humanoid then
 					return
 				end
