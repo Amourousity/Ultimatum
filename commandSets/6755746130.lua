@@ -100,6 +100,7 @@ return {
 								and 0 < #Button:GetChildren()
 								and Button.Name ~= "AutoCollect"
 								and not Button:GetAttribute("CostValue")
+								and not Button:GetAttribute("AchievementNeeded")
 							then
 								local Price = Button:GetAttribute("Cost")
 								if Price <= Variables.Money.Value and Price < LowestPrice then
