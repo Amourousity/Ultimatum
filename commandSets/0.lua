@@ -22,7 +22,7 @@ return {
 							destroy(Variables.ESPs)
 							for _, player: Player in service("Players"):GetPlayers() do
 								if player ~= owner and player.Character and player.Character:IsDescendantOf(workspace) then
-									Variables:CreateESP(player.Character, player, if player.Neutral or not player.Team then Color3.new(1, 1, 1) else player.TeamColor.Color)
+									Variables:CreateESP(player.Character, if player.Neutral or not player.Team then Color3.new(1, 1, 1) else player.TeamColor.Color)
 								end
 							end
 						end
