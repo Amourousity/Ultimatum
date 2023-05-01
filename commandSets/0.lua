@@ -38,7 +38,8 @@ return {
 		Variables = {
 			ESPs = {},
 			CreateESP = function(variables, object, roleColor)
-				local LargestAxis = math.max(object.Size.X, object.Size.Y, object.Size.Z)
+				local size = object:GetExtentsSize()
+				local LargestAxis = math.max(size.X, size.Y, size.Z)
 				table.insert(
 					variables.ESPs,
 					create({
