@@ -12,6 +12,75 @@ return {
 		end,
 		Description = "Leaves the current Roblox server",
 	},
+	ExtrasensoryPerception_extrasensoryp_esensoryperception_esperception_extrasp_esp = {
+		Function = function(Variables, Enabled)
+			if Enabled then
+				Variables.Time, Variables.Connection =
+					0, connect(service("Run").Heartbeat, function()
+						if 0.5 < os.clock() - Variables.Time then
+							Variables.Time = os.clock()
+							destroy(Variables.ESPs)
+							for _, player: Player in service("Players"):GetPlayers() do
+								if player ~= owner and player.Character and player.Character:IsDescendantOf(workspace) then
+									Variables:CreateESP(player.Character, player, if player.Neutral or not player.Team then Color3.new(1, 1, 1) else player.TeamColor.Color)
+								end
+							end
+						end
+					end)
+				addConnections({ Variables.Connection })
+			else
+				removeConnections({ Variables.Connection })
+				destroy(Variables.ESPs)
+			end
+		end,
+		Toggles = "SensoryPerception_sensoryp_sperception_sp_unextrasensoryperception_unextrasensoryp_unesperception_unextrasp_unesp_uesp",
+		ToggleCheck = true,
+		Variables = {
+			ESPs = {},
+			CreateESP = function(variables, object, roleColor)
+				local LargestAxis = math.max(object.Size.X, object.Size.Y, object.Size.Z)
+				table.insert(
+					variables.ESPs,
+					create({
+						espHolder = {
+							Parent = gui.holder,
+							ClassName = "BillboardGui",
+							Properties = {
+								Active = false,
+								Adornee = object,
+								AlwaysOnTop = true,
+								LightInfluence = 0,
+								ResetOnSpawn = false,
+								Size = UDim2.new(LargestAxis, 8, LargestAxis, 8),
+							},
+						},
+						main = {
+							Parent = "espHolder",
+							ClassName = "Frame",
+							Properties = {
+								Size = UDim2.new(1, 0, 1, 0),
+								BackgroundColor3 = roleColor,
+							},
+						},
+						gradient = {
+							Parent = "main",
+							ClassName = "UIGradient",
+							Properties = {
+								Rotation = 90,
+								Transparency = NumberSequence.new(0, 1),
+							},
+						},
+						corner = {
+							Parent = "main",
+							ClassName = "UICorner",
+							Properties = { CornerRadius = UDim.new(0.5, 0) },
+						},
+					})
+				)
+			end,
+		},
+		Description = "Locates player on the map (may not work as well in StreamingEnabled games)",
+	},
 	Copy_setclipboard_copyclipboard_setclip_copyclip_settoclipboard_copytoclipboard_ctc_stc_sc_cc_position_teleportstring_copyname_copyusername_copyid_copyuserid_copyid_jobid_copyname_copyuser_copycreatorid_copycreator_copyposition_copypos = {
 		Function = function(Variables, Type)
 			local Content = ({
