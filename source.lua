@@ -540,7 +540,7 @@ local function runCommand(text)
 							if (commandInfo.Enabled or false) == enabled then
 								enabled = if enabled then "En" else "Dis"
 								notify({
-									title = `Already {enabled}sabled`,
+									title = `Already {enabled}abled`,
 									text = `The command is already {enabled:lower()}abled`,
 								})
 								return
