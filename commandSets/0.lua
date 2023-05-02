@@ -52,7 +52,7 @@ return {
 								AlwaysOnTop = true,
 								LightInfluence = 0,
 								ResetOnSpawn = false,
-								Size = UDim2.new(LargestAxis, 8, LargestAxis, 8),
+								Size = UDim2.new(LargestAxis, 0, LargestAxis, 0),
 							},
 						},
 						main = {
