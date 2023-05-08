@@ -115,7 +115,7 @@ return {
 				javascriptrejoin = `javascript:Roblox.GameLauncher.joinGameInstance({game.PlaceId}, "{game.JobId}")`,
 			})[Type:lower()]
 			if Content and setclipboard then
-				setclipboard(type(Content) == "function" and Content() or Content)
+				setclipboard(tostring(if type(Content) == "function" then Content() else Content))
 			end
 		end,
 		Arguments = {
