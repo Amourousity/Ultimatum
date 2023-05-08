@@ -995,8 +995,10 @@ connections = {
 		service("UserInput").OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 		resizeMain()
 		task.delay(0.25, function()
-			hiddenGui.Parent = nil
-			hiddenGui.Parent = hiddenGuiParent
+			pcall(function()
+				hiddenGui.Parent = nil
+				hiddenGui.Parent = hiddenGuiParent
+			end)
 			if service("UserInput"):GetFocusedTextBox() ~= gui.commandBar then
 				resizeMain(40)
 				wait(0.25)
