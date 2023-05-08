@@ -25,8 +25,7 @@ if success and (not isfile("ultimatumVersion.ver") or readfile("ultimatumVersion
 	success, result =
 		pcall(game.HttpGet, game, "https://api.github.com/repos/Amourousity/Ultimatum/contents/commandSets", true)
 	if success then
-		result = jsonDecode(result)
-		for _, file in result do
+		for _, file in game:GetService("HttpService"):JSONDecode(result) do
 			cache(`ultimatumCommandSets/{file.name}`, file.download_url)
 		end
 	end
