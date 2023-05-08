@@ -1112,29 +1112,8 @@ end
 globalEnvironment.addUltimatumCommands = loadCommands
 local function getCommandSet(id)
 	id = valid.number(id, 0)
-	local success, result = pcall(
-		game.HttpGet,
-		game,
-		`https://raw.githubusercontent.com/Amourousity/Ultimatum/main/commandSets/{id}.lua`,
-		true
-	)
-	if isfolder and not isfolder("ultimatumCommandSets") then
-		makefolder("ultimatumCommandSets")
-	end
-	if success then
-		if isfolder then
-			writefile(`ultimatumCommandSets/{id}.lua`, result)
-		end
-	elseif isfolder and isfile and isfile(`ultimatumCommandSets/{id}.lua`) then
-		success, result = true, readfile(`ultimatumCommandSets/{id}.lua`)
-	end
-	if success then
-		loadCommands(result, `Command Set {id}`)
-	elseif result ~= "HTTP 404 (Not Found)" then
-		notify({
-			title = "Failed to Load",
-			text = `Command set {id} failed to download; is GitHub down?`,
-		})
+	if isfile(`ultimatumCommandSets/{id}.lua`) then
+		loadCommands(readfile(`ultimatumCommandSets/{id}.lua`), `Command Set {id}`)
 	end
 end
 enableDrag(gui.main, true)
